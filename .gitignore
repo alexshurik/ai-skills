@@ -1,0 +1,56 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+.tmp/
+tmp/
+
+# Environment files (should never be committed)
+.env
+.env.local
+.env.*.local
+
+# Keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Dependencies (if added later)
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Kimi CLI specific
+.kimi/

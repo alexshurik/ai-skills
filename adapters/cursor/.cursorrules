@@ -1,0 +1,76 @@
+# SK-* Skills for Cursor
+# Auto-generated from sk-* skills repository
+#
+# These are custom commands available in this project.
+# Use them by typing the command name in the chat.
+
+
+## Workflow Commands
+
+### /sk-team-feature
+Full workflow for new feature development with multi-agent team
+
+### /sk-team-help
+Show help and documentation for multi-agent team workflow
+
+### /sk-team-quick
+Quick workflow for bugfixes, typos, and small changes
+
+### /sk-team-status
+Show status of current team workflow
+
+## Onboarding Commands
+
+### /sk-discover-project
+Discover project structure, stack, domains, and API surface for quick onboarding
+
+### /sk-explore-codebase
+Explore codebase and generate check-before-create navigation rules
+
+### /sk-onboard
+Full project onboarding - discover structure + generate navigation rules
+
+## Planning Commands
+
+### /sk-plan-mode
+Structured planning workflow with file-based plan storage. Separates research from execution through 4 phases. Wait for explicit user approval before making changes.
+
+## Utility Commands
+
+### /sk-code-review
+Review uncommitted changes with fresh context. Skips automated checks, focuses on patterns linters miss.
+
+### /sk-explore-codestyle
+Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
+
+## Context Commands
+
+### /sk-copy-context
+Copy current session context to clipboard
+
+### /sk-pass-to-claude
+Save context and switch to aclaude in a new tab
+
+### /sk-pass-to-minimax
+Save context and switch to mclaude in a new tab
+
+## Available Agents
+
+### sk-acceptance-reviewer
+Verify business requirements are met (QA acceptance). Creates VERIFICATION.md with final verdict.
+
+### sk-architect
+Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
+
+### sk-code-reviewer
+Review code quality, patterns, and security. Provides actionable feedback or approves changes.
+
+### sk-developer
+Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
+
+### sk-product-analyst
+Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria.
+
+### sk-tester
+Write tests BEFORE code (TDD red phase). Creates failing tests based on requirements.
+

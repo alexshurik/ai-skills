@@ -1,0 +1,69 @@
+# Project Rules for Cursor
+
+## Available Commands
+
+Use these commands in chat to invoke workflows:
+
+### Workflow Commands
+
+#### /sk-team-feature
+Start full feature development with multi-agent team.
+Phases: Discovery → Planning → Testing → Implementation → Review → Acceptance
+
+#### /sk-team-quick
+Quick fix workflow for bugfixes, typos, and small changes.
+Phases: Developer → Code Review
+
+#### /sk-team-status
+Show status of active team workflows.
+
+#### /sk-team-help
+Show documentation for multi-agent team workflow.
+
+### Onboarding Commands
+
+#### /sk-onboard
+Full project onboarding - discover structure + generate navigation rules.
+
+#### /sk-discover-project
+Discover project structure, tech stack, domains, and API surface.
+
+#### /sk-explore-codebase
+Explore codebase and generate check-before-create navigation rules.
+
+### Utility Commands
+
+#### /sk-code-review
+Review uncommitted changes with fresh context.
+Focuses on patterns linters miss.
+
+#### /sk-explore-codestyle
+Analyze project and generate code style guidelines.
+Detects stack, extracts linter rules, identifies patterns.
+
+### Context Commands
+
+#### /sk-copy-context
+Copy current session context to clipboard for handoff.
+
+## Agent Roles
+
+When working on features, these agents handle different phases:
+
+- **sk-product-analyst** - Requirements gathering (WHAT & WHY)
+- **sk-architect** - System design (HOW)
+- **sk-tester** - TDD red phase (failing tests)
+- **sk-developer** - TDD green phase (implementation)
+- **sk-code-reviewer** - Code quality review
+- **sk-acceptance-reviewer** - Business validation
+
+## Artifacts Location
+
+All feature artifacts are stored in:
+```
+openspec/changes/<feature-name>/
+├── proposal.md      # Requirements
+├── design.md        # Technical design
+├── tasks.md         # Task breakdown
+└── VERIFICATION.md  # Acceptance result
+```
