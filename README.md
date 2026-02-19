@@ -221,6 +221,8 @@ openspec/changes/<feature-name>/
 └── VERIFICATION.md  # Acceptance result (Acceptance Reviewer)
 ```
 
+**Note:** This directory structure is inspired by [OpenSpec](https://openspec.dev/) (Spec-Driven Development), but **you don't need to install OpenSpec** — our workflows use this as a simple convention for organizing artifacts. Directories are created automatically during workflow execution.
+
 ## Customization
 
 ### Adding New Skills
@@ -252,5 +254,4 @@ MIT
 
 ## Related Projects
 
-- [GSD](https://github.com/example/gsd) - Get Stuff Done workflow system
-- [OpenSpec](https://github.com/example/openspec) - Specification management
+- [OpenSpec](https://openspec.dev/) - Spec-Driven Development (SDD) framework that inspired our artifact structure

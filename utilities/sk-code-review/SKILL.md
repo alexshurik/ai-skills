@@ -1,7 +1,7 @@
 ---
 name: sk-code-review
-version: 1.0.0
-description: Review uncommitted changes with fresh context. Skips automated checks, focuses on patterns linters miss.
+version: 2.0.0
+description: Review uncommitted changes with fresh context. Runs linters, checks SOLID/KISS/DRY principles, verifies language-specific best practices. Skips automated checks, focuses on patterns linters miss.
 license: MIT
 
 # Claude Code
@@ -17,26 +17,26 @@ platforms:
 
 # Code Review for Uncommitted Changes
 
-Review all uncommitted changes in the current repository with a fresh perspective.
+Review all uncommitted changes in the current repository with a fresh perspective. Runs linters, checks SOLID/KISS/DRY principles, and verifies language-specific best practices.
 
 **IMPORTANT: Context Reset.** Treat this as a fresh review session. Ignore any prior conversation context. Your only focus is analyzing the uncommitted changes objectively.
 
 ---
 
-## Step 1: Check for OpenSpec Context
+## Step 1: Check for Project Context
 
-Check if there are active OpenSpec changes that might provide context:
+Check if there are active project specifications or design documents:
 
 ```bash
-openspec list --json 2>/dev/null || echo "NO_OPENSPEC"
+find . -maxdepth 3 -name "design.md" -o -name "*.spec.md" -o -name "PROPOSAL.md" 2>/dev/null | head -10
 ```
 
-**If proposals exist:**
-- Use AskUserQuestion to ask the user if they want to review changes in context of a specific proposal
-- Options: list active proposal names + "No, review without proposal context"
-- If user selects a proposal, read `openspec/changes/<name>/proposal.md` and `openspec/changes/<name>/tasks.md` for context
+**If design documents exist:**
+- Use AskUserQuestion to ask the user if they want to review changes in context of a specific document
+- Options: list found documents + "No, review without context"
+- If user selects a document, read it for context
 
-**If no proposals or user declines:** Proceed without proposal context.
+**If no documents or user declines:** Proceed without additional context.
 
 ---
 
@@ -84,6 +84,22 @@ If user selects "No, continue":
 
 ## Step 2: Detect Changes
 
+Detect the project stack to apply language-specific rules:
+
+```bash
+# Detect languages
+find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.kt" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/venv/*" -not -path "*/__pycache__/*" -not -path "*/.pytest_cache/*" 2>/dev/null | head -100 | xargs -I {} basename {} | sed 's/.*\.//' | sort | uniq -c | sort -rn
+
+# Detect tooling configs
+ls -la .eslintrc* eslint.config.* .prettierrc* prettier.config.* pyproject.toml setup.cfg ruff.toml .flake8 .golangci.yml Cargo.toml 2>/dev/null
+```
+
+Record: Primary language(s), detected linters/formatters.
+
+---
+
+## Step 3: Detect Changes
+
 Check for uncommitted changes:
 
 ```bash
@@ -97,7 +113,60 @@ Output: "No uncommitted changes to review." and stop.
 
 ---
 
-## Step 3: Gather Full Diff
+## Step 4: Run Linters and Static Analysis
+
+Run linters and formatters if detected to catch automated issues first:
+
+### JavaScript/TypeScript
+```bash
+if [ -f package.json ]; then
+  npm run lint 2>/dev/null || yarn lint 2>/dev/null || pnpm lint 2>/dev/null || echo "No lint script"
+
+  if [ -f tsconfig.json ]; then
+    npx tsc --noEmit 2>/dev/null || echo "TypeScript check skipped"
+  fi
+fi
+```
+
+### Python
+```bash
+if command -v ruff &> /dev/null; then
+  ruff check . 2>/dev/null
+  ruff format --check . 2>/dev/null
+elif [ -f pyproject.toml ] || [ -f setup.cfg ]; then
+  black --check . 2>/dev/null
+  flake8 . 2>/dev/null
+fi
+
+if [ -f pyproject.toml ] && grep -q "mypy" pyproject.toml 2>/dev/null; then
+  mypy . 2>/dev/null
+fi
+```
+
+### Go
+```bash
+if [ -f go.mod ]; then
+  gofmt -l . 2>/dev/null
+  go vet ./... 2>/dev/null
+  if command -v golangci-lint &> /dev/null; then
+    golangci-lint run 2>/dev/null
+  fi
+fi
+```
+
+### Rust
+```bash
+if [ -f Cargo.toml ]; then
+  cargo fmt -- --check 2>/dev/null
+  cargo clippy 2>/dev/null
+fi
+```
+
+**Note:** Record any linter violations. These are BLOCKERS.
+
+---
+
+## Step 5: Gather Full Diff
 
 Get the complete diff of all changes:
 
@@ -115,9 +184,9 @@ For untracked files, read their contents to include in the review.
 
 ---
 
-## Step 4: Analyze Changes
+## Step 6: Analyze Changes
 
-### 4.1 Universal Checks (always apply)
+### 6.1 Universal Checks (always apply)
 
 #### Correctness
 - Logic errors
@@ -147,7 +216,52 @@ For untracked files, read their contents to include in the review.
 
 ---
 
-### 4.2 Maintainability (conditional)
+### 6.2 SOLID Principles Check
+
+#### Single Responsibility Principle (SRP)
+- Each class/module has ONE reason to change
+- No "god objects" that do everything
+- Functions are focused on a single task
+- File length reasonable (<300-400 lines)
+
+#### Open/Closed Principle (OCP)
+- New functionality extends rather than modifies existing code
+- Abstract classes/interfaces used appropriately
+
+#### Liskov Substitution Principle (LSP)
+- Derived classes can substitute base classes without issues
+- No unexpected behavior in subclasses
+
+#### Interface Segregation Principle (ISP)
+- Interfaces are client-specific, not fat interfaces
+- No dependency on unused methods
+
+#### Dependency Inversion Principle (DIP)
+- High-level modules depend on abstractions, not low-level details
+- Dependency injection used appropriately
+
+---
+
+### 6.3 KISS, DRY, YAGNI Check
+
+#### KISS (Keep It Simple, Stupid)
+- Code solves the problem simply without over-engineering
+- No unnecessary design patterns
+- No speculative abstraction "just in case"
+
+#### DRY (Don't Repeat Yourself)
+- No duplication of logic >3 lines
+- Magic values extracted to constants
+- Common logic extracted to functions/utilities
+
+#### YAGNI (You Ain't Gonna Need It)
+- No speculative functionality added
+- No unused parameters or variables
+- No "future-proofing" without clear requirements
+
+---
+
+### 6.4 Maintainability (conditional)
 
 **SKIP if in SKIP_IN_REVIEW list:**
 - Formatting (if Prettier/Black/gofmt/etc. detected)
@@ -161,40 +275,63 @@ For untracked files, read their contents to include in the review.
 - Unclear intent / poor abstraction
 - Magic numbers without explanation
 - Dead code introduction
+- SOLID violations
+- Deep nesting (>3 levels)
+- Functions with >4 parameters
 
 ---
 
-### 4.3 Project Patterns (if code-style.md loaded)
+### 6.5 Language-Specific Best Practices
 
-Check FOCUS_IN_REVIEW patterns:
+#### Python-Specific
+- **PEP 8 Compliance**: 4 spaces, 88-100 char lines
+- **Import Organization** (3 groups: stdlib, third-party, local)
+- Absolute imports preferred over relative
+- No wildcard imports (`from module import *`)
+- Type hints for public APIs
+- f-strings for formatting
+- `pathlib` over `os.path`
+- `is None` / `is not None` for None checks
+- `@dataclass` for data containers
 
-#### Naming Patterns
-- Does new code follow domain naming conventions?
-- Handler/Service/Repository naming consistent?
-- Boolean naming (is/has/can) matches project pattern?
+#### TypeScript/JavaScript-Specific
+- No `any` types (use `unknown` with guards)
+- Strict null checks
+- `===`/`!==` over `==`/`!=`
+- Optional chaining (`?.`) and nullish coalescing (`??`)
+- Async/await (not raw promises)
+- `const`/`let` (no `var`)
+- Event listeners cleaned up
 
-#### Module Organization
-- Are layer boundaries respected?
-- Is code in the right directory/module?
-- Are imports following the dependency direction?
+#### Go-Specific
+- Explicit error handling (`err != nil`)
+- Errors wrapped with context
+- Context propagation for cancellation
+- Small interfaces (interface segregation)
+- Resource cleanup with `defer`
+- No unused imports
 
-#### Error Handling
-- Using project's error class hierarchy?
-- Error wrapping/context consistent?
-- Logging pattern matches project?
-
-#### Async/Concurrency
-- Using project's async pattern?
-- Resource cleanup present?
-- Cancellation handled if applicable?
-
-#### Testing
-- Test structure matches project pattern?
-- Using project's mock/fixture approach?
+#### Rust-Specific
+- Handle `Result` and `Option` properly
+- `?` operator for error propagation
+- Ownership and borrowing correct
+- No unwrap in production code
 
 ---
 
-### 4.4 Architectural Review
+### 6.6 Import and Module Organization
+
+- Imports grouped logically (stdlib → third-party → local)
+- No unused imports
+- No circular dependencies
+- No deep relative paths (`../../../../`)
+- Barrel exports consistent
+- Clear separation of concerns
+- Public API boundaries clear
+
+---
+
+### 6.7 Architecture Review
 
 Always check, regardless of code-style.md:
 
@@ -202,10 +339,11 @@ Always check, regardless of code-style.md:
 - **Dependency direction**: Lower layers importing higher layers?
 - **Circular dependency risk**: New imports creating cycles?
 - **Abstraction leaks**: Implementation details exposed in APIs?
+- **SOLID violations**: Architecture patterns violated?
 
 ---
 
-## Step 5: Generate Report
+## Step 7: Generate Report
 
 Output a structured review report:
 
@@ -218,6 +356,31 @@ Output a structured review report:
 ### Files Changed
 - `path/to/file1.ts` - [brief description of changes]
 - `path/to/file2.ts` - [brief description of changes]
+
+---
+
+### Linter/Static Analysis Results
+[Linter output if run]
+
+---
+
+### SOLID Principles
+
+| Principle | Status | Notes |
+|-----------|--------|-------|
+| Single Responsibility | ✅/⚠️/❌ | [Notes if issues] |
+| Open/Closed | ✅/⚠️/❌ | [Notes if issues] |
+| Liskov Substitution | ✅/⚠️/❌ | [Notes if issues] |
+| Interface Segregation | ✅/⚠️/❌ | [Notes if issues] |
+| Dependency Inversion | ✅/⚠️/❌ | [Notes if issues] |
+
+---
+
+### KISS/DRY/YAGNI
+
+- **KISS**: ✅/⚠️/❌ - [Notes]
+- **DRY**: ✅/⚠️/❌ - [Notes if duplication found]
+- **YAGNI**: ✅/⚠️/❌ - [Notes if speculative code]
 
 ---
 
@@ -239,6 +402,19 @@ Output a structured review report:
 > **[WARNING]** `file.ts:15` - [description]
 > **Why:** [explanation]
 > **Suggestion:** [how to improve]
+
+---
+
+### Language-Specific Issues
+
+#### Python
+- [PEP 8/import/typing issues]
+
+#### TypeScript/JavaScript
+- [Type safety/modern syntax issues]
+
+#### Go
+- [Error handling/conventions issues]
 
 ---
 
@@ -281,6 +457,7 @@ Output a structured review report:
 - Files changed: N
 - Lines added: +N
 - Lines removed: -N
+- Linter issues: N
 - Critical issues: N
 - Warnings: N
 - Suggestions: N
@@ -289,6 +466,7 @@ Output a structured review report:
 **Section rules:**
 - Omit empty sections (except Summary and Summary Stats)
 - Omit "Style Guide Compliance" entirely if no code-style.md loaded
+- Omit language-specific sections if not applicable
 - Use severity levels: CRITICAL (must fix), WARNING (should fix), SUGGESTION (could improve)
 
 ---
@@ -301,4 +479,5 @@ Output a structured review report:
 - **Objective review** - Focus on the code, not on validating prior decisions
 - **Fresh perspective** - Ignore any prior conversation context about these changes
 - **Don't duplicate linters** - Skip checks that are automated by tooling
-- **Focus on patterns** - Prioritize project-specific patterns over generic style
+- **Focus on patterns** - Prioritize SOLID/KISS/DRY over generic style
+- **Language-specific** - Apply appropriate best practices for detected stack
