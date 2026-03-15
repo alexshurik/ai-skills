@@ -2,7 +2,7 @@
 name: sk-team-feature-flow
 description: Multi-agent feature development workflow with user approval gates. Worktree-based isolation.
 license: MIT
-version: 2.0.0
+version: 2.1.0
 type: flow
 platforms:
   kimi: true
@@ -21,16 +21,31 @@ flowchart TD
     ANALYST -->|Asks user questions| ANALYST_Q[User Q&A]
     ANALYST_Q -->|Creates proposal.md| APPROVAL1{User Approval?}
 
-    APPROVAL1 -->|Approved| ARCHITECT{Architect}
+    APPROVAL1 -->|Approved| RESEARCH_ASK{Research needed?}
     APPROVAL1 -->|Redo| ANALYST
+
+    RESEARCH_ASK -->|Yes| RESEARCHER{Researcher}
+    RESEARCH_ASK -->|Skip| ARCHITECT{Architect}
+    RESEARCHER -->|Creates RESEARCH.md| APPROVAL1_5{User Approval?}
+    APPROVAL1_5 -->|Approved| ARCHITECT
+    APPROVAL1_5 -->|Redo| RESEARCHER
 
     ARCHITECT -->|Asks user questions| ARCHITECT_Q[User Q&A]
     ARCHITECT_Q -->|Creates design.md + tasks.md| APPROVAL2{User Approval?}
 
-    APPROVAL2 -->|Approved| TESTER{Tester}
+    APPROVAL2 -->|Approved| DOC_REVIEW_ASK{Doc Review needed?}
     APPROVAL2 -->|Redo| ARCHITECT
 
-    TESTER -->|Creates failing tests| APPROVAL3{User Approval?}
+    DOC_REVIEW_ASK -->|Yes| DOC_REVIEWER{Doc Reviewer}
+    DOC_REVIEW_ASK -->|Skip| TESTER{Tester}
+    DOC_REVIEWER -->|Asks user questions| DOC_REVIEWER_Q[User Q&A]
+    DOC_REVIEWER_Q -->|Creates DOC_REVIEW.md| APPROVAL2_5{User Approval?}
+    APPROVAL2_5 -->|Approved| TESTER
+    APPROVAL2_5 -->|Redo| DOC_REVIEWER
+    APPROVAL2_5 -->|Issues found| IDENTIFY2{Route to phase}
+
+    TESTER -->|Proposes test plan| TESTER_Q[User approves plan]
+    TESTER_Q -->|Creates failing tests| APPROVAL3{User Approval?}
     APPROVAL3 -->|Approved| DEVELOPER{Developer}
     APPROVAL3 -->|Redo| TESTER
 
@@ -50,6 +65,9 @@ flowchart TD
     IDENTIFY -->|Planning issue| ARCHITECT
     IDENTIFY -->|Implementation issue| DEVELOPER
     IDENTIFY -->|Requirements issue| ANALYST
+
+    IDENTIFY2 -->|Planning issue| ARCHITECT
+    IDENTIFY2 -->|Requirements issue| ANALYST
 ```
 
 ## Core Principle
@@ -111,6 +129,30 @@ CRITICAL RULES:
 
 ---
 
+### 2.5. RESEARCHER - Research (OPTIONAL)
+**Agent**: researcher
+
+**When to include**: Product Analyst flagged need for research OR user requests it.
+
+**Prompt Template**:
+```
+Feature: {feature_name}
+Worktree: ../{feature_name}-worktree
+Proposal: openspec/changes/{feature_name}/proposal.md
+
+Research areas:
+- [Area 1]
+- [Area 2]
+
+Investigate unknown areas before planning.
+Create RESEARCH.md with findings and recommendations.
+```
+
+**Output**: `openspec/changes/{feature_name}/RESEARCH.md`
+**Post-phase**: Show summary → **WAIT FOR USER APPROVAL** → proceed or redo
+
+---
+
 ### 3. ARCHITECT - System Design
 **Agent**: architect
 
@@ -142,6 +184,32 @@ CRITICAL RULES:
 
 ---
 
+### 3.5. DOC_REVIEWER - Documentation Review (OPTIONAL)
+**Agent**: doc-reviewer
+
+**When to include**: Recommended for complex features. Ask user.
+
+**Prompt Template**:
+```
+Feature: {feature_name}
+Worktree: ../{feature_name}-worktree
+Artifacts:
+- openspec/changes/{feature_name}/proposal.md
+- openspec/changes/{feature_name}/design.md
+- openspec/changes/{feature_name}/tasks.md
+
+Review all documentation for consistency, gaps, and alignment.
+Build traceability matrix: requirement → design → task.
+Ask user clarifying questions to verify their mental model.
+Create DOC_REVIEW.md with findings and verdict.
+```
+
+**Output**: `openspec/changes/{feature_name}/DOC_REVIEW.md`
+**Post-phase**: Show summary → **WAIT FOR USER APPROVAL** → proceed or redo
+**If NEEDS_CLARIFICATION**: Route to appropriate phase (Architect or Product Analyst)
+
+---
+
 ### 4. TESTER - TDD Red Phase
 **Agent**: tester
 
@@ -154,13 +222,29 @@ Artifacts:
 - openspec/changes/{feature_name}/design.md
 - openspec/changes/{feature_name}/tasks.md
 
-Write failing tests based on acceptance criteria.
-Follow existing project testing patterns.
-Tests should fail until implementation is done.
+YOUR TASK:
+1. READ all artifacts and analyze existing test patterns
+2. DETECT project type (web app, API, library, CLI)
+3. PROPOSE a categorized test plan to user via AskUserQuestion:
+   - Unit tests (with descriptions)
+   - Integration tests (with descriptions)
+   - Service tests (with descriptions)
+   - E2E tests — OPTIONAL (ask user if they want these)
+4. WAIT for user to approve/modify/skip groups
+5. Only AFTER approval — write the approved tests
+
+CRITICAL RULES:
+- You MUST present the test plan BEFORE writing any test code
+- User can skip entire groups (e.g., "Skip E2E", "Skip unit tests")
+- User can modify specific tests (add/remove)
+- If user wants E2E tests, ask about credentials and infrastructure
+- Store E2E credentials in .env.test.local (not committed)
+- Do NOT write tests until user approves the plan
+- If you skip the test plan and go straight to writing, you have FAILED
 ```
 
 **Output**: Test files (failing state)
-**Post-phase**: Show summary → **WAIT FOR USER APPROVAL** → proceed or redo
+**Post-phase**: Show summary with groups (approved/skipped) → **WAIT FOR USER APPROVAL** → proceed or redo
 
 ---
 
@@ -294,7 +378,7 @@ Options:
 4. **"Modify: [changes]"** → Make specific adjustments
 5. **"Cancel"** → Abort the workflow
 
-Current phase: X of 6 | Next: [Phase Name]
+Next: [Phase Name]
 ```
 
 ---
@@ -313,12 +397,12 @@ When user asks to redo a phase:
 
 ### Start workflow:
 ```
-/flow:sk-team-feature-flow Add user authentication with OAuth2
+/sk-team-feature Add user authentication with OAuth2
 ```
 
 ### With specific context:
 ```
-/flow:sk-team-feature-flow Implement caching layer for API responses
+/sk-team-feature Implement caching layer for API responses
   - Use Redis
   - TTL: 5 minutes for most endpoints
   - Bypass cache for authenticated mutations
@@ -330,8 +414,10 @@ All outputs stored in:
 ```
 openspec/changes/<feature-name>/
 ├── proposal.md              # Requirements (Product Analyst)
+├── RESEARCH.md              # Research findings (Researcher, optional)
 ├── design.md                # Technical design (Architect)
 ├── tasks.md                 # Task breakdown (Architect)
+├── DOC_REVIEW.md            # Documentation review (Doc Reviewer, optional)
 ├── VERIFICATION.md          # QA verification (Acceptance Reviewer)
 ├── SUMMARY.md               # Executive summary (Acceptance Reviewer)
 ├── API_CHANGELOG.md         # API changes for frontend (Acceptance Reviewer)
@@ -343,8 +429,10 @@ openspec/changes/<feature-name>/
 | Artifact | Audience | Purpose |
 |----------|----------|---------|
 | proposal.md | Product, Dev | What and why |
+| RESEARCH.md | Architect, Dev | Technology findings |
 | design.md | Developers | How to implement |
 | tasks.md | Developers | What to do |
+| DOC_REVIEW.md | Tech Lead, Dev | Alignment verification |
 | VERIFICATION.md | QA, Tech Lead | Quality gate |
 | SUMMARY.md | Stakeholders, Management | What was delivered |
 | API_CHANGELOG.md | Frontend Team | How to integrate |

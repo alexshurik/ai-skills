@@ -48,7 +48,8 @@ ls openspec/changes/<name>/ 2>/dev/null
 |-------------------|-------|--------|
 | None | - | Not started |
 | proposal.md only | Discovery | Complete - Planning next |
-| proposal.md, design.md, tasks.md | Planning | Complete - Testing next |
+| proposal.md, design.md, tasks.md | Planning | Complete - Doc Review or Testing next |
+| Above + DOC_REVIEW.md | Doc Review | Complete - Testing next |
 | Above + test files (failing) | Testing | Complete - Implementation next |
 | Above + implementation (tests pass) | Implementation | Complete - Review next |
 | Above + approved review | Review | Complete - Acceptance next |
@@ -130,6 +131,7 @@ Example: `/sk-team-quick Fix typo in login error message`
 | sk-tester | TDD tests |
 | sk-developer | Implementation |
 | sk-code-reviewer | Code quality |
+| sk-doc-reviewer | Documentation review |
 | sk-acceptance-reviewer | Business validation |
 ```
 

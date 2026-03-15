@@ -106,7 +106,7 @@ Scenario: <Name>
 
 **YOU MUST NOT create proposal.md until you have:**
 1. Read the codebase to understand context
-2. Asked the user at least 3-5 clarifying questions via AskUserQuestion
+2. Asked the user at least 5-7 clarifying questions via AskUserQuestion
 3. Presented your understanding of the feature scope to the user
 4. Received user approval of your approach
 
@@ -114,10 +114,19 @@ Scenario: <Name>
 
 **Flow:**
 1. Read codebase context (quick scan)
-2. ASK USER questions (AskUserQuestion) — minimum 3 questions
-3. PRESENT your understanding: "Here's what I think we're building..." (via AskUserQuestion)
-4. WAIT for user confirmation
-5. Only then — create proposal.md
+2. ASK USER questions — Round 1 (AskUserQuestion) — minimum 5 questions covering all categories
+3. If answers reveal gaps or ambiguities → ASK USER questions — Round 2 (follow-up questions)
+4. PRESENT your understanding: "Here's what I think we're building..." (via AskUserQuestion)
+5. WAIT for user confirmation
+6. Only then — create proposal.md
+
+### Required Question Categories (minimum 1 question per category):
+- **Target Users**: Who will use this feature?
+- **Primary Use Cases**: What are the main scenarios?
+- **Constraints**: Time, budget, technology limitations?
+- **Edge Cases**: What can go wrong? Unusual situations?
+- **Integration Requirements**: How does this connect to existing systems?
+- **Success Criteria**: How do we know it's working?
 
 </mandatory_interaction_gate>
 
@@ -152,25 +161,38 @@ Read relevant files to understand:
 <step name="ask_clarifying_questions" priority="critical">
 **MANDATORY STEP — DO NOT SKIP**
 
-Use AskUserQuestion to resolve ambiguities. Ask at least 3 questions:
-- Target users and primary use cases
-- Priority of different aspects
-- Constraints (time, tech, etc.)
-- Integration requirements
-- Key use cases and edge cases
+**Round 1: Core Questions (MINIMUM 5 questions)**
+
+Ask at least 5 questions covering all required categories:
+
+| Category | Example Questions |
+|----------|-------------------|
+| **Target Users** | "Who is the primary user? Any secondary users?" |
+| **Primary Use Cases** | "What are the top 2-3 user scenarios?" |
+| **Constraints** | "Any time/tech/budget constraints?" |
+| **Edge Cases** | "What happens if [specific edge case]?" |
+| **Integration** | "How should this integrate with existing features?" |
+| **Success Criteria** | "How do we know this feature is working correctly?" |
 
 **You MUST wait for user answers before proceeding.**
 
-**Good questions to ask:**
-- "Who is the primary user for this feature?"
-- "Should this work on mobile, web, or both?"
-- "What happens if [edge case]?"
-- "Is [implied requirement] in scope?"
-- "What's the expected user flow for the main use case?"
-- "Are there any constraints I should know about?"
+**Round 2: Follow-up Questions (if needed)**
+
+After receiving answers, analyze for gaps:
+- Did any answer raise new questions?
+- Are there unclear requirements?
+- Missing edge cases?
+- Unstated assumptions?
+
+If gaps exist → Ask Round 2 questions (2-4 follow-ups).
+
+**Good follow-up patterns:**
+- "You mentioned X — should this also cover Y?"
+- "What happens when [derived edge case from previous answer]?"
+- "Is [implied requirement] explicitly in scope?"
+- "For [use case], what about [variation]?"
 
 Group related questions efficiently (max 4 questions per AskUserQuestion call).
-If you still have questions after the first round, ask a second round.
 </step>
 
 <step name="present_understanding">
@@ -282,11 +304,19 @@ Return structured result to orchestrator:
 - [Most important requirement 2]
 - [Most important requirement 3]
 
+### Research Recommendation
+**Does this feature need pre-planning research?**
+- [ ] YES — Unknown technology/API, new domain, external integration
+- [ ] NO — Well-understood problem, existing patterns apply
+
+**If YES, recommend research on:**
+- [Specific area needing investigation]
+
 ### Open Questions
 - [Any unresolved questions]
 
 ### Next Step
-Ready for Architect to design technical implementation.
+Ready for Architect to design technical implementation (or Researcher if needed).
 ```
 </step>
 

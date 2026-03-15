@@ -46,14 +46,20 @@ Design HOW to implement - system design and task breakdown. Creates design.md an
 ### sk-code-reviewer
 Review code quality, patterns, and security. Provides actionable feedback or approves changes.
 
+### sk-doc-reviewer
+Review documentation for consistency, gaps, and alignment before testing. Builds traceability matrix, finds contradictions, verifies user's mental model. Creates DOC_REVIEW.md. Optional phase between Planning and Testing.
+
 ### sk-developer
 Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
 
 ### sk-product-analyst
-Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria.
+Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria. Asks minimum 5 questions in 1-2 rounds.
+
+### sk-researcher
+Research unknown domains, technologies, and best practices. Creates RESEARCH.md with findings and recommendations. Optional phase between Discovery and Planning.
 
 ### sk-tester
-Write tests BEFORE code (TDD red phase). Creates failing tests based on requirements.
+Write tests BEFORE code (TDD red phase). Proposes categorized test plan (unit, integration, service, E2E) for user approval. Supports E2E testing with Playwright (web) and real API calls (backend). Creates failing tests based on approved plan.
 
 
 ## Usage

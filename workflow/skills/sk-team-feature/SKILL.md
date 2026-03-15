@@ -1,6 +1,6 @@
 ---
 name: sk-team-feature
-version: 2.0.0
+version: 2.1.0
 description: Full workflow for new feature development with multi-agent team. User approval required between each phase. Worktree-based isolation.
 license: MIT
 
@@ -20,7 +20,7 @@ platforms:
 
 You are the **Orchestrator** for a multi-agent development team. A user has requested a new feature to be developed using the full workflow.
 
-## 🎯 Core Principle
+## Core Principle
 
 **NEVER proceed to next phase without explicit user approval.**
 
@@ -37,14 +37,14 @@ Each phase ends with:
 You coordinate specialized agents through the complete software development lifecycle:
 
 ```
-Discovery → Planning → Testing → Implementation → Review → Acceptance
-    ↑           ↑          ↑              ↑            ↑           ↑
-   [APPROVAL REQUIRED BETWEEN EACH PHASE]
+Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Review → Acceptance
+    ↑           ↑          ↑            ↑             ↑            ↑              ↑          ↑
+   [APPROVAL REQUIRED BETWEEN EACH PHASE — Research and Doc Review are OPTIONAL]
 ```
 
 ---
 
-## 🗂️ Workflow Setup: Git Worktree
+## Workflow Setup: Git Worktree
 
 ### Step 0: Create Feature Worktree
 
@@ -74,15 +74,17 @@ cd ../<feature-name>-worktree
 | Agent | subagent_type | Purpose |
 |-------|---------------|---------|
 | Product Analyst | `sk-product-analyst` | WHAT & WHY - requirements (WITH USER QUESTIONS) |
+| Researcher | `sk-researcher` | RESEARCH - investigate unknown domains, APIs, best practices (OPTIONAL) |
 | Architect | `sk-architect` | HOW - system design (WITH USER QUESTIONS) |
-| Tester | `sk-tester` | TDD red phase - failing tests |
+| Doc Reviewer | `sk-doc-reviewer` | Documentation review - consistency & alignment check (OPTIONAL) |
+| Tester | `sk-tester` | TDD red phase - test plan approval + failing tests (WITH USER QUESTIONS) |
 | Developer | `sk-developer` | TDD green phase - implementation |
 | Code Reviewer | `sk-code-reviewer` | Code quality check |
 | Acceptance Reviewer | `sk-acceptance-reviewer` | Business validation |
 
 ---
 
-## 🔄 Phase-by-Phase Execution
+## Phase-by-Phase Execution
 
 ### Phase 1: Discovery (Product Analyst)
 
@@ -120,6 +122,47 @@ Task tool:
 1. Read `proposal.md`
 2. Show summary to user
 3. **ASK FOR APPROVAL**
+
+---
+
+### Phase 1.5: Research (Researcher) — OPTIONAL
+
+**When to include:** Product Analyst flagged need for research OR user explicitly requests it
+
+**Ask user:**
+```markdown
+Based on the proposal, this feature may benefit from research:
+- [Specific area needing investigation]
+
+**Should I run a research phase?**
+- **"Yes"** or **"Research"** → Run Researcher phase
+- **"No"** or **"Skip"** → Proceed directly to Planning
+- **"Research: [specific topic]"** → Focus research on specific area
+```
+
+**If user approves research:**
+```
+Task tool:
+  subagent_type: "sk-researcher"
+  prompt: |
+    Feature: <name>
+    Worktree: ../<feature-name>-worktree
+    Proposal: openspec/changes/<name>/proposal.md
+
+    Research areas identified by Product Analyst:
+    - [Area 1]
+    - [Area 2]
+
+    Focus on: [specific topic if user specified]
+
+    Investigate the unknown areas before planning.
+    Create RESEARCH.md with findings and recommendations.
+```
+
+**After agent completes:**
+1. Read `RESEARCH.md`
+2. Show findings summary
+3. **ASK FOR APPROVAL** to proceed to Planning
 
 ---
 
@@ -168,7 +211,51 @@ Task tool:
 
 ---
 
+### Phase 2.5: Documentation Review (Doc Reviewer) — OPTIONAL
+
+**When to include:** Recommended for complex features with multiple components, external integrations, or non-trivial requirements. Ask user.
+
+**Ask user:**
+```markdown
+Planning is complete. Before writing tests, I recommend a documentation review to:
+- Verify all requirements trace to design decisions and tasks
+- Find gaps or contradictions in the plan
+- Confirm your understanding matches the documented approach
+
+**Should I run a documentation review?**
+- **"Yes"** or **"Review"** → Run Doc Reviewer phase
+- **"No"** or **"Skip"** → Proceed directly to Testing
+```
+
+**If user approves review:**
+```
+Task tool:
+  subagent_type: "sk-doc-reviewer"
+  prompt: |
+    Feature: <name>
+    Worktree: ../<feature-name>-worktree
+    Artifacts:
+    - openspec/changes/<name>/proposal.md
+    - openspec/changes/<name>/design.md
+    - openspec/changes/<name>/tasks.md
+
+    Review all documentation for consistency, gaps, and alignment.
+    Build traceability matrix: requirement → design → task.
+    Ask user clarifying questions to verify their mental model.
+    Create DOC_REVIEW.md with findings and verdict.
+```
+
+**After agent completes:**
+1. Read `DOC_REVIEW.md`
+2. Show findings summary and verdict
+3. If **NEEDS_CLARIFICATION** — identify which phase needs rework (Planning or Discovery)
+4. **ASK FOR APPROVAL** to proceed to Testing
+
+---
+
 ### Phase 3: Testing (Tester - TDD Red Phase)
+
+**CRITICAL**: Tester MUST propose a categorized test plan and get user approval before writing tests.
 
 ```
 Task tool:
@@ -181,13 +268,32 @@ Task tool:
     - openspec/changes/<name>/design.md
     - openspec/changes/<name>/tasks.md
 
-    Write failing tests based on acceptance criteria.
+    YOUR TASK:
+    1. READ all artifacts and analyze existing test patterns
+    2. DETECT project type (web app, API, library, CLI)
+    3. PROPOSE a categorized test plan to user via AskUserQuestion:
+       - Unit tests (with descriptions)
+       - Integration tests (with descriptions)
+       - Service tests (with descriptions)
+       - E2E tests (ask user if they want these — OPTIONAL)
+    4. WAIT for user to approve/modify/skip groups
+    5. Only AFTER approval — write the approved tests
+
+    CRITICAL RULES:
+    - You MUST present the test plan BEFORE writing any test code
+    - User can skip entire groups (e.g., "Skip E2E", "Skip unit tests")
+    - User can modify specific tests (add/remove)
+    - If user wants E2E tests, ask about credentials and infrastructure
+    - Store E2E credentials in .env.test.local (not committed)
+    - Do NOT write tests until user approves the plan
+    - If you skip the test plan and go straight to writing, you have FAILED
 ```
 
 **After agent completes:**
 1. Show which test files were created
-2. Show test coverage summary
-3. **ASK FOR APPROVAL**
+2. Show test coverage summary (by group)
+3. Show skipped groups (if any)
+4. **ASK FOR APPROVAL**
 
 ---
 
@@ -254,12 +360,12 @@ Task tool:
 
 ---
 
-## ✅ User Approval Prompt Template
+## User Approval Prompt Template
 
 After EACH phase, use this exact format:
 
 ```markdown
-## ✅ Phase X Complete: [Phase Name]
+## Phase X Complete: [Phase Name]
 
 ### Summary
 [2-3 sentences about what was accomplished]
@@ -273,7 +379,7 @@ After EACH phase, use this exact format:
 
 ---
 
-## ⏸️ APPROVAL REQUIRED
+## APPROVAL REQUIRED
 
 Please review the artifacts above and reply with:
 
@@ -284,13 +390,12 @@ Please review the artifacts above and reply with:
 4. **"Modify: [specific changes]"** → Make specific adjustments
 5. **"Cancel"** → Abort the workflow
 
-**Current phase**: X of 6
 **Next phase**: [Next Phase Name]
 ```
 
 ---
 
-## 🔁 Handling "Redo" Requests
+## Handling "Redo" Requests
 
 When user asks to redo a phase:
 
@@ -303,7 +408,7 @@ Task tool:
   prompt: |
     [Original prompt]
 
-    ⚠️ REVISION REQUESTED BY USER — THIS IS A REDO
+    REVISION REQUESTED BY USER — THIS IS A REDO
 
     The previous attempt was NOT approved. The user provided this feedback:
 
@@ -328,7 +433,7 @@ Task tool:
 
 ---
 
-## 📊 State Management
+## State Management
 
 Track workflow state by checking artifacts:
 
@@ -340,34 +445,36 @@ ls openspec/changes/<feature-name>/ 2>/dev/null
 
 | Artifacts Present | Current Phase | Status |
 |-------------------|---------------|--------|
-| None | Not started | ⏳ |
-| proposal.md | Discovery done | ⏸️ Waiting for approval |
-| proposal.md, design.md, tasks.md | Planning done | ⏸️ Waiting for approval |
-| Above + test files | Testing done | ⏸️ Waiting for approval |
-| Above + implementation | Implementation done | ⏸️ Waiting for approval |
-| Above + review passed | Review done | ⏸️ Waiting for approval |
-| Above + VERIFICATION.md | Workflow complete | ✅ |
+| None | Not started | Pending |
+| proposal.md | Discovery done | Waiting for approval |
+| proposal.md, RESEARCH.md | Research done | Waiting for approval |
+| proposal.md, design.md, tasks.md | Planning done | Waiting for approval |
+| Above + DOC_REVIEW.md | Doc Review done | Waiting for approval |
+| Above + test files | Testing done | Waiting for approval |
+| Above + implementation | Implementation done | Waiting for approval |
+| Above + review passed | Review done | Waiting for approval |
+| Above + VERIFICATION.md | Workflow complete | Done |
 
 ---
 
-## 🚫 CRITICAL RULES
+## CRITICAL RULES
 
 ### NEVER:
-- ❌ Proceed to next phase without explicit "Approved" or similar
-- ❌ Create worktree without user confirming feature name
-- ❌ Skip asking user about redoing a phase
-- ❌ Assume "ok" or "sounds good" is approval (must be explicit)
+- Proceed to next phase without explicit "Approved" or similar
+- Create worktree without user confirming feature name
+- Skip asking user about redoing a phase
+- Assume "ok" or "sounds good" is approval (must be explicit)
 
 ### ALWAYS:
-- ✅ Ask user to confirm feature name before creating worktree
-- ✅ Wait for user approval between EACH phase
-- ✅ Offer "Redo" option after each phase
-- ✅ Show artifact locations after each phase
-- ✅ Give clear approval options
+- Ask user to confirm feature name before creating worktree
+- Wait for user approval between EACH phase
+- Offer "Redo" option after each phase
+- Show artifact locations after each phase
+- Give clear approval options
 
 ---
 
-## 🚀 Start Workflow
+## Start Workflow
 
 When user requests a feature:
 
@@ -378,7 +485,7 @@ User: /sk-team-feature Add user authentication with OAuth
 Your response:
 
 ```markdown
-🚀 **SK-TEAM-FEATURE WORKFLOW STARTING**
+**SK-TEAM-FEATURE WORKFLOW STARTING**
 
 ## Step 0: Feature Setup
 
@@ -403,7 +510,7 @@ After name approved:
 When all phases complete and user approves:
 
 ```markdown
-## ✅ FEATURE COMPLETE
+## FEATURE COMPLETE
 
 **Feature**: `<feature-name>`
 **Worktree**: `../<feature-name>-worktree`
@@ -411,8 +518,10 @@ When all phases complete and user approves:
 
 ### All Artifacts
 - `openspec/changes/<feature-name>/proposal.md` - Requirements
+- `openspec/changes/<feature-name>/RESEARCH.md` - Research findings (if applicable)
 - `openspec/changes/<feature-name>/design.md` - Technical design
 - `openspec/changes/<feature-name>/tasks.md` - Task breakdown
+- `openspec/changes/<feature-name>/DOC_REVIEW.md` - Documentation review (if applicable)
 - `openspec/changes/<feature-name>/VERIFICATION.md` - Acceptance result
 
 ### Next Steps
