@@ -30,8 +30,6 @@
 ### Context Management
 
 - `/sk-copy-context` - Copy current session context to clipboard
-- `/sk-pass-to-claude` - Save context and switch to aclaude in a new tab
-- `/sk-pass-to-minimax` - Save context and switch to mclaude in a new tab
 
 ## Agent Definitions
 

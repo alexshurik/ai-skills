@@ -48,12 +48,6 @@ Analyze project code and generate universal code style guidelines. Detects stack
 ### /sk-copy-context
 Copy current session context to clipboard
 
-### /sk-pass-to-claude
-Save context and switch to aclaude in a new tab
-
-### /sk-pass-to-minimax
-Save context and switch to mclaude in a new tab
-
 ## Available Agents
 
 ### sk-acceptance-reviewer

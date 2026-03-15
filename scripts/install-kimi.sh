@@ -56,13 +56,14 @@ for skill_dir in "$REPO_DIR"/context/sk-*/; do
     fi
 done
 
-# 4. Onboarding Skills → ~/.config/agents/skills/
-echo "Installing onboarding skills..."
-for skill_dir in "$REPO_DIR"/onboarding/skills/sk-*/; do
-    if [ -d "$skill_dir" ]; then
-        name=$(basename "$skill_dir")
-        ln -sfn "$skill_dir" "$AGENTS_DIR/skills/$name"
-        echo "  ✓ Linked skill: $name"
+# 4. Onboarding Commands → ~/.config/agents/skills/
+echo "Installing onboarding commands..."
+for cmd in "$REPO_DIR"/onboarding/sk-*.md; do
+    if [ -f "$cmd" ]; then
+        name=$(basename "$cmd" .md)
+        mkdir -p "$AGENTS_DIR/skills/$name"
+        ln -sfn "$cmd" "$AGENTS_DIR/skills/$name/SKILL.md"
+        echo "  ✓ Linked command: $name"
     fi
 done
 
@@ -92,12 +93,18 @@ agent:
     product-analyst:
       path: ./sk-product-analyst.yaml
       description: "Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria."
+    researcher:
+      path: ./sk-researcher.yaml
+      description: "Research unknown domains, technologies, APIs, and best practices. Creates RESEARCH.md."
     architect:
       path: ./sk-architect.yaml
       description: "Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md."
+    doc-reviewer:
+      path: ./sk-doc-reviewer.yaml
+      description: "Review documentation for consistency, gaps, and alignment. Creates DOC_REVIEW.md."
     tester:
       path: ./sk-tester.yaml
-      description: "Write tests BEFORE code (TDD red phase). Creates failing tests based on requirements."
+      description: "Propose test plan for approval, write failing tests (TDD red phase). Supports E2E testing."
     developer:
       path: ./sk-developer.yaml
       description: "Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns."

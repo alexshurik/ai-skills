@@ -19,7 +19,7 @@ cat > "$OUTPUT" << 'HEADER'
 # AGENTS.md
 
 > Auto-generated. Provides context for AI coding agents.
-> Compatible with: OpenAI Codex, Cursor, Aider, RooCode, Zed
+> Compatible with: OpenAI Codex, Cursor, Aider, RooCode, Zed, Kimi/MiniMax
 
 ## Available Commands
 
@@ -53,6 +53,18 @@ echo "### Utilities" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
 for skill in "$REPO_DIR"/utilities/sk-*/SKILL.md; do
+    if [ -f "$skill" ]; then
+        name=$(basename "$(dirname "$skill")")
+        desc=$(extract_desc "$skill")
+        echo "- \`/$name\` - $desc" >> "$OUTPUT"
+    fi
+done
+
+echo "" >> "$OUTPUT"
+echo "### Planning" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+for skill in "$REPO_DIR"/planning/sk-*/SKILL.md; do
     if [ -f "$skill" ]; then
         name=$(basename "$(dirname "$skill")")
         desc=$(extract_desc "$skill")

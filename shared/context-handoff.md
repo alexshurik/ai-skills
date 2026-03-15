@@ -52,8 +52,8 @@ Use this template when passing context between AI agents or sessions.
 ### Copy to Clipboard
 Use `/sk-copy-context` to generate and copy this to clipboard.
 
-### Switch to Another Agent
-Use `/sk-pass-to-claude` or `/sk-pass-to-minimax` to switch to another AI agent with context.
+### Copy Context
+Use `/sk-copy-context` to copy the current session context to clipboard for use in another agent.
 
 ## Tips for Good Handoffs
 

@@ -98,9 +98,7 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
 | `sk-onboard` | Full project onboarding |
 | `sk-discover-project` | Discover project structure |
 | `sk-explore-codebase` | Generate navigation rules |
-| `sk-copy-context` | Copy context (from Claude) |
-| `sk-pass-to-claude` | Switch to Claude |
-| `sk-pass-to-minimax` | Switch to MiniMax |
+| `sk-copy-context` | Copy context to clipboard |
 
 ### Flow Skills (Automated)
 
