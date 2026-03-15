@@ -62,14 +62,6 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 
 Every phase requires **explicit user approval** before proceeding to the next one.
 
-### Highlights
-
-**Test plan approval** — before writing any tests, the tester proposes a categorized plan (unit, integration, service, E2E). You can approve, skip groups, or modify individual tests.
-
-**E2E testing** — Playwright for web apps, real HTTP calls for APIs. Credentials are stored in `.env.test.local` (excluded from git). Auth session is shared between tests automatically.
-
-**Documentation review** — cross-references requirements, design, and tasks. Finds gaps and contradictions. Verifies that your understanding matches what will actually be built.
-
 ## Quick Fix Workflow
 
 ```
