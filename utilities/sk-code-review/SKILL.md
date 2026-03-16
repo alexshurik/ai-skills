@@ -1,12 +1,12 @@
 ---
 name: sk-code-review
-version: 2.0.0
-description: Review uncommitted changes with fresh context. Runs linters, checks SOLID/KISS/DRY principles, verifies language-specific best practices. Skips automated checks, focuses on patterns linters miss.
+version: 3.0.0
+description: Deep code review with best practices research, advanced analysis tools (complexity, maintainability, code smells, security), SOLID/KISS/DRY principles, and language-specific checks. Caches research in .claude/rules/best-practices/.
 license: MIT
 
 # Claude Code
 disable-model-invocation: true
-allowed-tools: Bash, Glob, Grep, Read, AskUserQuestion
+allowed-tools: Bash, Glob, Grep, Read, AskUserQuestion, WebSearch, WebFetch, Write
 
 # Cross-platform hints
 platforms:
@@ -17,7 +17,7 @@ platforms:
 
 # Code Review for Uncommitted Changes
 
-Review all uncommitted changes in the current repository with a fresh perspective. Runs linters, checks SOLID/KISS/DRY principles, and verifies language-specific best practices.
+Deep code review with best practices research and advanced analysis tools. Researches framework/domain best practices before reviewing, runs deep analysis tools (complexity, maintainability, code smells, security), checks SOLID/KISS/DRY principles, and verifies language-specific best practices.
 
 **IMPORTANT: Context Reset.** Treat this as a fresh review session. Ignore any prior conversation context. Your only focus is analyzing the uncommitted changes objectively.
 
@@ -113,6 +113,123 @@ Output: "No uncommitted changes to review." and stop.
 
 ---
 
+## Step 3.5: Research Best Practices
+
+Research best practices for the detected framework and domain. Results are cached for reuse.
+
+### Detect Framework
+
+```bash
+# JavaScript/TypeScript frameworks
+if [ -f package.json ]; then
+  cat package.json | grep -E '"(next|nuxt|@nestjs|express|@sveltejs|remix|astro|@angular|vue|react)"' 2>/dev/null
+fi
+
+# Python frameworks
+if [ -f pyproject.toml ] || [ -f requirements.txt ] || [ -f setup.py ]; then
+  grep -iE '(fastapi|django|flask|starlette|tornado|sanic)' pyproject.toml requirements.txt setup.py 2>/dev/null
+fi
+
+# Go frameworks
+if [ -f go.mod ]; then
+  grep -E '(gin-gonic|echo|fiber|chi|gorilla)' go.mod 2>/dev/null
+fi
+
+# Rust frameworks
+if [ -f Cargo.toml ]; then
+  grep -iE '(actix|axum|rocket|warp|tide)' Cargo.toml 2>/dev/null
+fi
+```
+
+### Detect Domain from Changed Files
+
+Scan changed file paths (from `git status --porcelain`) for domain signals:
+
+| Path patterns | Domain |
+|--------------|--------|
+| `auth/`, `login`, `session`, `oauth`, `jwt`, `token` | authentication |
+| `pay/`, `billing`, `stripe`, `checkout` | payment-processing |
+| `middleware/`, `interceptor` | middleware |
+| `migration/`, `schema`, `model` | database |
+| `websocket`, `realtime`, `sse` | realtime |
+| `cache/`, `redis` | caching |
+| `queue/`, `worker`, `job` | background-jobs |
+| `upload/`, `storage`, `s3` | file-storage |
+| `email/`, `notification`, `sms` | notifications |
+| `search/`, `elastic`, `algolia` | search |
+
+**If no framework AND no domain detected → skip this step.**
+
+### Check Cache
+
+```bash
+ls .claude/rules/best-practices/ 2>/dev/null
+```
+
+**If `.claude/rules/best-practices/[name].md` exists:**
+
+Use AskUserQuestion:
+- Header: "Best Practices Cache"
+- Question: "Found cached best practices for [name] (researched [DATE]). What would you like to do?"
+- Options:
+  1. "Use cached" - description: "Use existing best practices for review"
+  2. "Research fresh" - description: "Conduct new research and update cache"
+  3. "Use cached + supplement for [domain]" - description: "Keep framework practices, add domain research" (only if domain detected)
+
+**If cache does not exist → proceed to research.**
+
+### Conduct Research
+
+Use 3-5 WebSearch queries + 5-8 WebFetch calls:
+
+**For framework:**
+1. **WebSearch:** `"[framework] best practices [current_year]"` → **WebFetch** top 2-3 results
+2. **WebSearch:** `"[framework] common mistakes anti-patterns"` → **WebFetch** top 1-2 results
+3. **WebSearch:** `"[framework] security best practices"` → **WebFetch** top 1-2 results
+4. **WebSearch:** `"[framework] performance optimization"` → **WebFetch** top 1 result
+
+**For domain:**
+5. **WebSearch:** `"[framework_or_language] [domain] best practices security"` → **WebFetch** top 2 results
+
+**Extract:**
+- Concrete, actionable patterns (not vague advice)
+- Anti-patterns with WHY they're bad and WHAT to do instead
+- Security rules with specific examples
+- Performance pitfalls with measurable impact
+
+### Save to Cache
+
+```bash
+mkdir -p .claude/rules/best-practices
+```
+
+Write `.claude/rules/best-practices/[name].md`:
+
+```markdown
+# Best Practices: [Framework/Domain Name]
+
+> Last researched: [YYYY-MM-DD]
+> Sources: [list of URLs]
+
+## Key Patterns
+- [Pattern]: [brief explanation]
+
+## Anti-Patterns (flag in review)
+- [Anti-pattern]: [why bad] → [what instead]
+
+## Security Considerations
+- [Rule with example]
+
+## Performance Considerations
+- [Rule with impact]
+```
+
+### Load for Review
+
+Read cached file(s) and use as **Supplementary Review Criteria** during Step 6 analysis.
+
+---
+
 ## Step 4: Run Linters and Static Analysis
 
 Run linters and formatters if detected to catch automated issues first:
@@ -166,6 +283,134 @@ fi
 
 ---
 
+## Step 4.5: Run Deep Analysis Tools
+
+Run advanced code quality analysis beyond linters. Only run tools that are **already installed**.
+
+**Priority:** security → complexity/maintainability → code smells → duplication → dependency audit
+
+### Multi-Language Tools
+
+```bash
+# Semgrep — security & pattern analysis (17+ languages)
+if command -v semgrep &> /dev/null; then
+  semgrep --config auto --severity ERROR --severity WARNING --quiet --json . 2>/dev/null | head -500
+fi
+
+# jscpd — copy-paste / code duplication (any language)
+if command -v jscpd &> /dev/null; then
+  jscpd --reporters console --threshold 5 --min-lines 5 --min-tokens 50 . 2>/dev/null
+fi
+
+# lizard — cyclomatic complexity, function length, params (17+ languages)
+if command -v lizard &> /dev/null; then
+  lizard . --CCN 10 -w -L 50 -a 5 2>/dev/null | head -200
+fi
+```
+
+### JavaScript/TypeScript
+
+```bash
+if [ -f package.json ]; then
+  npm audit --json 2>/dev/null | head -200
+
+  if command -v madge &> /dev/null; then
+    madge --circular --extensions ts,tsx,js,jsx src/ 2>/dev/null
+  fi
+
+  if command -v depcheck &> /dev/null; then
+    depcheck . 2>/dev/null
+  fi
+
+  if grep -q "sonarjs" package.json .eslintrc* eslint.config.* 2>/dev/null; then
+    npx eslint --format json ./src 2>/dev/null | head -500
+  fi
+fi
+```
+
+### Python
+
+```bash
+if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
+  if command -v bandit &> /dev/null; then
+    bandit -r . -f json --severity-level medium 2>/dev/null | head -500
+  fi
+
+  if command -v radon &> /dev/null; then
+    radon cc -j -n C . 2>/dev/null | head -200
+    radon mi -j -s . 2>/dev/null | head -200
+    radon hal -j . 2>/dev/null | head -200
+  fi
+
+  if command -v vulture &> /dev/null; then
+    vulture . --min-confidence 80 2>/dev/null | head -100
+  fi
+
+  if command -v pip-audit &> /dev/null; then
+    pip-audit 2>/dev/null | head -100
+  fi
+
+  if command -v pylint &> /dev/null; then
+    pylint --disable=all --enable=R0801,R0912,R0913,R0914,R0915,R0911,C0901 --output-format=json . 2>/dev/null | head -300
+  fi
+fi
+```
+
+### Go
+
+```bash
+if [ -f go.mod ]; then
+  if command -v gosec &> /dev/null; then
+    gosec -fmt json ./... 2>/dev/null | head -300
+  fi
+
+  if command -v gocognit &> /dev/null; then
+    gocognit -over 10 -top 20 -avg ./... 2>/dev/null
+  fi
+
+  if command -v golangci-lint &> /dev/null; then
+    golangci-lint run --enable gocritic,gocognit,gocyclo --out-format json ./... 2>/dev/null | head -500
+  fi
+fi
+```
+
+### Rust
+
+```bash
+if [ -f Cargo.toml ]; then
+  if command -v cargo-deny &> /dev/null; then
+    cargo deny check 2>/dev/null | head -200
+  elif command -v cargo-audit &> /dev/null; then
+    cargo audit 2>/dev/null | head -200
+  fi
+
+  cargo clippy --message-format=json -- -W clippy::cognitive_complexity 2>/dev/null | head -300
+fi
+```
+
+### Severity Mapping
+
+| Category | Condition | Severity |
+|----------|-----------|----------|
+| Security (semgrep/bandit/gosec) | any finding | **BLOCKER** |
+| Vulnerable deps (audit tools) | high/critical CVE | **BLOCKER** |
+| Vulnerable deps (audit tools) | moderate CVE | **MAJOR** |
+| Cyclomatic complexity | >15 CCN | **MAJOR** |
+| Cyclomatic complexity | >10 CCN | **MINOR** |
+| Cognitive complexity | >15 | **MAJOR** |
+| Cognitive complexity | >10 | **MINOR** |
+| Maintainability Index | <20 | **MAJOR** |
+| Maintainability Index | <40 | **MINOR** |
+| Code duplication (jscpd) | >5 lines | **MAJOR** (DRY) |
+| Circular deps (madge) | any cycle | **MAJOR** |
+| Dead code (vulture) | >80% confidence | **MINOR** |
+| Code smells (pylint/sonarjs) | structural issues | **MAJOR** |
+| Unused deps (depcheck) | any | **MINOR** |
+
+**Note:** Skip tools that take >30 seconds. Record unavailable tools for the report.
+
+---
+
 ## Step 5: Gather Full Diff
 
 Get the complete diff of all changes:
@@ -185,6 +430,8 @@ For untracked files, read their contents to include in the review.
 ---
 
 ## Step 6: Analyze Changes
+
+**Important:** If Step 3.5 produced Supplementary Review Criteria from best practices research, apply those criteria throughout this analysis in addition to the standard checks below.
 
 ### 6.1 Universal Checks (always apply)
 
@@ -364,6 +611,44 @@ Output a structured review report:
 
 ---
 
+### Best Practices Review
+[Only include if research was conducted in Step 3.5]
+Source: .claude/rules/best-practices/[name].md (researched [DATE])
+
+#### Patterns Compliance
+- [x] [Pattern 1]: followed
+- [ ] [Pattern 2]: violation in file.ts:42
+  - **Problem:** [what's wrong]
+  - **Best practice:** [correct approach + source]
+
+#### Anti-Patterns Detected
+- [Anti-pattern]: found in file.ts:42 — [description + recommendation]
+
+---
+
+### Deep Analysis Results
+[Only include if tools were run in Step 4.5]
+
+#### Security
+| Tool | Findings | Details |
+|------|----------|---------|
+| [tool] | [N] issues | [summary] |
+
+#### Complexity & Maintainability
+| Tool | Metric | Result | Status |
+|------|--------|--------|--------|
+| [tool] | [metric] | [value] | OK/MAJOR/MINOR |
+
+#### Code Smells
+| Tool | Findings | Details |
+|------|----------|---------|
+| [tool] | [N] issues | [summary] |
+
+#### Tools Not Available
+Consider installing for better coverage: [list]
+
+---
+
 ### SOLID Principles
 
 | Principle | Status | Notes |
@@ -458,6 +743,8 @@ Output a structured review report:
 - Lines added: +N
 - Lines removed: -N
 - Linter issues: N
+- Deep analysis findings: N (X blocker, Y major, Z minor)
+- Best practices: [Researched/Cached/Skipped]
 - Critical issues: N
 - Warnings: N
 - Suggestions: N
@@ -466,6 +753,8 @@ Output a structured review report:
 **Section rules:**
 - Omit empty sections (except Summary and Summary Stats)
 - Omit "Style Guide Compliance" entirely if no code-style.md loaded
+- Omit "Best Practices Review" if no research was conducted
+- Omit "Deep Analysis Results" if no tools were run
 - Omit language-specific sections if not applicable
 - Use severity levels: CRITICAL (must fix), WARNING (should fix), SUGGESTION (could improve)
 
@@ -473,7 +762,8 @@ Output a structured review report:
 
 ## Guardrails
 
-- **Read-only mode** - NEVER make any changes to files. This is strictly a review.
+- **Read-only for source code** - NEVER make any changes to source code files. This is strictly a review.
+- **Write only to cache** - The Write tool may ONLY be used for `.claude/rules/best-practices/` files
 - **No commits** - Do not create, amend, or modify any commits
 - **No git operations** - Only read git state, never modify it
 - **Objective review** - Focus on the code, not on validating prior decisions
@@ -481,3 +771,6 @@ Output a structured review report:
 - **Don't duplicate linters** - Skip checks that are automated by tooling
 - **Focus on patterns** - Prioritize SOLID/KISS/DRY over generic style
 - **Language-specific** - Apply appropriate best practices for detected stack
+- **Research-informed** - When best practices are available, cite specific patterns and sources
+- **Tool-evidence based** - Include deep analysis tool output to back up findings
+- **Don't skip tools** - Run all available deep analysis tools before manual review

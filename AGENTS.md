@@ -24,7 +24,7 @@
 
 ### Utilities
 
-- `/sk-code-review` - Review uncommitted changes with fresh context. Skips automated checks, focuses on patterns linters miss.
+- `/sk-code-review` - Deep code review with best practices research, advanced analysis tools (complexity, maintainability, code smells, security), and SOLID/KISS/DRY checks. Caches research in .claude/rules/best-practices/.
 - `/sk-explore-codestyle` - Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
 
 ### Context Management
@@ -42,7 +42,7 @@ Verify business requirements are met (QA acceptance). Creates VERIFICATION.md wi
 Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
 
 ### sk-code-reviewer
-Review code quality, patterns, and security. Provides actionable feedback or approves changes.
+Deep code review with best practices research and advanced analysis tools. Researches framework/domain best practices (cached in .claude/rules/best-practices/), runs deep analysis (semgrep, lizard, radon, jscpd, bandit, etc.), checks SOLID/KISS/DRY, security, complexity, maintainability. Provides actionable feedback or approves changes.
 
 ### sk-doc-reviewer
 Review documentation for consistency, gaps, and alignment before testing. Builds traceability matrix, finds contradictions, verifies user's mental model. Creates DOC_REVIEW.md. Optional phase between Planning and Testing.
