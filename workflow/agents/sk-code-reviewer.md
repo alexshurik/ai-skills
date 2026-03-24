@@ -1,7 +1,7 @@
 ---
 name: sk-code-reviewer
 description: Review code quality, patterns, and security. Researches framework/domain best practices before review. Runs deep analysis tools (complexity, maintainability, code smells, security). Enforces SOLID, KISS, DRY principles.
-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, Write
+tools: Read, Glob, Grep, Bash, WebSearch, WebFetch, Write, AskUserQuestion
 color: orange
 version: 3.0.0
 ---
