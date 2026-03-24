@@ -303,6 +303,7 @@ fi
 <step name="run_deep_analysis">
 Run advanced code quality analysis tools beyond linters. Only run tools that are **already installed**.
 If a tool is not installed, record it in the "Tools Not Available" list for the report.
+After all tools are checked, propose installing unavailable ones to the user (see "Suggest Installation" at the end of this step).
 
 **Priority order:** security → complexity/maintainability → code smells → duplication → dependency audit
 
@@ -321,7 +322,7 @@ fi
 
 # lizard — cyclomatic complexity, function length, parameter count (17+ languages)
 if command -v lizard &> /dev/null; then
-  lizard . --CCN 10 -w -L 50 -a 5 2>/dev/null | head -200
+  lizard . --CCN 10 -w -L 70 -a 5 2>/dev/null | head -200
 fi
 ```
 
@@ -443,9 +444,38 @@ Map tool findings to review severity levels:
 | Dead code (vulture) | >80% confidence | **MINOR** |
 | Code smells (pylint/sonarjs) | structural issues | **MAJOR** |
 | Unused deps (depcheck) | any | **MINOR** |
+| Broad try-catch | >10 lines in try block | **MAJOR** |
+| Generic exception catch | bare except/catch(Exception) | **MAJOR** |
+| Hardcoded config values | URLs, paths, timeouts | **MAJOR** |
+| Hardcoded credentials | API keys, tokens, passwords | **BLOCKER** |
+| Imperative where declarative fits | raw loop replaceable by map/filter | **MINOR** |
 
 **Note:** If a tool takes more than 30 seconds, skip it and note in the report.
 Record which tools were NOT available — list them in the "Tools Not Available" section.
+
+### Suggest Installation
+
+After collecting the "Tools Not Available" list, propose installation to the user.
+For each unavailable tool, suggest the install command:
+
+| Tool | Install command |
+|------|----------------|
+| semgrep | `pip install semgrep` or `brew install semgrep` |
+| jscpd | `npm install -g jscpd` |
+| lizard | `pip install lizard` |
+| bandit | `pip install bandit` |
+| radon | `pip install radon` |
+| vulture | `pip install vulture` |
+| pip-audit | `pip install pip-audit` |
+| madge | `npm install -g madge` |
+| depcheck | `npm install -g depcheck` |
+| gosec | `go install github.com/securego/gosec/v2/cmd/gosec@latest` |
+| gocognit | `go install github.com/uudashr/gocognit/cmd/gocognit@latest` |
+| golangci-lint | `brew install golangci-lint` |
+| cargo-deny | `cargo install cargo-deny` |
+| cargo-audit | `cargo install cargo-audit` |
+
+Present the list of unavailable but relevant tools (matching the project's language) to the user and ask if they want to install any. Install and run only the tools the user approves.
 </step>
 
 <step name="review_each_file">
@@ -521,6 +551,13 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 ### DRY (Don't Repeat Yourself)
 - [ ] No duplication of logic >3 lines
 - [ ] Magic values extracted to constants
+- [ ] No hardcoded URLs, API endpoints, or base paths — extract to config/env vars
+- [ ] No hardcoded file paths — use config or path resolution
+- [ ] No hardcoded timeouts, retry counts, limits — extract to named constants
+- [ ] No hardcoded feature flags or toggles — use configuration
+- [ ] No hardcoded error messages with user-facing text — use constants or i18n
+- [ ] String literals used more than once MUST be extracted to constants
+- [ ] Credentials, API keys, tokens — NEVER hardcoded (BLOCKER)
 - [ ] Common logic extracted to functions/utilities
 - [ ] Reusable components used appropriately
 
@@ -537,7 +574,8 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] Clear, intention-revealing variable/function names
 - [ ] No abbreviations or single-letter variables (except loops)
 - [ ] Boolean names use is/has/should/can prefixes
-- [ ] Function length < 20 lines (ideal), < 50 lines (max)
+- [ ] Function length < 20 lines (ideal), < 70 lines (hard max — approximately one screen height)
+- [ ] Functions longer than 70 lines MUST be split into smaller sub-methods
 - [ ] No deeply nested conditionals (>3 levels is a smell)
 - [ ] Early returns reduce nesting
 - [ ] Comments explain WHY, not WHAT
@@ -556,18 +594,77 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] Switch statements use lookup tables when large
 - [ ] Extract complex conditions to named variables/functions
 
+### Declarative over Imperative
+- [ ] Prefer declarative constructs (map, filter, reduce, list comprehensions) over raw for-loops
+- [ ] If a for-loop does a transformation — use map/select/comprehension
+- [ ] If a for-loop filters — use filter/where/comprehension
+- [ ] If a for-loop accumulates — use reduce/fold
+- [ ] Multi-step imperative logic in a method: extract each step into a named sub-method, then call them sequentially in the main method for readability
+- [ ] Avoid deeply nested loops — extract inner logic into separate functions with descriptive names
+- [ ] Prefer pipeline-style composition: `data.filter(...).map(...).reduce(...)` over nested loops
+- [ ] Method should read like a high-level description of WHAT it does, not HOW
+
+</step>
+
+<step name="error_handling_check">
+
+### Try-Catch Scope
+- [ ] Try blocks wrap ONLY the code that can actually throw — no extra logic inside
+- [ ] Setup/cleanup code is OUTSIDE the try block
+- [ ] Each try-catch handles ONE logical operation, not multiple unrelated ones
+- [ ] If a try block is longer than 5-10 lines, consider splitting into smaller try blocks or extracting the throwable part into a separate function
+
+### Specific Exception Handling
+- [ ] Catch blocks specify the EXACT exception type(s) the code can throw
+- [ ] No generic catch-all: avoid `catch (Exception e)`, `except Exception`, `catch (error)`, `catch (...)`
+- [ ] Multiple specific catch blocks preferred over one generic catch
+- [ ] If a generic catch IS needed (e.g., top-level handler), it MUST be justified with a comment
+
+### Language-Specific Exception Rules
+
+**Python:**
+- [ ] No bare `except:` — always specify exception type
+- [ ] No `except Exception:` unless at top-level entry point
+- [ ] Use specific exceptions: `ValueError`, `KeyError`, `TypeError`, `IOError`, etc.
+- [ ] `except (TypeError, ValueError):` for multiple related exceptions
+
+**TypeScript/JavaScript:**
+- [ ] Narrow try blocks — don't wrap entire function body in try-catch
+- [ ] Use type guards in catch: `if (error instanceof SpecificError)`
+- [ ] For async: catch specific rejection reasons, not blanket catch
+- [ ] Consider custom error classes for domain errors
+
+**Go:**
+- [ ] Error checks immediately after the call that can fail
+- [ ] Errors wrapped with context (`fmt.Errorf("...: %w", err)`)
+- [ ] No ignored errors (no `_ = someFunc()` without justification)
+- [ ] Use `errors.Is()` / `errors.As()` for specific error handling
+
+**Rust:**
+- [ ] Use `?` operator, not manual match on every Result
+- [ ] Custom error types for domain errors (thiserror/anyhow)
+- [ ] No `.unwrap()` or `.expect()` in production code unless guaranteed safe
+
+**Java/Kotlin:**
+- [ ] No `catch (Exception e)` — catch specific exception types
+- [ ] No empty catch blocks
+- [ ] Use multi-catch: `catch (IOException | SQLException e)`
+- [ ] Checked exceptions handled at the appropriate level
+
 </step>
 
 <step name="language_specific_check">
 
-### Python-Specific
+### Python-Specific (PEP Compliance)
 - [ ] **PEP 8 Compliance**: 4 spaces indentation, 88-100 char line length
+- [ ] **ALL imports at the top of the file** (PEP 8) — NEVER inside functions, methods, or conditional blocks. This is a common anti-pattern: lazy imports inside function bodies hurt readability and hide dependencies. The only acceptable exception is avoiding circular imports, and even then it must be commented with `# avoid circular import`.
 - [ ] **Import Organization** (3 groups with blank lines):
   1. Standard library (os, sys, datetime)
   2. Third-party (requests, pandas, flask)
   3. Local application imports (from mypackage import ...)
 - [ ] Absolute imports preferred over relative
 - [ ] No wildcard imports (`from module import *`)
+- [ ] No duplicate imports
 - [ ] Type hints used (PEP 484) for function signatures
 - [ ] `__all__` defined for public APIs in modules
 - [ ] Docstrings for public functions/classes (PEP 257)
@@ -577,6 +674,9 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] List/dict comprehensions used appropriately
 - [ ] `with` statements for resource management
 - [ ] `@dataclass` or `@attrs` for data containers
+- [ ] Context managers for resource cleanup (PEP 343)
+- [ ] `enumerate()` instead of manual counter in loops
+- [ ] `zip()` for parallel iteration instead of index-based access
 
 ### TypeScript/JavaScript-Specific
 - [ ] No `any` types (use `unknown` with type guards)
@@ -888,8 +988,10 @@ Return structured result to orchestrator:
 6. **Language-specific violations** - Major/minor depending on severity
 7. **Import/module organization** - Major if affects maintainability
 8. **Test coverage gaps** - Major for new code
-9. **Error handling** - Major
-10. **Performance issues** - Context-dependent
+9. **Error handling** - Major (narrow try-catch, specific exceptions)
+10. **Hardcoded values** - Major (URLs, paths, timeouts, config)
+11. **Declarative style** - Minor (prefer map/filter/reduce over raw loops)
+12. **Performance issues** - Context-dependent
 
 ## Don't Nitpick
 
@@ -1025,7 +1127,9 @@ Before completing review:
 - [ ] Research-informed checks applied during file review
 - [ ] Design compliance checked
 - [ ] SOLID principles verified
-- [ ] KISS/DRY/YAGNI checked
+- [ ] KISS/DRY/YAGNI checked (including hardcoded values)
+- [ ] Error handling checked (narrow try-catch, specific exceptions)
+- [ ] Declarative style preferred over imperative where applicable
 - [ ] Language-specific practices verified
 - [ ] Import organization checked
 - [ ] Module structure reviewed

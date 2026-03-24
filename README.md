@@ -123,7 +123,6 @@ Structure inspired by [OpenSpec](https://openspec.dev/). No additional tools nee
 skills/
 ├── workflow/
 │   ├── skills/          # Orchestrator commands
-│   ├── flows/           # Flow definitions (Kimi)
 │   └── agents/          # Agent definitions (8 agents)
 ├── onboarding/          # Project onboarding commands
 ├── planning/            # Planning workflows

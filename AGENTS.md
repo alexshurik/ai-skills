@@ -7,7 +7,7 @@
 
 ### Workflow (Multi-Agent Team)
 
-- `/sk-team-feature` - Full workflow for new feature development with multi-agent team
+- `/sk-team-feature` - Full workflow for new feature development with multi-agent team. User approval required between each phase. Worktree-based isolation.
 - `/sk-team-help` - Show help and documentation for multi-agent team workflow
 - `/sk-team-quick` - Quick workflow for bugfixes, typos, and small changes
 - `/sk-team-status` - Show status of current team workflow
@@ -18,14 +18,14 @@
 - `/sk-explore-codebase` - Explore codebase and generate check-before-create navigation rules
 - `/sk-onboard` - Full project onboarding - discover structure + generate navigation rules
 
+### Utilities
+
+- `/sk-code-review` - Standalone code review for uncommitted changes. Delegates to sk-code-reviewer agent for the full review process.
+- `/sk-explore-codestyle` - Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
+
 ### Planning
 
 - `/sk-plan-mode` - Structured planning workflow with file-based plan storage. Separates research from execution through 4 phases. Wait for explicit user approval before making changes.
-
-### Utilities
-
-- `/sk-code-review` - Deep code review with best practices research, advanced analysis tools (complexity, maintainability, code smells, security), and SOLID/KISS/DRY checks. Caches research in .claude/rules/best-practices/.
-- `/sk-explore-codestyle` - Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
 
 ### Context Management
 
@@ -42,22 +42,22 @@ Verify business requirements are met (QA acceptance). Creates VERIFICATION.md wi
 Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
 
 ### sk-code-reviewer
-Deep code review with best practices research and advanced analysis tools. Researches framework/domain best practices (cached in .claude/rules/best-practices/), runs deep analysis (semgrep, lizard, radon, jscpd, bandit, etc.), checks SOLID/KISS/DRY, security, complexity, maintainability. Provides actionable feedback or approves changes.
-
-### sk-doc-reviewer
-Review documentation for consistency, gaps, and alignment before testing. Builds traceability matrix, finds contradictions, verifies user's mental model. Creates DOC_REVIEW.md. Optional phase between Planning and Testing.
+Review code quality, patterns, and security. Researches framework/domain best practices before review. Runs deep analysis tools (complexity, maintainability, code smells, security). Enforces SOLID, KISS, DRY principles.
 
 ### sk-developer
 Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
 
+### sk-doc-reviewer
+Review documentation for consistency, gaps, and alignment before testing. Verifies user's mental model matches the plan.
+
 ### sk-product-analyst
-Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria. Asks minimum 5 questions in 1-2 rounds.
+Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria.
 
 ### sk-researcher
-Research unknown domains, technologies, and best practices. Creates RESEARCH.md with findings and recommendations. Optional phase between Discovery and Planning.
+Research unknown domains, technologies, APIs, and best practices before planning. Creates RESEARCH.md with findings, options, and recommendations.
 
 ### sk-tester
-Write tests BEFORE code (TDD red phase). Proposes categorized test plan (unit, integration, service, E2E) for user approval. Supports E2E testing with Playwright (web) and real API calls (backend). Creates failing tests based on approved plan.
+Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.
 
 
 ## Usage
@@ -76,12 +76,6 @@ Write tests BEFORE code (TDD red phase). Proposes categorized test plan (unit, i
 ```bash
 ./scripts/generate-cursorrules.sh
 cp adapters/cursor/.cursorrules /path/to/project/
-```
-
-### Kimi/MiniMax
-```bash
-./scripts/install-kimi.sh
-kimi --agent-file ~/.config/agents/agents/sk-team.yaml
 ```
 
 ## Quick Start

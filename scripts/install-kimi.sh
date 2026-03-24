@@ -26,16 +26,6 @@ for skill_dir in "$REPO_DIR"/workflow/skills/sk-*/; do
     fi
 done
 
-# 1b. Flow Skills (type: flow) → ~/.config/agents/skills/
-echo "Installing flow skills..."
-for skill_dir in "$REPO_DIR"/workflow/flows/sk-*/; do
-    if [ -d "$skill_dir" ]; then
-        name=$(basename "$skill_dir")
-        ln -sfn "$skill_dir" "$AGENTS_DIR/skills/$name"
-        echo "  ✓ Linked flow skill: $name"
-    fi
-done
-
 # 2. Utility Skills → ~/.config/agents/skills/
 echo "Installing utility skills..."
 for skill_dir in "$REPO_DIR"/utilities/sk-*/; do
