@@ -300,10 +300,83 @@ fi
 **Note:** Record any linter violations found. These are BLOCKERS if they fail CI.
 </step>
 
+<step name="check_and_install_tools" priority="before_deep_analysis">
+Check which analysis tools are available and offer to install missing ones BEFORE running analysis.
+
+### 1. Check Availability
+
+Run these checks based on detected project language:
+
+```bash
+echo "=== Tool Availability ==="
+
+# Multi-language tools (always check)
+for tool in semgrep jscpd lizard; do
+  command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
+done
+
+# Python tools
+if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
+  for tool in bandit radon vulture pip-audit pylint; do
+    command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
+  done
+fi
+
+# JavaScript/TypeScript tools
+if [ -f package.json ]; then
+  for tool in madge depcheck; do
+    command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
+  done
+fi
+
+# Go tools
+if [ -f go.mod ]; then
+  for tool in gosec gocognit golangci-lint; do
+    command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
+  done
+fi
+
+# Rust tools
+if [ -f Cargo.toml ]; then
+  for tool in cargo-deny cargo-audit; do
+    command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
+  done
+fi
+```
+
+### 2. Propose Installation
+
+If any relevant tools are missing, use **AskUserQuestion** to ask the user which ones to install:
+
+| Tool | Install command | What it does |
+|------|----------------|--------------|
+| semgrep | `pip install semgrep` or `brew install semgrep` | Security & pattern analysis |
+| jscpd | `npm install -g jscpd` | Code duplication detection |
+| lizard | `pip install lizard` | Cyclomatic complexity, function length |
+| bandit | `pip install bandit` | Python security analysis |
+| radon | `pip install radon` | Python complexity & maintainability |
+| vulture | `pip install vulture` | Python dead code detection |
+| pip-audit | `pip install pip-audit` | Python dependency vulnerabilities |
+| pylint | `pip install pylint` | Python code smells |
+| madge | `npm install -g madge` | JS/TS circular dependency detection |
+| depcheck | `npm install -g depcheck` | JS/TS unused dependency detection |
+| gosec | `go install github.com/securego/gosec/v2/cmd/gosec@latest` | Go security analysis |
+| gocognit | `go install github.com/uudashr/gocognit/cmd/gocognit@latest` | Go cognitive complexity |
+| golangci-lint | `brew install golangci-lint` | Go extended linting |
+| cargo-deny | `cargo install cargo-deny` | Rust dependency audit |
+| cargo-audit | `cargo install cargo-audit` | Rust vulnerability audit |
+
+Present only tools relevant to the project's language. Ask: "These analysis tools are not installed. Want me to install any?"
+
+### 3. Install Approved Tools
+
+For each tool the user approves, install it via Bash and verify installation succeeded.
+
+If the user declines all — proceed without them and note in the report.
+</step>
+
 <step name="run_deep_analysis">
-Run advanced code quality analysis tools beyond linters. Only run tools that are **already installed**.
-If a tool is not installed, record it in the "Tools Not Available" list for the report.
-After all tools are checked, propose installing unavailable ones to the user (see "Suggest Installation" at the end of this step).
+Run the analysis tools that are now available (either pre-installed or just installed in the previous step).
 
 **Priority order:** security → complexity/maintainability → code smells → duplication → dependency audit
 
@@ -453,29 +526,7 @@ Map tool findings to review severity levels:
 **Note:** If a tool takes more than 30 seconds, skip it and note in the report.
 Record which tools were NOT available — list them in the "Tools Not Available" section.
 
-### Suggest Installation
-
-After collecting the "Tools Not Available" list, propose installation to the user.
-For each unavailable tool, suggest the install command:
-
-| Tool | Install command |
-|------|----------------|
-| semgrep | `pip install semgrep` or `brew install semgrep` |
-| jscpd | `npm install -g jscpd` |
-| lizard | `pip install lizard` |
-| bandit | `pip install bandit` |
-| radon | `pip install radon` |
-| vulture | `pip install vulture` |
-| pip-audit | `pip install pip-audit` |
-| madge | `npm install -g madge` |
-| depcheck | `npm install -g depcheck` |
-| gosec | `go install github.com/securego/gosec/v2/cmd/gosec@latest` |
-| gocognit | `go install github.com/uudashr/gocognit/cmd/gocognit@latest` |
-| golangci-lint | `brew install golangci-lint` |
-| cargo-deny | `cargo install cargo-deny` |
-| cargo-audit | `cargo install cargo-audit` |
-
-Present the list of unavailable but relevant tools (matching the project's language) to the user and ask if they want to install any. Install and run only the tools the user approves.
+**Note:** Record which tools were NOT available (user declined installation) — list them in the "Tools Not Available" section of the report.
 </step>
 
 <step name="review_each_file">
