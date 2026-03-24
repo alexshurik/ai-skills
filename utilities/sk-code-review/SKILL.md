@@ -56,19 +56,24 @@ Spawn the **sk-code-reviewer** agent to perform the full review:
 Task tool:
   subagent_type: "sk-code-reviewer"
   prompt: |
-    Review uncommitted changes in the current repository.
+    Review the codebase in the current repository.
 
     Context:
     - Design doc: [path if user selected one, or "none"]
     - Code style: [path if exists, or "none"]
 
-    Run the FULL review process:
+    CRITICAL — follow steps IN ORDER, do NOT skip any:
+
     1. Detect project stack
     2. Research best practices (if framework/domain detected)
     3. Run linters
-    4. Run deep analysis tools (propose installing missing ones)
-    5. Review each changed file against all checklists
-    6. Provide structured verdict: APPROVED or CHANGES REQUESTED
+    4. **MANDATORY: check_and_install_tools step** — check which analysis
+       tools are missing, then use AskUserQuestion to ask the user which
+       ones to install. WAIT for user response. Install approved tools.
+       DO NOT skip this step. DO NOT just list tools in the report.
+    5. Run deep analysis with ALL available tools (including just-installed)
+    6. Review each changed file against all checklists
+    7. Provide structured verdict: APPROVED or CHANGES REQUESTED
 ```
 
 **If Task tool is not available** (e.g., Codex, Cursor):

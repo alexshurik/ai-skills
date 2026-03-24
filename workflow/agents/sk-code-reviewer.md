@@ -301,7 +301,10 @@ fi
 </step>
 
 <step name="check_and_install_tools" priority="before_deep_analysis">
+**MANDATORY STEP — DO NOT SKIP.**
 Check which analysis tools are available and offer to install missing ones BEFORE running analysis.
+You MUST run the availability check, then use AskUserQuestion to ask the user about installing missing tools.
+Do NOT proceed to run_deep_analysis without completing this step.
 
 ### 1. Check Availability
 
@@ -1171,6 +1174,7 @@ validation and data access."
 
 <quality_checklist>
 Before completing review:
+- [ ] **Tool availability checked and user asked about installing missing tools (MANDATORY)**
 - [ ] Best practices researched or loaded from cache (if framework/domain detected)
 - [ ] Deep analysis tools run (security, complexity, maintainability, smells)
 - [ ] Tool findings triaged and mapped to severity levels
