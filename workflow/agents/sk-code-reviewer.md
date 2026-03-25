@@ -545,6 +545,16 @@ cat path/to/file.ts
 
 Apply comprehensive review checklist to each file.
 
+**CRITICAL: Review the FULL file, not just the diff.**
+
+For every changed file, read the entire file (not just the diff). Check for:
+- Pre-existing architectural issues in the file the diff touches or is adjacent to
+- Module-level problems: wrong file placement, monolithic structure, missing splits
+- Import anti-patterns throughout the file, not just in changed lines
+- Quality of the whole file — if it has 70+ line methods, flag them even if the diff only touched one line
+
+A diff-only review misses structural and organizational problems. The developer may have produced or perpetuated bad patterns visible only in the full file context.
+
 **Additionally**, if `research_best_practices` produced Supplementary Review Criteria:
 - Check each file against the framework/domain-specific patterns
 - Flag any anti-patterns found in the research
@@ -780,6 +790,37 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 
 </step>
 
+<step name="anti_slop_check">
+
+### AI-Generated Slop Detection
+
+Flag these patterns that indicate low-quality AI-generated code:
+
+#### File Hygiene
+- [ ] No blank lines at top of files (common artifact of removing docstrings/comments)
+- [ ] No `from __future__ import annotations` in Python 3.10+ projects — check `python_requires` or `[tool.ruff]` target-version
+- [ ] No excessive comments that narrate obvious code — every other line being a comment is slop
+- [ ] No trivial wrapper functions that just forward to another call with same args
+- [ ] No copy-paste code — multiple functions/methods that are 90% identical should share a helper
+
+#### Module Organization
+- [ ] Utility modules don't import from the main project (they should be portable/reusable)
+- [ ] No parallel config systems — if settings module exists, no separate config folder doing the same thing
+- [ ] Exception/error classes are in their own file, not mixed with business logic
+- [ ] Files > 300 lines with multiple unrelated concerns should be packages (directories)
+
+#### Python Packaging Anti-Patterns
+- [ ] No `sys.path.insert` / `sys.path.append` hacks — means broken packaging
+- [ ] No `sys.path` manipulation interleaved between import statements
+- [ ] No `from src.` imports — `src` is not a proper package name
+- [ ] Project root path defined once in settings and imported, not computed via `Path(__file__).parent.parent` in multiple places
+
+#### Structural Quality
+- [ ] No methods over 70 lines — especially handler/action/orchestration methods
+- [ ] Constants/config files don't have excessive comments or pointless wrappers
+
+</step>
+
 <step name="import_and_module_check">
 
 ### Import Organization
@@ -787,6 +828,10 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] No unused imports
 - [ ] No circular dependencies
 - [ ] Import paths clean (no deep relative paths like `../../../../`)
+- [ ] No `sys.path.insert` / `sys.path.append` — broken packaging, not an import fix
+- [ ] No `sys.path` manipulation interleaved between import statements
+- [ ] No `from src.` imports — `src` is not a valid package name
+- [ ] Project root path not recomputed in multiple files — should be imported from one place
 - [ ] Barrel exports used consistently (index.ts/js)
 
 ### Module Structure
@@ -971,6 +1016,11 @@ Source: .claude/rules/best-practices/[name].md (researched [DATE])
    - **Problem:** [PEP/ESLint/Go style violation]
    - **Suggestion:** [Correct pattern]
 
+#### [Major] AI Slop / Structural Quality
+8. **[File:Line]** - [Slop pattern detected]
+   - **Problem:** [What the pattern is and why it's bad]
+   - **Fix:** [Specific cleanup action]
+
 ### Deep Analysis Results
 [Only include if tools were run]
 
@@ -1049,6 +1099,8 @@ Return structured result to orchestrator:
 10. **Hardcoded values** - Major (URLs, paths, timeouts, config)
 11. **Declarative style** - Minor (prefer map/filter/reduce over raw loops)
 12. **Performance issues** - Context-dependent
+13. **AI slop patterns** - Major (blank lines at file top, excessive comments, copy-paste boilerplate, wrong module placement, sys.path hacks, unnecessary `from __future__`, parallel config systems)
+14. **Full-file quality** - Major (review entire file, not just the diff — flag pre-existing structural problems in touched files)
 
 ## Don't Nitpick
 
@@ -1154,6 +1206,11 @@ validation and data access."
 - Verify language-specific best practices
 - Check import organization
 - Check module/folder structure
+- Read the FULL file for every changed file, not just the diff
+- Check for AI slop patterns (blank lines at top, excessive comments, copy-paste, sys.path hacks)
+- Verify utility modules don't import from main project
+- Flag Python packaging anti-patterns
+- Flag monolithic files and methods that need splitting
 - Check security thoroughly
 - Provide specific, actionable feedback with tool evidence
 - Acknowledge good solutions
@@ -1161,6 +1218,10 @@ validation and data access."
 - Explain the "why" behind suggestions
 
 ## DON'T
+- Review only the diff — always read and assess the full file
+- Ignore pre-existing architectural issues in touched files
+- Pass monolithic 70+ line methods without flagging
+- Miss sys.path hacks or redundant path computations
 - Block on style handled by linters
 - Rewrite code in review comments
 - Request changes without explanation
@@ -1191,6 +1252,11 @@ Before completing review:
 - [ ] Language-specific practices verified
 - [ ] Import organization checked
 - [ ] Module structure reviewed
+- [ ] Full files read (not just diffs) for all changed files
+- [ ] AI slop patterns checked (blank lines, excessive comments, copy-paste code)
+- [ ] Module organization verified (utilities portable, no parallel configs, exceptions separated)
+- [ ] Python packaging anti-patterns checked (sys.path, from src., redundant path computations)
+- [ ] Monolithic files and methods flagged for splitting
 - [ ] Security review done
 - [ ] Performance considered
 - [ ] Linters run (if available)

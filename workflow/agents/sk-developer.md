@@ -571,6 +571,34 @@ def _read_cache_file(path: Path) -> str | None:
 - Use `?.` and `??` operators
 - Async/await over raw promises
 
+## Anti-Slop: Clean Code, Not AI Boilerplate
+
+AI-generated code has recognizable bad patterns. Actively avoid them:
+
+- **No blank lines at top of file** — if you remove a docstring or comment, clean up leftover blank lines. Files start with code or imports on line 1.
+- **No `from __future__ import annotations`** unless the project supports Python < 3.10. Check `python_requires` or target version before adding.
+- **No excessive comments** — don't annotate every constant, every function call, every assignment. A file where every other line is a comment is slop. Comments are for WHY, not WHAT.
+- **No trivial wrapper functions** — don't create a function that just calls another function with the same arguments. Call it directly.
+- **No copy-paste with minor edits** — if multiple functions/methods are 90% identical, extract the common logic into a shared helper or base class.
+- **Exception classes in their own file** — don't mix exception/error class definitions with client/business logic. Create a separate `exceptions.py`.
+
+## Project Structure Awareness
+
+Before creating or placing files, study the existing project layout:
+
+- **Utilities are portable** — utility modules (datetime helpers, string formatters, async wrappers, HTTP helpers) should live in a dedicated utilities directory. They must NOT import from the main project — imagine they could be copied to any other project as-is.
+- **One source of truth for config** — if the project already has a settings/config module, don't create a parallel one. Add to what exists.
+- **Root path in settings** — if scripts or modules need the project root path, store it once in settings (e.g., `BASE_DIR = Path(__file__).resolve().parent.parent`) and import it everywhere. Don't compute `Path(__file__).parent.parent` in multiple places.
+- **Growing files → packages** — when a single file (models, schemas, config, constants) grows beyond 300 lines or contains multiple unrelated concerns, convert it to a package directory with `__init__.py` re-exporting the public API.
+- **Long handler/action methods** — any method that builds, renders, processes, or orchestrates and exceeds 50 lines should be broken into smaller named sub-methods. The main method should read like a table of contents.
+
+## Python Packaging Hygiene
+
+- **No `sys.path.insert` / `sys.path.append` hacks** — if imports don't work without modifying `sys.path`, the packaging is broken. Fix `pyproject.toml` or `setup.py` with proper package discovery, or use `pip install -e .`.
+- **No path manipulation between imports** — all `sys.path` changes (if truly unavoidable) go before ALL imports, never interleaved.
+- **No importing from a `src` package** — `from src.something` is a packaging anti-pattern. Use the real project package name.
+- **Prefer entry points** — define CLI commands and scripts as entry points in `pyproject.toml` `[project.scripts]` instead of standalone scripts that hack the Python path.
+
 </coding_guidelines>
 
 <tdd_discipline>
@@ -633,5 +661,12 @@ Before completing, verify:
 - [ ] Error handling is consistent
 - [ ] No code without tests
 - [ ] Refactoring done with tests green
+- [ ] No blank lines at top of any file
+- [ ] No `from __future__ import annotations` unless project requires Python < 3.10
+- [ ] No `sys.path` hacks — imports work through proper packaging
+- [ ] Files placed in correct location per project structure conventions
+- [ ] No monolithic files > 300 lines with multiple unrelated concerns
+- [ ] No excessive comments or trivial wrapper functions
+- [ ] Exception classes separated into own files
 - [ ] Ready for code review
 </quality_checklist>
