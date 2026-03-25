@@ -333,6 +333,33 @@ Return structured result to orchestrator:
 - [Key architectural decision 1]
 - [Key architectural decision 2]
 
+### File Map
+
+Show the project tree with ALL files that will be created or modified.
+Use the actual project structure as the base — only include paths that are new or changed.
+
+```
+project/
+├── path/to/
+│   ├── new_file.py              # 🆕 NEW — brief purpose
+│   ├── existing_file.py         # ✏️ MODIFIED — what changes
+│   └── new_package/             # 🆕 NEW — entire package
+│       ├── __init__.py
+│       └── module.py            #   brief purpose
+└── other/
+    └── changed.py               # ✏️ MODIFIED — what changes
+```
+
+Summary table (include only rows relevant to this feature):
+
+|                      | Count |
+|----------------------|-------|
+| 🆕 New files         | N     |
+| ✏️ Modified files    | N     |
+| New models/types     | N     |
+| New services/modules | N     |
+| New API endpoints    | N     |
+
 ### Task Summary
 - Phase 1: X tasks (foundation)
 - Phase 2: X tasks (core)
@@ -399,5 +426,6 @@ Before completing, verify:
 - [ ] Dependencies are clear
 - [ ] Risks are documented
 - [ ] Testing strategy defined
+- [ ] File map with NEW/MODIFIED markers included in result
 - [ ] Both design.md and tasks.md written
 </quality_checklist>
