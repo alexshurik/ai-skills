@@ -244,39 +244,332 @@ Match existing code style:
 
 ## Write Readable Code
 
-- Clear variable names
-- Short functions (< 20 lines ideal)
-- Obvious logic flow
-- Comments only when necessary
+- Clear, intention-revealing variable names — **no single-letter names**, even for counters
+- Short functions: < 20 lines ideal, **70 lines hard max** — split longer functions into sub-methods
+- Functions have **< 4 parameters** — use an options object (TS) or dataclass/TypedDict (Python) if more
+- **No file-level docstrings** at the top of the file — they add noise and become stale
+- **No dead code, commented-out code, or console.log/print/debugger** left in
+- **Comments only for complex/non-obvious logic** — if the code needs a comment to be understood, first try to simplify the code. If it's genuinely complex (tricky algorithm, workaround, business rule), then comment WHY, not WHAT. Don't litter code with obvious comments.
+- **Blank line grouping**: separate logical blocks within a function with blank lines — group related statements together, split unrelated ones. Not too many, not too few — aim for readable "paragraphs" of code.
+- **Break long comprehensions/chains** across multiple lines for readability
+
+```python
+# Good - self-documenting
+active_users = [u for u in users if u.is_active]
+email_list = [u.email for u in active_users]
+
+# Bad - needs comments to understand
+e = [x.e for x in u if x.a]
+```
 
 ```typescript
 // Good - self-documenting
 const activeUsers = users.filter(user => user.isActive);
 const emailList = activeUsers.map(user => user.email);
 
-// Bad - needs comments to understand
+// Bad
 const e = u.filter(x => x.a).map(x => x.e);
+```
+
+## File Size and Module Structure
+
+- **Files > 300 lines with multiple unrelated functions/classes** → split into a package/module folder with separate files grouped by responsibility
+- One large class in a file is fine — the rule targets files that became a dumping ground for loosely related functions
+- Prefer a folder-module (`dialogs/` with `__init__.py`, `items.py`, `billing.py`) over a single 500-line `dialogs.py`
+
+## Keep Complexity Low
+
+- **Cyclomatic complexity < 10** per function — if higher, split into smaller functions
+- **Max 3 levels of nesting** — use early returns / guard clauses to flatten conditionals
+- Extract complex conditions into named variables or functions
+- Large switch/if-elif chains → lookup tables/dicts
+- Each level of logic — its own step or function. Don't nest for → if → with.
+
+```python
+# Bad - deeply nested
+def process(user):
+    if user:
+        if user.is_active:
+            if user.role == "admin":
+                # ... deep logic
+
+# Good - early returns (guard clauses)
+def process(user):
+    if not user:
+        return
+    if not user.is_active:
+        return
+    if user.role != "admin":
+        return
+    # ... flat logic
+```
+
+```python
+# Bad - long if-elif chain
+def get_handler(action):
+    if action == "create":
+        return create_handler
+    elif action == "update":
+        return update_handler
+    elif action == "delete":
+        return delete_handler
+
+# Good - lookup dict
+HANDLERS = {
+    "create": create_handler,
+    "update": update_handler,
+    "delete": delete_handler,
+}
+
+def get_handler(action):
+    return HANDLERS.get(action)
+```
+
+## Declarative Over Imperative
+
+- Prefer `map`, `filter`, `reduce` (JS/TS) or list/dict comprehensions (Python) over raw for-loops
+- Pipeline-style composition over nested loops
+- Extract multi-step imperative logic into named sub-methods
+
+```python
+# Bad - imperative
+result = []
+for item in items:
+    if item.is_active:
+        result.append(item.name.upper())
+
+# Good - list comprehension
+result = [item.name.upper() for item in items if item.is_active]
+```
+
+```python
+# Bad - imperative accumulation
+counts = {}
+for item in items:
+    key = item.category
+    if key not in counts:
+        counts[key] = 0
+    counts[key] += 1
+
+# Good - Counter
+from collections import Counter
+counts = Counter(item.category for item in items)
+```
+
+```typescript
+// Bad - imperative
+const result: string[] = [];
+for (const item of items) {
+  if (item.isActive) {
+    result.push(item.name.toUpperCase());
+  }
+}
+
+// Good - declarative
+const result = items
+  .filter(item => item.isActive)
+  .map(item => item.name.toUpperCase());
+```
+
+## No Hardcoded Values
+
+- URLs, API endpoints, base paths → config/env vars
+- Timeouts, retry counts, limits → named constants
+- Magic numbers/strings used more than once → extract to constants
+- Credentials, API keys → **NEVER** hardcode
+
+```python
+# Bad
+response = requests.get("https://api.example.com/users", timeout=5)
+
+# Good
+API_BASE_URL = os.environ["API_BASE_URL"]
+REQUEST_TIMEOUT_SEC = 5
+
+response = requests.get(f"{API_BASE_URL}/users", timeout=REQUEST_TIMEOUT_SEC)
+```
+
+## Imports Always at Top of File
+
+- **ALL imports at the top of the file** — never inside functions, methods, or conditional blocks
+- Only exception: avoiding circular imports (must be commented `# avoid circular import`)
+- Group imports with blank lines between groups:
+  1. Standard library
+  2. Third-party
+  3. Local/project
+- No wildcard imports (`from module import *`), no duplicate imports, no unused imports
+
+```python
+# Good — PEP 8 import order
+import os
+import sys
+from pathlib import Path
+
+import requests
+from sqlalchemy import Column, String
+
+from myapp.models import User
+from myapp.utils import validate_email
+```
+
+```python
+# Bad — import inside function
+def get_user(user_id: str):
+    import requests  # NEVER do this
+    return requests.get(f"/users/{user_id}")
 ```
 
 ## Handle Errors Consistently
 
 Follow project's error handling pattern:
+- **Narrow try-catch/try-except**: wrap ONLY the code that can throw, not the whole function
+- **Specific exceptions**: catch the exact type, not generic `except Exception` / `catch (error)`
+- If generic catch IS needed (top-level handler), justify with a comment
+
+```python
+# Bad - too broad
+def get_user(user_id: str) -> User:
+    try:
+        data = fetch_from_api(user_id)
+        user = parse_user(data)
+        save_to_cache(user)
+        return user
+    except Exception:
+        return None
+
+# Good - narrow and specific
+def get_user(user_id: str) -> User:
+    try:
+        data = fetch_from_api(user_id)
+    except ConnectionError:
+        raise ServiceUnavailableError(f"Cannot reach API for user {user_id}")
+
+    user = parse_user(data)
+    save_to_cache(user)
+    return user
+```
 
 ```typescript
-// If project uses custom errors
-async function getUser(id: string): Promise<User> {
-  const user = await db.users.findById(id);
-  if (!user) {
-    throw new NotFoundError(`User ${id} not found`);
+// Bad - wrapping everything
+async function getUser(id: string): Promise<User | null> {
+  try {
+    const data = await fetchFromApi(id);
+    const user = parseUser(data);
+    await saveToCache(user);
+    return user;
+  } catch (error) {
+    return null;
   }
-  return user;
 }
 
-// If project returns null/undefined
-async function getUser(id: string): Promise<User | null> {
-  return await db.users.findById(id);
+// Good - narrow try, specific error
+async function getUser(id: string): Promise<User> {
+  let data: RawUser;
+  try {
+    data = await fetchFromApi(id);
+  } catch (error) {
+    if (error instanceof NetworkError) {
+      throw new ServiceUnavailableError(`Cannot reach API for user ${id}`);
+    }
+    throw error;
+  }
+
+  const user = parseUser(data);
+  await saveToCache(user);
+  return user;
 }
 ```
+
+## Boolean Naming
+
+- Boolean variables and functions use `is`/`has`/`should`/`can` prefixes
+
+```python
+# Good
+is_active = user.status == "active"
+has_permission = "admin" in user.roles
+
+# Bad
+active = user.status == "active"
+permission = "admin" in user.roles
+```
+
+## Python-Specific (PEP Compliance)
+
+Follow PEP 8, PEP 257, PEP 484 strictly:
+- **Type hints** for all function signatures (PEP 484)
+- **f-strings** for formatting (not `%` or `.format()`)
+- **`pathlib.Path`** instead of `os.path`
+- **`is None`** / **`is not None`** for None checks (never `==`/`!=`)
+- **`with` statements** for resource management (files, connections, locks)
+- **`enumerate()`** instead of manual counter in loops
+- **`zip()`** for parallel iteration
+- **`@dataclass`** for data containers
+- List/dict comprehensions where appropriate
+- **Docstring format**: opening and closing `"""` on their own lines, not glued to text
+
+```python
+# Good
+"""
+Recognize receipt items from image with validation loop.
+
+Makes up to 3 API calls (1 initial + 2 corrections). Each correction
+is a fresh call with a system prompt describing the previous error.
+"""
+
+# Bad — closing quotes glued to text
+"""Recognize receipt items from image with validation loop.
+
+Makes up to 3 API calls (1 initial + 2 corrections). Each correction
+is a fresh call with a system prompt describing the previous error."""
+```
+
+```python
+# Bad — violates multiple PEP rules, deep nesting
+def get_users(ids, active = None):
+    result = []
+    i = 0
+    for id in ids:
+        if active != None:
+            f = open("cache/%s.json" % id)
+            data = f.read()
+            f.close()
+        i = i + 1
+    return result
+
+# Good — PEP-compliant, flat structure, each step separate
+def get_users(
+    user_ids: list[str],
+    *,
+    active: bool | None = None,
+) -> list[User]:
+    if active is None:
+        return load_users_from_db(user_ids)
+
+    cache_paths = [Path("cache") / f"{uid}.json" for uid in user_ids]
+    raw_data = [_read_cache_file(path) for path in cache_paths]
+
+    return [
+        parse_user(data)
+        for data in raw_data
+        if data is not None
+    ]
+
+
+def _read_cache_file(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    with path.open() as f:
+        return f.read()
+```
+
+## TypeScript-Specific
+
+- No `any` — use `unknown` with type guards
+- `===`/`!==` over `==`/`!=`
+- `const`/`let` over `var`
+- Use `?.` and `??` operators
+- Async/await over raw promises
 
 </coding_guidelines>
 

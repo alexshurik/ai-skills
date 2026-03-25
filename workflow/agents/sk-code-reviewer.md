@@ -626,14 +626,16 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 
 ### Readability
 - [ ] Clear, intention-revealing variable/function names
-- [ ] No abbreviations or single-letter variables (except loops)
+- [ ] No abbreviations or single-letter variables — **including counters** (no `i`, `j`, `k`)
 - [ ] Boolean names use is/has/should/can prefixes
 - [ ] Function length < 20 lines (ideal), < 70 lines (hard max — approximately one screen height)
 - [ ] Functions longer than 70 lines MUST be split into smaller sub-methods
 - [ ] No deeply nested conditionals (>3 levels is a smell)
 - [ ] Early returns reduce nesting
-- [ ] Comments explain WHY, not WHAT
-- [ ] Complex logic documented
+- [ ] **No file-level docstrings** at the top of the file — they add noise and become stale
+- [ ] **Comments only for complex/non-obvious logic** — if code needs a comment, first try to simplify it. If genuinely complex (tricky algorithm, workaround, business rule), comment WHY, not WHAT. Don't litter code with obvious comments.
+- [ ] **Blank line grouping** — related statements grouped together, unrelated ones separated by blank lines. Code reads like "paragraphs". Not too many blank lines, not too few.
+- [ ] **Long comprehensions/chains broken** across multiple lines for readability
 
 ### Maintainability
 - [ ] Functions have < 4 parameters (use object/params object if more)
@@ -721,7 +723,7 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] No duplicate imports
 - [ ] Type hints used (PEP 484) for function signatures
 - [ ] `__all__` defined for public APIs in modules
-- [ ] Docstrings for public functions/classes (PEP 257)
+- [ ] Docstrings for public functions/classes (PEP 257) — opening and closing `"""` on their own lines, not glued to text
 - [ ] f-strings used for formatting (not % or .format())
 - [ ] `pathlib` used instead of `os.path`
 - [ ] `is`/`is not` used for None checks (not `==`/`!=`)
@@ -788,6 +790,7 @@ find . -name "design.md" -o -name "*.spec.md" 2>/dev/null | head -5
 - [ ] Barrel exports used consistently (index.ts/js)
 
 ### Module Structure
+- [ ] **Files > 300 lines with multiple unrelated functions/classes** → should be split into a package/module folder (one large class per file is fine)
 - [ ] Clear separation of concerns
 - [ ] Feature-based or layer-based organization consistent
 - [ ] Public API boundaries clear
