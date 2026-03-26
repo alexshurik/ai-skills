@@ -1,6 +1,6 @@
 ---
 name: sk-team-quick
-version: 1.0.0
+version: 1.1.0
 description: Quick workflow for bugfixes, typos, and small changes
 license: MIT
 
@@ -38,51 +38,98 @@ This workflow is for:
 ## Quick Workflow Phases
 
 ```
-Developer → Code Review → Done
+Setup → Mini-Architect → Developer → Code Review → Mini-Acceptance → Done
 ```
 
 Skipped phases:
 - Product Analyst (no requirements gathering)
-- Architect (no design needed)
 - Separate Tester (Developer handles tests)
-- Acceptance Reviewer (Code Review is sufficient)
+- Doc Reviewer (lightweight design note is sufficient)
 
 ## Available Agents
 
 | Agent | subagent_type | Purpose |
 |-------|---------------|---------|
+| Architect | `sk-architect` | Brief design note |
 | Developer | `sk-developer` | Fix + tests |
 | Code Reviewer | `sk-code-reviewer` | Quality check |
+| Acceptance Reviewer | `sk-acceptance-reviewer` | Verify fix + write docs |
 
 ## Workflow Execution
 
-### Phase 1: Developer
+### Phase 0: Setup
+**Goal**: Prepare documentation structure
+
+1. Generate a fix name in kebab-case from the user's description (e.g. `fix-null-pointer-in-parser`)
+2. Create directory: `openspec/changes/<fix-name>/`
+
+```bash
+mkdir -p openspec/changes/<fix-name>
+```
+
+### Phase 1: Mini-Architect
+**Goal**: Brief design note — what to change and why
+
+```
+Agent tool:
+  subagent_type: "sk-architect"
+  prompt: |
+    ## QUICK FIX MODE
+
+    This is a quick fix workflow — lightweight design only.
+
+    **Fix request:** <description>
+    **Docs directory:** openspec/changes/<fix-name>/
+
+    ### What to do:
+    1. Explore the codebase to understand the problem
+    2. Write a brief `openspec/changes/<fix-name>/design.md` with:
+       - **Problem**: What is broken / what needs to change
+       - **Root cause**: Why it happens (if bug)
+       - **Fix approach**: What to change and in which files
+       - **Risks**: Anything that could go wrong (if any)
+    3. Return a summary of your findings
+
+    ### Quick fix rules — MUST FOLLOW:
+    - Do NOT ask the user any questions — work autonomously
+    - Do NOT create tasks.md — this is a quick fix
+    - Do NOT write component diagrams, API design, data model sections
+    - Keep design.md SHORT — aim for 20-40 lines max
+    - Focus only on: problem, root cause, fix approach, risks
+```
+
+**Output**: Brief design.md + summary to orchestrator
+
+### Phase 2: Developer
 **Goal**: Fix the issue with proper testing
 
 ```
-Task tool:
+Agent tool:
   subagent_type: "sk-developer"
   prompt: |
     Quick fix request: <description>
 
-    This is a quick fix workflow (no formal proposal/design).
+    **Design note:** Read `openspec/changes/<fix-name>/design.md` for the architect's analysis of the problem and recommended approach.
 
-    1. Understand the issue
-    2. Write a test that reproduces the bug (if applicable)
-    3. Implement the fix
-    4. Ensure all tests pass
+    1. Read the design note
+    2. Understand the issue
+    3. Write a test that reproduces the bug (if applicable)
+    4. Implement the fix following the architect's approach
+    5. Ensure all tests pass
 ```
 
 **Output**: Fix + Tests
 
-### Phase 2: Code Review
+### Phase 3: Code Review
 **Goal**: Quick quality check
 
 ```
-Task tool:
+Agent tool:
   subagent_type: "sk-code-reviewer"
   prompt: |
     Quick fix: <description>
+
+    Design note at: openspec/changes/<fix-name>/design.md
 
     Review the fix for:
     - Correctness
@@ -93,35 +140,84 @@ Task tool:
 
 **Output**: Approved OR Changes Requested
 
+### Phase 4: Mini-Acceptance
+**Goal**: Verify fix and produce documentation
+
+```
+Agent tool:
+  subagent_type: "sk-acceptance-reviewer"
+  prompt: |
+    ## QUICK FIX MODE
+
+    This is a quick fix workflow — lightweight acceptance only.
+
+    **Fix request:** <description>
+    **Design note:** openspec/changes/<fix-name>/design.md
+    **Docs directory:** openspec/changes/<fix-name>/
+
+    ### What to do:
+    1. Read the design note to understand what was supposed to be fixed
+    2. Review the implemented code changes
+    3. Run all tests and verify they pass
+    4. Scan for TODO/FIXME/HACK/XXX in changed files
+    5. Write `openspec/changes/<fix-name>/VERIFICATION.md`:
+       - Verdict: ACCEPTED or NEEDS WORK
+       - What was verified and evidence
+       - Test results summary
+       - Issues found (if any)
+    6. Write `openspec/changes/<fix-name>/SUMMARY.md`:
+       - Problem: what was broken
+       - Fix: what was changed
+       - Files modified: list
+       - Tests: what was added/verified
+
+    ### Quick fix rules — MUST FOLLOW:
+    - Do NOT build traceability chains (no proposal.md exists)
+    - Do NOT write API_CHANGELOG.md or OPERATIONAL_TASKS.md
+    - Keep both documents SHORT — aim for 15-30 lines each
+    - Focus on: was the fix correct? do tests pass? any regressions?
+```
+
+**Output**: VERIFICATION.md + SUMMARY.md
+
 ## Execution Flow
 
 ```
 START
   │
-  ├─► [1] sk-developer
+  ├─► [0] Setup: generate fix name, create openspec/changes/<fix-name>/
+  │
+  ├─► [1] sk-architect (quick mode)
+  │       └─► Brief design.md written
+  │
+  ├─► [2] sk-developer
   │       └─► Fix implemented with tests
   │
-  ├─► [2] sk-code-reviewer
-  │       ├─► Approved → DONE
-  │       └─► Changes Requested → Loop to [1]
+  ├─► [3] sk-code-reviewer
+  │       ├─► Approved → continue
+  │       └─► Changes Requested → Loop to [2] (max 2 iterations)
   │
-  └─► COMPLETE: Report to user
+  ├─► [4] sk-acceptance-reviewer (quick mode)
+  │       ├─► ACCEPTED → archive and DONE
+  │       └─► NEEDS WORK → Loop to [2] (max 1 iteration)
+  │
+  └─► COMPLETE: Archive docs, report to user
 ```
 
 ## Developer Quick Fix Instructions
 
 For quick workflow, Developer should:
 
-1. **Understand the issue**
-   - Read relevant code
-   - Identify the bug/change needed
-   - Locate the exact file(s) to modify
+1. **Read the design note**
+   - Check `openspec/changes/<fix-name>/design.md`
+   - Understand the architect's recommended approach
 
 2. **Write a test first** (if applicable)
    - Test that fails with current code
    - Test that will pass with fix
 
 3. **Implement the fix**
+   - Follow the architect's approach
    - Minimum change needed
    - Follow project patterns
    - Don't refactor unrelated code
@@ -134,10 +230,15 @@ For quick workflow, Developer should:
 
 1. **Receive fix request** from user
 2. **Confirm it's a quick fix** (not a feature)
-3. **Invoke Developer** with fix context
-4. **Invoke Code Reviewer** with changes
-5. **Handle review feedback** if needed (max 2 iterations)
-6. **Report completion** to user
+3. **Setup**: generate fix name, create `openspec/changes/<fix-name>/`
+4. **Invoke Architect** (quick mode) for brief design note
+5. **Invoke Developer** with design note context
+6. **Invoke Code Reviewer** with changes
+7. **Handle review feedback** if needed (max 2 iterations)
+8. **Invoke Acceptance Reviewer** (quick mode) for verification + summary
+9. **Handle acceptance feedback** if needed (max 1 iteration)
+10. **Archive docs**: `mv openspec/changes/<fix-name> openspec/completed/<fix-name>`
+11. **Report completion** to user with summary
 
 ## Escalation
 
@@ -163,9 +264,13 @@ Recommend using `/sk-team-feature <description>` for proper workflow.
 The user has described a quick fix. Begin the workflow:
 
 1. Acknowledge the request
-2. Invoke sk-developer to localize and fix the issue
-3. After fix, invoke sk-code-reviewer
-4. Handle any review feedback
-5. Report results
+2. Generate fix name and create `openspec/changes/<fix-name>/`
+3. Invoke sk-architect (quick mode) for design note
+4. Invoke sk-developer with design context
+5. After fix, invoke sk-code-reviewer
+6. Handle any review feedback
+7. Invoke sk-acceptance-reviewer (quick mode) for verification
+8. Archive docs to `openspec/completed/<fix-name>/`
+9. Report results
 
 </sk-team-quick>
