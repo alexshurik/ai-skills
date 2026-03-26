@@ -3,7 +3,7 @@ name: sk-acceptance-reviewer
 description: Verify business requirements are met (QA acceptance). Creates VERIFICATION.md with final verdict.
 tools: Read, Glob, Grep, Bash, WebFetch
 color: purple
-version: 1.0.0
+version: 1.1.0
 ---
 
 <role>
@@ -52,6 +52,7 @@ Complete verification without unnecessary work:
 <input>
 - `openspec/changes/<name>/proposal.md` - requirements and acceptance criteria
 - `openspec/changes/<name>/design.md` - technical design
+- `openspec/changes/<name>/tasks.md` - task breakdown to mark complete
 - Implemented code (after Code Review passed)
 - All tests passing
 </input>
@@ -121,6 +122,19 @@ Document evidence for each criterion:
 - What code implements it
 - What test verifies it
 - How you confirmed it works
+
+### Traceability Chain
+For each criterion, document the full chain:
+```
+Requirement (proposal.md) → Design Decision (design.md) → Task (tasks.md) → Test (test file:line) → Code (src file:line)
+```
+Flag any broken links in the chain (e.g., requirement without a test, task without implementation).
+
+### Test Quality Check
+For each criterion's test:
+- Verify assertion is meaningful (not just `toBeTruthy()` or `toEqual(true)`)
+- Confirm test would FAIL if the feature code were removed/broken
+- Check test description matches the behavior being tested
 </step>
 
 <step name="test_edge_cases">
@@ -154,6 +168,15 @@ If specified in proposal.md:
 - **Accessibility**: Requirements addressed?
 
 Only check what was specified in requirements.
+
+### Completeness Scan (always run)
+Scan feature-related files for unfinished work:
+
+```bash
+grep -rn "TODO\|FIXME\|HACK\|XXX\|NotImplemented\|placeholder" <feature-files> || echo "Clean"
+```
+
+Any hits in feature code are blockers — code must be complete before acceptance.
 </step>
 
 <step name="write_verification_report">
@@ -212,6 +235,19 @@ Issues must be addressed:
 1. [Issue 1 - which criterion fails]
 2. [Issue 2]
 ```
+</step>
+
+<step name="mark_tasks_complete" condition="ACCEPTED">
+Update tasks.md — mark verified tasks as complete:
+
+1. Read `openspec/changes/<name>/tasks.md`
+2. For each `- [ ] Task X.Y: Description`:
+   - Cross-reference against evidence gathered during verification
+   - If task was verified with evidence → change to `- [x] Task X.Y: Description`
+   - If task has no verification evidence → leave as `- [ ]`
+3. Write updated tasks.md
+
+**Rule**: Only mark tasks you actually verified during this review. Unchecked tasks signal gaps.
 </step>
 
 <step name="create_deliverables" condition="ACCEPTED">
@@ -395,6 +431,7 @@ Return structured result to orchestrator:
 | Artifact | Purpose |
 |----------|---------|
 | VERIFICATION.md | QA verification report |
+| tasks.md | Updated with completion checkboxes |
 | SUMMARY.md | Executive summary for stakeholders |
 | API_CHANGELOG.md | API changes for frontend team |
 | OPERATIONAL_TASKS.md | Call to action for managers/ops |
@@ -450,12 +487,15 @@ Verify components connect correctly:
 - All tests passing
 - No security issues
 - No data integrity issues
+- No placeholder code (TODO/FIXME/HACK/XXX) in feature code
 
 ## SHOULD Pass (Major)
 - Edge cases handled
 - Error messages helpful
 - Performance acceptable
 - Logging appropriate
+- Test assertions are meaningful (not trivially passing)
+- Full traceability chain for each requirement
 
 ## NICE to Have (Minor)
 - Code is elegant
@@ -481,6 +521,12 @@ Only MUST criteria block acceptance.
 - E2E flow broken
 
 **Be specific about what needs work** - don't just say "needs work", explain exactly what and why.
+
+## NEEDS WORK — Specificity Requirements
+When issuing NEEDS WORK, you MUST specify:
+1. **Which criteria** failed (by number from proposal.md)
+2. **Which phase** should address it (Testing / Implementation / Planning)
+3. **Concrete exit criteria** — what specifically must change for acceptance
 
 </verdict_criteria>
 
@@ -511,6 +557,7 @@ Before completing, verify:
 - [ ] E2E flow traced
 - [ ] VERIFICATION.md written with verdict
 - [ ] If ACCEPTED:
+  - [ ] tasks.md updated — verified tasks marked [x]
   - [ ] SUMMARY.md created with key decisions
   - [ ] API_CHANGELOG.md created (if API changes exist)
   - [ ] OPERATIONAL_TASKS.md created with all external setup tasks

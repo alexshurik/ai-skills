@@ -1,6 +1,6 @@
 ---
 name: sk-team-feature
-version: 2.1.0
+version: 2.2.0
 description: Full workflow for new feature development with multi-agent team. User approval required between each phase. Worktree-based isolation.
 license: MIT
 
@@ -453,7 +453,7 @@ ls openspec/changes/<feature-name>/ 2>/dev/null
 | Above + test files | Testing done | Waiting for approval |
 | Above + implementation | Implementation done | Waiting for approval |
 | Above + review passed | Review done | Waiting for approval |
-| Above + VERIFICATION.md | Workflow complete | Done |
+| Above + VERIFICATION.md | Workflow complete | Archived to openspec/completed/ |
 
 ---
 
@@ -509,6 +509,15 @@ After name approved:
 
 When all phases complete and user approves:
 
+**Archive completed feature docs:**
+```bash
+# Move docs from changes/ to completed/
+mkdir -p openspec/completed
+mv openspec/changes/<feature-name> openspec/completed/<feature-name>
+```
+
+Then display:
+
 ```markdown
 ## FEATURE COMPLETE
 
@@ -516,13 +525,13 @@ When all phases complete and user approves:
 **Worktree**: `../<feature-name>-worktree`
 **Branch**: `feature/<feature-name>`
 
-### All Artifacts
-- `openspec/changes/<feature-name>/proposal.md` - Requirements
-- `openspec/changes/<feature-name>/RESEARCH.md` - Research findings (if applicable)
-- `openspec/changes/<feature-name>/design.md` - Technical design
-- `openspec/changes/<feature-name>/tasks.md` - Task breakdown
-- `openspec/changes/<feature-name>/DOC_REVIEW.md` - Documentation review (if applicable)
-- `openspec/changes/<feature-name>/VERIFICATION.md` - Acceptance result
+### All Artifacts (archived)
+- `openspec/completed/<feature-name>/proposal.md` - Requirements
+- `openspec/completed/<feature-name>/RESEARCH.md` - Research findings (if applicable)
+- `openspec/completed/<feature-name>/design.md` - Technical design
+- `openspec/completed/<feature-name>/tasks.md` - Task breakdown (with completion marks)
+- `openspec/completed/<feature-name>/DOC_REVIEW.md` - Documentation review (if applicable)
+- `openspec/completed/<feature-name>/VERIFICATION.md` - Acceptance result
 
 ### Next Steps
 1. Review changes in worktree: `cd ../<feature-name>-worktree`
