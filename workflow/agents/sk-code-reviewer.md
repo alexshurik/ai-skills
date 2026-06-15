@@ -320,7 +320,7 @@ done
 
 # Python tools
 if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
-  for tool in bandit radon vulture pip-audit pylint; do
+  for tool in bandit radon complexipy vulture pip-audit pylint; do
     command -v $tool &> /dev/null && echo "✓ $tool" || echo "✗ $tool"
   done
 fi
@@ -358,6 +358,7 @@ If any relevant tools are missing, use **AskUserQuestion** to ask the user which
 | lizard | `pip install lizard` | Cyclomatic complexity, function length |
 | bandit | `pip install bandit` | Python security analysis |
 | radon | `pip install radon` | Python complexity & maintainability |
+| complexipy | `pip install complexipy` | Python cognitive complexity (fast, Rust-based) |
 | vulture | `pip install vulture` | Python dead code detection |
 | pip-audit | `pip install pip-audit` | Python dependency vulnerabilities |
 | pylint | `pip install pylint` | Python code smells |
@@ -444,6 +445,11 @@ if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
 
     # Halstead complexity metrics
     radon hal -j . 2>/dev/null | head -200
+  fi
+
+  # Cognitive complexity (complexipy — fast, Rust-based; -d low shows only functions over the threshold)
+  if command -v complexipy &> /dev/null; then
+    complexipy . -d low 2>/dev/null | head -200
   fi
 
   # Dead code detection
