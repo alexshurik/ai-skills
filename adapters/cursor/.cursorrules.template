@@ -54,7 +54,7 @@ When working on features, these agents handle different phases:
 - **sk-architect** - System design (HOW)
 - **sk-tester** - TDD red phase (failing tests)
 - **sk-developer** - TDD green phase (implementation)
-- **sk-code-reviewer** - Code quality review
+- **sk-review-orchestrator** - Code review orchestration
 - **sk-acceptance-reviewer** - Business validation
 
 ## Artifacts Location

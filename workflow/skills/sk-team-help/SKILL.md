@@ -51,8 +51,8 @@ A structured workflow system with specialized agents for software development.
                                              │
                                        ┌─────┴─────┐
                                        ▼           ▼
-                                   sk-code-    sk-acceptance-
-                                   reviewer    reviewer
+                                   sk-review-  sk-acceptance-
+                                   orchestrator reviewer
 ```
 
 ## Agents (subagent_type for Task tool)
@@ -63,7 +63,7 @@ A structured workflow system with specialized agents for software development.
 | `sk-architect` | Planning | HOW - system design, task breakdown |
 | `sk-tester` | TDD Red | Write failing tests before code |
 | `sk-developer` | TDD Green | Implement code to pass tests |
-| `sk-code-reviewer` | Review | Code quality, security, patterns |
+| `sk-review-orchestrator` | Review | Code quality, security, patterns |
 | `sk-acceptance-reviewer` | Acceptance | Verify business requirements met |
 
 ## Workflows
@@ -77,7 +77,7 @@ For new features, significant changes, complex work:
 2. sk-architect → design.md + tasks.md (system design)
 3. sk-tester → Tests (failing - TDD red phase)
 4. sk-developer → Code (tests pass - TDD green phase)
-5. sk-code-reviewer → Quality check (may loop to Developer)
+5. sk-review-orchestrator → Quality check (may loop to Developer)
 6. sk-acceptance-reviewer → VERIFICATION.md (final check)
 ```
 
@@ -92,7 +92,7 @@ For bugfixes, typos, small changes:
 
 ```
 1. sk-developer → Fix + Tests
-2. sk-code-reviewer → Quick review
+2. sk-review-orchestrator → Quick review
 ```
 
 **Example:**
@@ -142,7 +142,7 @@ Each agent runs in isolated context with specific tools.
 | sk-architect | Green |
 | sk-tester | Yellow |
 | sk-developer | Cyan |
-| sk-code-reviewer | Orange |
+| sk-review-orchestrator | Orange |
 | sk-acceptance-reviewer | Purple |
 
 ## Best Practices
@@ -163,7 +163,7 @@ Each agent runs in isolated context with specific tools.
 - Let the Product Analyst ask questions
 - Don't skip phases for "simple" features
 - Trust the TDD process
-- Review Code Reviewer feedback carefully
+- Review code review feedback carefully
 
 ## Getting Started
 

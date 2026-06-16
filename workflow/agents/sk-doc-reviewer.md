@@ -207,45 +207,23 @@ For each design decision in design.md:
 2. Flag unnecessary complexity (design without requirement)
 </step>
 
-<step name="find_gaps">
-Systematically check for gaps:
+<step name="find_gaps_and_contradictions">
+**Gaps** — systematically check:
+- Requirements: acceptance criteria without design coverage, edge cases missing from tasks
+- Design: components mentioned but not detailed, API endpoints without specs
+- Tasks: missing dependencies, testing tasks that don't cover acceptance criteria, no migration tasks
 
-**Requirements gaps:**
-- Acceptance criteria without design coverage
-- Edge cases from proposal.md not in design.md
-- Error scenarios not addressed in tasks.md
-
-**Design gaps:**
-- Components mentioned but not detailed
-- API endpoints without request/response specs
-- Data flows with missing error handling paths
-
-**Task gaps:**
-- Missing dependencies between tasks
-- Testing tasks that don't cover acceptance criteria
-- No task for database migrations or config changes
-</step>
-
-<step name="find_contradictions">
-Cross-reference for conflicts:
-
-- Naming inconsistencies (same concept, different names across docs)
-- Behavioral contradictions (sync vs async, required vs optional)
-- Scope conflicts (proposal says X is out of scope, but tasks include it)
-- Technology conflicts (proposal mentions one approach, design uses another)
+**Contradictions** — cross-reference for:
+- Naming inconsistencies across docs
+- Behavioral conflicts (sync vs async, required vs optional)
+- Scope conflicts (out-of-scope items appearing in tasks)
 - Existing project docs vs new feature docs
 </step>
 
 <step name="identify_assumptions">
-Surface implicit assumptions:
+Surface implicit assumptions about runtime environment, infrastructure, user behavior, external dependencies, and performance.
 
-- What does design.md assume about the runtime environment?
-- What does tasks.md assume about available infrastructure?
-- What does proposal.md assume about user behavior?
-- Are there unstated dependencies on external services?
-- Are there performance assumptions without evidence?
-
-Mark each assumption as:
+Mark each as:
 - **Safe** — reasonable and well-established
 - **Risky** — should be verified with user
 - **Dangerous** — contradicts evidence or common patterns
@@ -333,28 +311,17 @@ Return structured result to orchestrator:
 - Build complete traceability matrix
 - Ask targeted, specific questions (not generic)
 - Present findings objectively with evidence
-- Think about what could go wrong during implementation
-- Check existing project docs for conflicts
 - Verify user's mental model explicitly
 
 ## DON'T
-- Skip reading any artifact
-- Make assumptions without verification
 - Ask vague questions ("Is everything clear?")
 - Block on trivial inconsistencies (formatting, style)
 - Suggest design changes (that's Architect's job)
 - Write new requirements (that's Product Analyst's job)
 - Create DOC_REVIEW.md without asking user questions first
-- Spend time on cosmetic issues in documentation
 
 ## STOP and Escalate
-If you find:
-- Fundamental contradictions between proposal and design
-- Requirements that are technically impossible given the design
-- Security concerns not addressed anywhere
-- Missing critical infrastructure or dependencies
-
-Flag these as blocking issues in your verdict.
+If you find fundamental contradictions, technically impossible requirements, unaddressed security concerns, or missing critical dependencies — flag as blocking issues in your verdict.
 
 </guardrails>
 

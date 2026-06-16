@@ -98,9 +98,9 @@ agent:
     developer:
       path: ./sk-developer.yaml
       description: "Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns."
-    code-reviewer:
-      path: ./sk-code-reviewer.yaml
-      description: "Review code quality, patterns, and security. Provides actionable feedback or approves changes."
+    review-orchestrator:
+      path: ./sk-review-orchestrator.yaml
+      description: "Orchestrate code review through specialized subagents. Resolves stack-specific profiles, dispatches parallel review passes, aggregates findings."
     acceptance-reviewer:
       path: ./sk-acceptance-reviewer.yaml
       description: "Verify business requirements are met (QA acceptance). Creates VERIFICATION.md with final verdict."
@@ -138,6 +138,34 @@ for agent_file in "$REPO_DIR"/workflow/agents/sk-*.md; do
         echo "  ✓ Copied: agents/references/$name"
     fi
 done
+
+# Copy review steps
+echo "Installing review steps..."
+if [ -d "$REPO_DIR/workflow/agents/review-steps" ]; then
+    mkdir -p "$AGENTS_DIR/agents/references/review-steps"
+    for step in "$REPO_DIR"/workflow/agents/review-steps/*.md; do
+        if [ -f "$step" ]; then
+            cp "$step" "$AGENTS_DIR/agents/references/review-steps/$(basename "$step")"
+            echo "  ✓ Copied: review-steps/$(basename "$step")"
+        fi
+    done
+fi
+
+# Copy best-practice profiles
+echo "Installing best-practice profiles..."
+if [ -d "$REPO_DIR/shared/best-practices" ]; then
+    cp -R "$REPO_DIR/shared/best-practices" "$AGENTS_DIR/agents/references/best-practices"
+    echo "  ✓ Copied: best-practices/"
+
+    # Agents reference the Claude-Code path ~/.claude/agents/best-practices.
+    # Rewrite it to the Kimi install location so the resolver resolves here.
+    echo "Rewriting best-practices paths for Kimi..."
+    for ref in "$AGENTS_DIR"/agents/references/*.md; do
+        [ -f "$ref" ] || continue
+        sed -i.bak "s|~/.claude/agents/best-practices|$AGENTS_DIR/agents/references/best-practices|g" "$ref"
+        rm -f "$ref.bak"
+    done
+fi
 
 # Create main system prompt
 cat > "$AGENTS_DIR/agents/sk-team-system.md" << 'EOF'
@@ -179,7 +207,7 @@ Before starting ANY work:
 | `architect` | HOW - system design (MUST ASK USER QUESTIONS) |
 | `tester` | TDD red phase - failing tests |
 | `developer` | TDD green phase - implementation |
-| `code-reviewer` | Code quality check |
+| `review-orchestrator` | Code quality check (delegates to security/architecture/stack-rules/instruction-quality subagents) |
 | `acceptance-reviewer` | Business validation |
 
 ## Phase Execution
@@ -195,7 +223,7 @@ When user requests a feature:
    → Show summary → **WAIT FOR APPROVAL**
 5. **Implementation**: developer → implements code
    → Show summary → **WAIT FOR APPROVAL**
-6. **Review**: code-reviewer → reviews code
+6. **Review**: review-orchestrator → coordinates parallel review subagents
    → Show summary → **WAIT FOR APPROVAL**
 7. **Acceptance**: acceptance-reviewer → verifies requirements
    → Show summary → **WAIT FOR APPROVAL**

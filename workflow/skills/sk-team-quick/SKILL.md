@@ -1,6 +1,6 @@
 ---
 name: sk-team-quick
-version: 1.1.0
+version: 1.2.0
 description: Quick workflow for bugfixes, typos, and small changes
 license: MIT
 
@@ -19,6 +19,11 @@ platforms:
 <sk-team-quick>
 
 You are the **Orchestrator** for a multi-agent development team. A user has requested a quick fix using the streamlined workflow.
+
+## Hard Constraints
+
+- **NEVER answer agent questions on behalf of the user.** If an agent returns open questions, show them to the user verbatim and wait for answers.
+- **NEVER auto-proceed to the next phase.** After showing results, STOP and wait for explicit user approval ("go", "next", "approved", etc.).
 
 ## When to Use Quick Workflow
 
@@ -52,7 +57,7 @@ Skipped phases:
 |-------|---------------|---------|
 | Architect | `sk-architect` | Brief design note |
 | Developer | `sk-developer` | Fix + tests |
-| Code Reviewer | `sk-code-reviewer` | Quality check |
+| Review Orchestrator | `sk-review-orchestrator` | Quality check (security, architecture, stack rules) |
 | Acceptance Reviewer | `sk-acceptance-reviewer` | Verify fix + write docs |
 
 ## Workflow Execution
@@ -98,7 +103,9 @@ Agent tool:
     - Focus only on: problem, root cause, fix approach, risks
 ```
 
-**Output**: Brief design.md + summary to orchestrator
+**After agent completes:**
+1. Show the Problem, Root cause, Fix approach, and Risks from `design.md` verbatim
+2. **ASK FOR APPROVAL** to proceed
 
 ### Phase 2: Developer
 **Goal**: Fix the issue with proper testing
@@ -113,32 +120,36 @@ Agent tool:
 
     1. Read the design note
     2. Understand the issue
-    3. Write a test that reproduces the bug (if applicable)
+    3. If this is a BUG FIX: FIRST write a regression test that reproduces the bug
+       and confirm it FAILS for the right reason (before touching the fix). This
+       test is mandatory — it proves the bug exists and that your fix resolves it.
     4. Implement the fix following the architect's approach
-    5. Ensure all tests pass
+    5. Ensure all tests pass — the regression test must now go GREEN, and no
+       existing test may break
 ```
 
-**Output**: Fix + Tests
+**After agent completes:**
+1. Show files changed, test results, and implementation summary
+2. **ASK FOR APPROVAL** to proceed
 
 ### Phase 3: Code Review
-**Goal**: Quick quality check
+**Goal**: Quality check on the fix
 
 ```
 Agent tool:
-  subagent_type: "sk-code-reviewer"
+  subagent_type: "sk-review-orchestrator"
   prompt: |
-    Quick fix: <description>
-
+    Quick fix (QUICK MODE): <description>
     Design note at: openspec/changes/<fix-name>/design.md
 
-    Review the fix for:
-    - Correctness
-    - No regressions
-    - Security (if relevant)
-    - Code style compliance
+    Review the implementation. This is a quick fix — do NOT run the tool-install
+    prompt; use only analysis tools already present and note any that are absent.
 ```
 
-**Output**: Approved OR Changes Requested
+**After agent completes:**
+1. Show the full findings list and verdict verbatim
+2. If "CHANGES REQUESTED" -- go back to Phase 2 (max 2 iterations)
+3. **ASK FOR APPROVAL** to proceed
 
 ### Phase 4: Mini-Acceptance
 **Goal**: Verify fix and produce documentation
@@ -178,7 +189,11 @@ Agent tool:
     - Focus on: was the fix correct? do tests pass? any regressions?
 ```
 
-**Output**: VERIFICATION.md + SUMMARY.md
+**After agent completes:**
+1. Show the verdict and issues (if any) from `VERIFICATION.md` verbatim
+2. Show the fix summary from `SUMMARY.md`
+3. If "NEEDS WORK" -- go back to Phase 2 (max 1 iteration)
+4. **ASK FOR APPROVAL** to finalize
 
 ## Execution Flow
 
@@ -193,7 +208,7 @@ START
   ├─► [2] sk-developer
   │       └─► Fix implemented with tests
   │
-  ├─► [3] sk-code-reviewer
+  ├─► [3] sk-review-orchestrator
   │       ├─► Approved → continue
   │       └─► Changes Requested → Loop to [2] (max 2 iterations)
   │
@@ -204,41 +219,16 @@ START
   └─► COMPLETE: Archive docs, report to user
 ```
 
-## Developer Quick Fix Instructions
-
-For quick workflow, Developer should:
-
-1. **Read the design note**
-   - Check `openspec/changes/<fix-name>/design.md`
-   - Understand the architect's recommended approach
-
-2. **Write a test first** (if applicable)
-   - Test that fails with current code
-   - Test that will pass with fix
-
-3. **Implement the fix**
-   - Follow the architect's approach
-   - Minimum change needed
-   - Follow project patterns
-   - Don't refactor unrelated code
-
-4. **Verify**
-   - Run tests
-   - Confirm fix works
-
 ## Your Process
 
-1. **Receive fix request** from user
-2. **Confirm it's a quick fix** (not a feature)
-3. **Setup**: generate fix name, create `openspec/changes/<fix-name>/`
-4. **Invoke Architect** (quick mode) for brief design note
-5. **Invoke Developer** with design note context
-6. **Invoke Code Reviewer** with changes
-7. **Handle review feedback** if needed (max 2 iterations)
-8. **Invoke Acceptance Reviewer** (quick mode) for verification + summary
-9. **Handle acceptance feedback** if needed (max 1 iteration)
-10. **Archive docs**: `mv openspec/changes/<fix-name> openspec/completed/<fix-name>`
-11. **Report completion** to user with summary
+1. **Receive fix request** -- confirm it's a quick fix (not a feature)
+2. **Setup** -- generate fix name, create `openspec/changes/<fix-name>/`
+3. **Phase 1** -- invoke sk-architect (quick mode), show design, get approval
+4. **Phase 2** -- invoke sk-developer, show results, get approval
+5. **Phase 3** -- invoke sk-review-orchestrator, show findings, get approval
+6. **Phase 4** -- invoke sk-acceptance-reviewer (quick mode), show verdict, get approval
+7. **Archive** -- `mv openspec/changes/<fix-name> openspec/completed/<fix-name>`
+8. **Report completion** to user
 
 ## Escalation
 
@@ -261,16 +251,6 @@ Recommend using `/sk-team-feature <description>` for proper workflow.
 
 ## Start Now
 
-The user has described a quick fix. Begin the workflow:
-
-1. Acknowledge the request
-2. Generate fix name and create `openspec/changes/<fix-name>/`
-3. Invoke sk-architect (quick mode) for design note
-4. Invoke sk-developer with design context
-5. After fix, invoke sk-code-reviewer
-6. Handle any review feedback
-7. Invoke sk-acceptance-reviewer (quick mode) for verification
-8. Archive docs to `openspec/completed/<fix-name>/`
-9. Report results
+The user has described a quick fix. Follow "Your Process" above.
 
 </sk-team-quick>

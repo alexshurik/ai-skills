@@ -79,8 +79,16 @@ cd ../<feature-name>-worktree
 | Doc Reviewer | `sk-doc-reviewer` | Documentation review - consistency & alignment check (OPTIONAL) |
 | Tester | `sk-tester` | TDD red phase - test plan approval + failing tests (WITH USER QUESTIONS) |
 | Developer | `sk-developer` | TDD green phase - implementation |
-| Code Reviewer | `sk-code-reviewer` | Code quality check |
+| Review Orchestrator | `sk-review-orchestrator` | Orchestrate code review through specialized subagents |
 | Acceptance Reviewer | `sk-acceptance-reviewer` | Business validation |
+
+---
+
+## Hard Constraints
+
+- NEVER answer agent questions on behalf of the user. If an agent returns open questions, show them to the user verbatim and wait for answers.
+- NEVER auto-proceed to the next phase. After showing results, STOP and wait for explicit user approval.
+- NEVER paraphrase structured agent output. Show the specific artifacts listed in each phase's "After agent completes" block verbatim.
 
 ---
 
@@ -120,7 +128,7 @@ Task tool:
 
 **After agent completes:**
 1. Read `proposal.md`
-2. Show summary to user
+2. Show verbatim: proposal summary, user stories, and any open questions
 3. **ASK FOR APPROVAL**
 
 ---
@@ -161,7 +169,7 @@ Task tool:
 
 **After agent completes:**
 1. Read `RESEARCH.md`
-2. Show findings summary
+2. Show verbatim: executive summary, recommendations, and open questions
 3. **ASK FOR APPROVAL** to proceed to Planning
 
 ---
@@ -206,7 +214,7 @@ Task tool:
 
 **After agent completes:**
 1. Read `design.md` and `tasks.md`
-2. Show summary to user
+2. Show verbatim: Architecture Summary, File Map with NEW/MODIFIED markers, Task Summary, and Risks
 3. **ASK FOR APPROVAL**
 
 ---
@@ -247,7 +255,7 @@ Task tool:
 
 **After agent completes:**
 1. Read `DOC_REVIEW.md`
-2. Show findings summary and verdict
+2. Show verbatim: findings summary and verdict
 3. If **NEEDS_CLARIFICATION** — identify which phase needs rework (Planning or Discovery)
 4. **ASK FOR APPROVAL** to proceed to Testing
 
@@ -290,10 +298,8 @@ Task tool:
 ```
 
 **After agent completes:**
-1. Show which test files were created
-2. Show test coverage summary (by group)
-3. Show skipped groups (if any)
-4. **ASK FOR APPROVAL**
+1. Show verbatim: test files created, coverage summary by group, skipped groups (if any)
+2. **ASK FOR APPROVAL**
 
 ---
 
@@ -314,28 +320,27 @@ Task tool:
 ```
 
 **After agent completes:**
-1. Show which files were modified/created
-2. Show test results
-3. **ASK FOR APPROVAL**
+1. Show verbatim: files modified/created and test results
+2. **ASK FOR APPROVAL**
 
 ---
 
-### Phase 5: Code Review (Code Reviewer)
+### Phase 5: Code Review (Review Orchestrator)
 
 ```
 Task tool:
-  subagent_type: "sk-code-reviewer"
+  subagent_type: "sk-review-orchestrator"
   prompt: |
     Feature: <name>
     Worktree: ../<feature-name>-worktree
     Design: openspec/changes/<name>/design.md
 
-    Review the implementation for quality, security, and pattern compliance.
+    Review the implementation.
 ```
 
 **After agent completes:**
-1. Show review results
-2. If "CHANGES REQUESTED" - go back to Phase 4
+1. Show verbatim: full findings list and verdict
+2. If "CHANGES REQUESTED" — go back to Phase 4
 3. **ASK FOR APPROVAL** to proceed
 
 ---
@@ -354,8 +359,8 @@ Task tool:
 ```
 
 **After agent completes:**
-1. Show acceptance results
-2. If "NEEDS WORK" - identify phase to redo
+1. Show verbatim: acceptance results and verdict
+2. If "NEEDS WORK" — identify phase to redo
 3. **ASK FOR APPROVAL** to finalize
 
 ---

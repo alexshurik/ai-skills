@@ -67,7 +67,19 @@ for agent in "$REPO_DIR"/workflow/agents/*.md; do
     fi
 done
 
-# 5. Commands → ~/.claude/commands/
+# 6. Review Steps → ~/.claude/agents/review-steps/
+echo "Installing review steps..."
+if [ -d "$REPO_DIR/workflow/agents/review-steps" ]; then
+    ln -sfn "$REPO_DIR/workflow/agents/review-steps" "$CLAUDE_DIR/agents/review-steps"
+    echo "  ✓ Linked: agents/review-steps/"
+fi
+
+# 7. Best-practice profiles → ~/.claude/agents/best-practices/
+echo "Installing best-practice profiles..."
+ln -sfn "$REPO_DIR/shared/best-practices" "$CLAUDE_DIR/agents/best-practices"
+echo "  ✓ Linked: agents/best-practices/"
+
+# 8. Commands → ~/.claude/commands/
 echo "Installing commands..."
 for cmd in "$REPO_DIR"/onboarding/*.md; do
     if [ -f "$cmd" ]; then

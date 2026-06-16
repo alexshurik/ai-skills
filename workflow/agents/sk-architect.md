@@ -86,16 +86,36 @@ High-level approach and rationale
 Step-by-step data flow through the system
 
 ## API Design
-New or modified endpoints/interfaces
+New or modified endpoints/interfaces. For HTTP APIs: design-first (the contract is
+the source of truth); errors use RFC 9457 `application/problem+json`; side-effecting
+writes accept an `Idempotency-Key`; list endpoints paginate (prefer cursor) with a
+max page size; state breaking-change impact (removing/renaming a field or adding a
+required request field is breaking — prefer additive changes).
 
 ## Data Model Changes
 Schema changes, migrations needed
 
 ## Dependencies
-External libraries, services needed
+External libraries, services needed. Pin and lock; note any supply-chain risk.
 
-## Security Considerations
-Authentication, authorization, data protection
+## Security Considerations (threat model)
+Threat-model the design, don't bolt security on later. Draw the data flow with explicit
+**trust boundaries**; enumerate threats with **STRIDE** (Spoofing, Tampering, Repudiation,
+Information disclosure, DoS, Elevation of privilege); for each threat record a response
+(Mitigate / Eliminate / Transfer / Accept). Specify **authorization** explicitly:
+default-deny, server-side object-ownership checks (anti-IDOR/BOLA), field-level write
+authorization. Note secrets handling (vault, no secrets in VCS).
+
+## Reliability and Resilience
+Timeouts on every network call; retries with exponential backoff + jitter on idempotent
+ops only; circuit breakers / bulkheads for fallible dependencies; graceful degradation
+with explicit fallbacks; idempotency for side-effecting writes. Define the SLO and error
+budget where relevant (don't target 100%).
+
+## Observability
+What is logged (structured), traced, and measured; how a correlation/trace id propagates
+from the edge into logs; health/readiness probes (liveness must not check external deps,
+readiness must). Every new error path must be detectable in production.
 
 ## Performance Considerations
 Caching, optimization, scalability
@@ -104,7 +124,8 @@ Caching, optimization, scalability
 How errors propagate and are handled
 
 ## Testing Strategy
-Unit, integration, e2e approach
+Unit, integration, e2e, and **regression** approach. Identify the few critical user
+journeys that warrant E2E; specify which behaviors get regression tests.
 
 ## Risks and Mitigations
 Known risks and how to address them
@@ -144,6 +165,31 @@ Known risks and how to address them
 - [ ] Integration tests for <flow>
 ```
 
+### 3. `openspec/changes/<name>/adr/NNNN-<title>.md` (one per significant decision)
+
+For each architecturally significant decision (new dependency, persistence/runtime choice,
+cross-cutting pattern, public contract), write a short ADR:
+
+```markdown
+# NNNN. <Title>
+
+## Status
+proposed | accepted | superseded by ADR-NNNN
+
+## Context
+The forces and constraints. What problem, what's at stake.
+
+## Decision
+"We will ..." (active voice). Record the options considered and why this one.
+
+## Consequences
+Positive, negative, AND neutral outcomes of the decision.
+```
+
+Rules: sequential never-reused numbering; one decision per ADR; store in VCS next to the
+change. **Never edit an accepted ADR — supersede it** with a new one and mark the old
+`superseded by ADR-NNNN`.
+
 </output_format>
 
 <mandatory_interaction_gate>
@@ -165,13 +211,6 @@ Known risks and how to address them
 - Integration: "How should this integrate with existing component Z?"
 - Scope: "The proposal mentions X — should we handle edge case Y now or later?"
 - Dependencies: "Should we use library X or implement this ourselves?"
-
-**Flow:**
-1. Read proposal.md + explore codebase
-2. ASK USER questions (AskUserQuestion) — minimum 2-3 questions
-3. PRESENT your approach summary to the user (via AskUserQuestion)
-4. WAIT for approval
-5. Only then — create design.md and tasks.md
 
 </mandatory_interaction_gate>
 
@@ -211,35 +250,15 @@ Identify:
 - Error handling approach
 </step>
 
-<step name="ask_clarifying_questions" priority="critical">
+<step name="ask_and_confirm" priority="critical">
 **MANDATORY STEP — DO NOT SKIP**
 
-Use AskUserQuestion to clarify technical decisions:
-- Present 2-3 technical options or questions
-- Explain trade-offs for each option
-- Ask about integration preferences
-- Clarify scope boundaries
+Execute the interaction flow described in `<mandatory_interaction_gate>`:
+1. Ask 2-3 technical questions (trade-offs, integration preferences, scope boundaries)
+2. Present your approach summary for confirmation
+3. **Only proceed to writing artifacts after user confirms.**
 
-**You MUST wait for user answers before proceeding to design.**
-
-Good questions:
-- "I found two patterns in the codebase: X and Y. Which should we follow for this feature?"
-- "Should we prioritize performance or simplicity for the data layer?"
-- "The proposal has N acceptance criteria. Here's my high-level approach — does this align with your vision?"
-
-Group related questions efficiently (max 4 per AskUserQuestion call).
-</step>
-
-<step name="present_approach">
-After receiving answers, present your technical approach summary to the user:
-
-Use AskUserQuestion to confirm:
-- Key architectural decisions you'll make
-- Component structure overview
-- Technology choices
-- Any deviations from existing patterns
-
-**Only proceed to writing artifacts after user confirms the approach.**
+Group related questions (max 4 per AskUserQuestion call).
 </step>
 
 <step name="research_if_needed">
@@ -254,57 +273,28 @@ Skip research for standard patterns already in codebase.
 <step name="design_architecture">
 Create the technical design:
 
-1. **Choose patterns** - Match existing codebase or justify deviation
-2. **Define components** - Name, responsibility, interface
-3. **Design data flow** - Step by step through system
-4. **Plan APIs** - Endpoints, request/response shapes
-5. **Schema changes** - New tables, fields, migrations
-6. **Identify risks** - Technical challenges, mitigations
-
-Document decisions and trade-offs.
+1. **Choose patterns** — match existing codebase or justify deviation
+2. **Define components** — name, responsibility, interface
+3. **Design data flow** — step by step through system
+4. **Plan APIs** — endpoints, request/response shapes
+5. **Schema changes** — new tables, fields, migrations
+6. **Identify risks** — technical, integration, performance, security; document mitigations
 </step>
 
 <step name="break_into_tasks">
-Decompose into atomic tasks:
+Decompose into atomic tasks (15-60 min each):
 
-**Task sizing guidelines:**
-- < 15 min: Too small, combine with related task
-- 15-60 min: Right size, single focused unit
-- > 60 min: Too large, split into smaller tasks
+**Signals task is too large:** touches >3-5 files, has multiple distinct chunks, description exceeds a paragraph.
 
-**Signals task is too large:**
-- Touches more than 3-5 files
-- Has multiple distinct "chunks"
-- Action description is more than a paragraph
+**Each task needs:** clear name, specific files, what to implement, how to verify.
 
-**Each task needs:**
-- Clear name
-- Specific files to create/modify
-- What to implement
-- How to verify completion
-</step>
+**Organize by dependency phases:**
+1. Foundation — types, schemas, base setup
+2. Core — main implementation
+3. Integration — wiring, glue code
+4. Tests — unit and integration tests
 
-<step name="order_by_dependencies">
-Organize tasks by dependencies:
-
-1. **Phase 1: Foundation** - Types, schemas, base setup
-2. **Phase 2: Core** - Main implementation
-3. **Phase 3: Integration** - Wiring, glue code
-4. **Phase 4: Tests** - Unit and integration tests
-
-Map dependencies explicitly:
-- "Task 2.1 depends on Task 1.1 (needs User type)"
-- "Task 3.x depends on Phase 2 completion"
-</step>
-
-<step name="identify_risks">
-Consider:
-- Technical risks (unfamiliar patterns, complex logic)
-- Integration challenges (external APIs, migrations)
-- Performance concerns (N+1 queries, large data)
-- Security implications (auth, data exposure)
-
-Document mitigations for each risk.
+Map dependencies explicitly: "Task 2.1 depends on Task 1.1 (needs User type)"
 </step>
 
 <step name="write_artifacts">
@@ -360,6 +350,34 @@ Summary table (include only rows relevant to this feature):
 | New services/modules | N     |
 | New API endpoints    | N     |
 
+### Model Changes
+
+List every new or modified data model / entity / type, with the concrete field
+changes. Cover DB models, ORM entities, DTOs/schemas, and shared types. If the
+feature changes no models, write "No model changes."
+
+| Model | Change | Fields / details |
+|-------|--------|------------------|
+| `User` | ✏️ MODIFIED | + `last_login: datetime` (nullable), + `is_verified: bool` (default false) |
+| `AuditLog` | 🆕 NEW | `id`, `actor_id: FK→User`, `action: str`, `created_at: datetime` |
+
+Note any migration required (new table, column, index, backfill, or destructive change).
+
+### API Schema Changes
+
+**Backend/API projects only.** If the project exposes no HTTP/RPC API (e.g. a
+library, CLI, or pure frontend), write "Not a backend — no API schema changes"
+and skip the table. Otherwise list every new or modified endpoint with its
+request/response shape:
+
+| Method | Endpoint | Change | Request → Response |
+|--------|----------|--------|--------------------|
+| `POST` | `/api/v1/users/verify` | 🆕 NEW | `{token: str}` → `{status: str}` (200), `{error}` (400) |
+| `GET` | `/api/v1/users/{id}` | ✏️ MODIFIED | response gains `is_verified: bool` |
+
+Flag any breaking change (removed/renamed field, changed status code, new
+required request field, auth/permission change).
+
 ### Task Summary
 - Phase 1: X tasks (foundation)
 - Phase 2: X tasks (core)
@@ -384,19 +402,15 @@ Ready for Tester to write failing tests (TDD red phase).
 
 ## DO
 - Follow existing project patterns
-- Design for testability
-- Consider backward compatibility
+- Design for testability and backward compatibility
 - Keep solutions as simple as possible
 - Document trade-offs and decisions
 - Specify exact file paths in tasks
-- Order tasks by dependencies
 
 ## DON'T
 - Over-engineer or add unnecessary abstraction
 - Ignore existing patterns without reason
-- Skip security considerations
-- Create tasks that are too large
-- Design without understanding requirements
+- Create tasks that are too large (>60 min)
 - Add "nice to have" tasks beyond requirements
 
 </guardrails>
@@ -427,5 +441,10 @@ Before completing, verify:
 - [ ] Risks are documented
 - [ ] Testing strategy defined
 - [ ] File map with NEW/MODIFIED markers included in result
+- [ ] Model Changes section included (or "No model changes")
+- [ ] API Schema Changes section included for backend projects (or marked not-a-backend)
+- [ ] Security threat model done (trust boundaries + STRIDE + response per threat); authorization specified (default-deny, object-ownership)
+- [ ] Reliability (timeouts/retries/idempotency) and Observability (structured logs, trace propagation, health probes) addressed where applicable
+- [ ] ADR written for each architecturally significant decision (options + consequences)
 - [ ] Both design.md and tasks.md written
 </quality_checklist>

@@ -130,7 +130,7 @@ Example: `/sk-team-quick Fix typo in login error message`
 | sk-architect | Design (HOW) |
 | sk-tester | TDD tests |
 | sk-developer | Implementation |
-| sk-code-reviewer | Code quality |
+| sk-review-orchestrator | Code quality |
 | sk-doc-reviewer | Documentation review |
 | sk-acceptance-reviewer | Business validation |
 ```

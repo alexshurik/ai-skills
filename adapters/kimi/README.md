@@ -34,7 +34,7 @@ The orchestrator will coordinate subagents:
 - `architect` → Design
 - `tester` → Tests
 - `developer` → Implementation
-- `code-reviewer` → Review
+- `review-orchestrator` → Review
 - `acceptance-reviewer` → QA
 
 ### Option 2: Individual Skills
@@ -121,7 +121,7 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
     ├── sk-architect.yaml
     ├── sk-tester.yaml
     ├── sk-developer.yaml
-    ├── sk-code-reviewer.yaml
+    ├── sk-review-orchestrator.yaml
     ├── sk-acceptance-reviewer.yaml
     └── references/           # Agent system prompts
         ├── sk-product-analyst.md

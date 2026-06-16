@@ -1,0 +1,150 @@
+# shared/best-practices/index.yaml
+#
+# Central manifest for language, framework, and tooling best-practice profiles.
+# Agents read this file to determine which profiles to load for a target repo.
+#
+# Profile organization:
+#   default/          — universal rules applied to every project
+#   languages/<lang>/ — language-specific rules (python, js, go, ...)
+#   frameworks/<fw>/  — framework-specific rules (fastapi, vue, gin, ...)
+#   tooling/<tool>/   — tooling-specific rules (ansible, terraform, ...)
+#
+# Adding a new profile:
+#   1. Create a directory under the appropriate category (languages/, frameworks/, tooling/)
+#   2. Add coder.md and/or reviewer.md inside that directory
+#   3. Add a detection entry below with file/grep signals and profile paths
+#
+# Precedence chain (highest to lowest):
+#   project   — repo-local overrides in .agents/best-practices/project/
+#   tooling   — infra/IaC tool-specific profiles (terraform, ansible)
+#   framework — framework-specific profiles
+#   language  — language-specific profiles
+#   default   — universal baseline rules
+#
+# When multiple profiles match, all are loaded. Higher-precedence profiles
+# override conflicting rules from lower-precedence ones.
+#
+# Same-level resolution: when multiple profiles match at the same
+# precedence level (e.g., js + typescript), the resolver loads them in a
+# fixed order so later overrides earlier. See resolver.md Step 2.
+
+precedence:
+  - project
+  - tooling
+  - framework
+  - language
+  - default
+
+detection:
+  languages:
+    python:
+      signals:
+        - file: pyproject.toml
+        - file: setup.py
+        - file: requirements.txt
+      profiles:
+        coder: languages/python/coder.md
+        reviewer: languages/python/reviewer.md
+
+    js:
+      signals:
+        - file: package.json
+      profiles:
+        coder: languages/js/coder.md
+        reviewer: languages/js/reviewer.md
+
+    typescript:
+      signals:
+        - file: tsconfig.json
+      profiles:
+        coder: languages/typescript/coder.md
+        reviewer: languages/typescript/reviewer.md
+
+    go:
+      signals:
+        - file: go.mod
+      profiles:
+        coder: languages/go/coder.md
+        reviewer: languages/go/reviewer.md
+
+  # Framework detection is independent of language detection.
+  # Both framework and language profiles are loaded when their signals match.
+  # There is no parent-child inheritance — a fastapi project loads both
+  # the fastapi/ and python/ profiles because both sets of signals match.
+  frameworks:
+    fastapi:
+      signals:
+        - grep: "fastapi"
+          in: [pyproject.toml, requirements.txt, setup.py]
+      profiles:
+        coder: frameworks/fastapi/coder.md
+        reviewer: frameworks/fastapi/reviewer.md
+
+    vue:
+      signals:
+        - grep: "vue"
+          in: [package.json]
+      profiles:
+        coder: frameworks/vue/coder.md
+        reviewer: frameworks/vue/reviewer.md
+
+    gin:
+      signals:
+        - grep: "gin-gonic"
+          in: [go.mod]
+      profiles:
+        coder: frameworks/gin/coder.md
+        reviewer: frameworks/gin/reviewer.md
+
+  tooling:
+    ansible:
+      signals:
+        - file: ansible.cfg
+        - file: playbook.yml
+        - file: site.yml
+        - file: requirements.yml
+        - directory: roles/
+        - directory: inventory/
+        - directory: group_vars/
+      profiles:
+        coder: tooling/ansible/coder.md
+        reviewer: tooling/ansible/reviewer.md
+
+    terraform:
+      signals:
+        - file: main.tf
+        - file: terraform.tfvars
+        - file: .terraform.lock.hcl
+        - glob: "*.tf"
+      profiles:
+        coder: tooling/terraform/coder.md
+        reviewer: tooling/terraform/reviewer.md
+
+    docker:
+      signals:
+        - file: Dockerfile
+        - file: docker-compose.yml
+        - file: compose.yaml
+        - glob: "*.Dockerfile"
+      profiles:
+        coder: tooling/docker/coder.md
+        reviewer: tooling/docker/reviewer.md
+
+    kubernetes:
+      signals:
+        - file: Chart.yaml
+        - file: kustomization.yaml
+        - directory: k8s/
+        - directory: manifests/
+        - directory: charts/
+      profiles:
+        coder: tooling/kubernetes/coder.md
+        reviewer: tooling/kubernetes/reviewer.md
+
+    github-actions:
+      signals:
+        - glob: ".github/workflows/*.yml"
+        - glob: ".github/workflows/*.yaml"
+      profiles:
+        coder: tooling/github-actions/coder.md
+        reviewer: tooling/github-actions/reviewer.md

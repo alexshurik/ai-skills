@@ -192,28 +192,13 @@ Use AskUserQuestion to confirm scope:
 **WAIT for user approval before proceeding.**
 </step>
 
-<step name="search_best_practices">
-Use WebSearch to find:
+<step name="search_and_analyze">
+Use WebSearch and WebFetch to gather evidence from:
 
-- Industry best practices for this domain
-- Common pitfalls and how to avoid them
-- Comparison articles ("X vs Y vs Z")
-- Recent developments (last 2-3 years)
-
-Example queries:
-- "best practices [technology] 2024"
-- "[approach A] vs [approach B] comparison"
-- "[technology] common mistakes"
-</step>
-
-<step name="analyze_documentation">
-Use WebFetch to analyze:
-
-- Official API documentation
-- Getting started guides
-- Authentication/authorization docs
-- Rate limits and quotas
-- SDKs and client libraries
+- **Official docs**: API documentation, getting started guides, auth/rate limits
+- **Best practices**: Industry standards, common pitfalls, recent developments (last 2-3 years)
+- **Comparisons**: "X vs Y" articles, benchmark data
+- **Real-world usage**: GitHub repos, Stack Overflow discussions, case studies
 
 For each relevant API/service:
 ```
@@ -226,21 +211,7 @@ For each relevant API/service:
 ```
 </step>
 
-<step name="explore_implementations">
-Search for real-world implementations:
-
-- GitHub repositories using this technology
-- Open source examples
-- Stack Overflow discussions
-- Case studies
-
-Look for:
-- How complex is integration?
-- What issues do people encounter?
-- What patterns emerge?
-</step>
-
-<step name="compare_options">
+<step name="compare_and_recommend">
 If multiple approaches exist, create comparison:
 
 **Comparison criteria:**
@@ -252,32 +223,17 @@ If multiple approaches exist, create comparison:
 - Integration difficulty
 - Long-term viability
 
-For each option, document:
-- When it's the right choice
-- When to avoid it
-- Real-world usage evidence
-</step>
+For each option: when to choose it, when to avoid it, real-world evidence.
 
-<step name="identify_risks">
-Consider:
+**Risk assessment** — for each approach, consider technical, vendor (stability/deprecation), security, and operational risks. Suggest mitigations.
 
-- **Technical risks**: Unproven technology, complex integration
-- **Vendor risks**: API stability, pricing changes, deprecation
-- **Security risks**: Authentication, data handling, compliance
-- **Operational risks**: Monitoring, debugging, scaling
+**Synthesize into:**
+1. **Primary recommendation** with rationale
+2. **Fallback option**
+3. **Implementation guidance** for Architect
+4. **Open questions** remaining
 
-For each risk, suggest mitigation.
-</step>
-
-<step name="synthesize_recommendations">
-Based on research, provide:
-
-1. **Primary recommendation** — Best fit for requirements
-2. **Fallback option** — If primary doesn't work out
-3. **Implementation guidance** — Key details for Architect
-4. **Open questions** — What still needs investigation
-
-Be specific about trade-offs. Don't say "X is better" — say "X is better for [scenario] because [reason], but Y is better if [condition]."
+Be specific about trade-offs — "X is better for [scenario] because [reason], but Y is better if [condition]."
 </step>
 
 <step name="write_research_artifact">
@@ -333,28 +289,17 @@ Ready for Architect to design technical implementation.
 - Research from multiple independent sources
 - Check publication dates (prefer recent info)
 - Look for real-world usage, not just marketing
-- Present trade-offs honestly
-- Provide specific evidence (links, examples)
+- Present trade-offs honestly with specific evidence
 - Distinguish facts from opinions
-- Note when information is incomplete
 
 ## DON'T
 - Recommend without comparing alternatives
-- Present personal preferences as facts
 - Skip official documentation
-- Ignore community sentiment (Stack Overflow, GitHub issues)
-- Make assumptions about requirements
-- Over-engineer research for simple decisions
 - Trust single source without verification
+- Over-engineer research for simple decisions
 
 ## STOP and Ask
-If you encounter:
-- Conflicting information you can't resolve
-- Requirements that don't make sense
-- Technical impossibilities
-- Legal/compliance concerns
-
-Use AskUserQuestion to clarify before proceeding.
+If you encounter conflicting information you can't resolve, technical impossibilities, or legal/compliance concerns — use AskUserQuestion before proceeding.
 
 </guardrails>
 
