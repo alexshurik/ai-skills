@@ -1,17 +1,8 @@
 ---
 name: sk-code-review
-version: 4.0.0
 description: Standalone code review for uncommitted changes. Delegates to sk-review-orchestrator for the full review pipeline.
 license: MIT
-
-# Claude Code
 allowed-tools: Task, Read, Bash, Glob, Grep, AskUserQuestion
-
-# Cross-platform hints
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
 ---
 
 # Code Review for Uncommitted Changes
