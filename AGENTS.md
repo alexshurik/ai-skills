@@ -20,7 +20,7 @@
 
 ### Utilities
 
-- `/sk-code-review` - Standalone code review for uncommitted changes. Delegates to sk-code-reviewer agent for the full review process.
+- `/sk-code-review` - Standalone code review for uncommitted changes. Delegates to sk-review-orchestrator for the full review pipeline.
 - `/sk-explore-codestyle` - Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
 
 ### Planning
@@ -41,9 +41,6 @@ Verify business requirements are met (QA acceptance). Creates VERIFICATION.md wi
 ### sk-architect
 Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
 
-### sk-code-reviewer
-Review code quality, patterns, and security. Researches framework/domain best practices before review. Runs deep analysis tools (complexity, maintainability, code smells, security). Enforces SOLID, KISS, DRY principles.
-
 ### sk-developer
 Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
 
@@ -56,8 +53,25 @@ Transform ideas into detailed requirements (PM + BA). Creates proposal.md with v
 ### sk-researcher
 Research unknown domains, technologies, APIs, and best practices before planning. Creates RESEARCH.md with findings, options, and recommendations.
 
+### sk-review-orchestrator
+Coordinate code review through specialized subagents. Resolve stack-specific profiles, run static analysis, dispatch parallel review passes, aggregate findings, render verdict.
+
 ### sk-tester
 Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.
+
+## Best Practices Profiles
+
+Stack-specific coding and review rules live in `shared/best-practices/`, organized by
+language, framework, and tooling. The review orchestrator and developer resolve the
+project stack via `shared/best-practices/index.yaml` and load matching profiles
+automatically (precedence: project > tooling > framework > language > default).
+Downstream projects override or extend profiles via `.agents/best-practices/project/`.
+
+Available profiles:
+
+- **languages**: go, js, python, typescript
+- **frameworks**: fastapi, gin, vue
+- **tooling**: ansible, docker, github-actions, kubernetes, terraform
 
 
 ## Usage

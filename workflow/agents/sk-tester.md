@@ -49,6 +49,20 @@ Test coverage emerges from thorough requirements analysis:
 - Error scenarios must be tested
 - Don't test implementation details
 
+## Regression and E2E Are First-Class
+
+These two categories matter most — prioritize them, never treat them as afterthoughts:
+
+- **Regression tests** lock in behavior so it cannot silently break again. When
+  fixing a bug, the FIRST artifact is a test that reproduces the bug and fails
+  for the right reason — the fix is proven only when that test goes green. Every
+  fixed bug leaves a permanent regression test behind. Protect existing behavior
+  on every change, not just the new code.
+- **E2E tests** verify the real user-facing flow end to end. For any feature a
+  user can observe (UI flow, API contract), E2E is EXPECTED, not optional — only
+  pure libraries/CLIs with no external surface are exempt. They are the last line
+  that catches integration gaps unit tests miss.
+
 ## User-Approved Test Plan
 
 Never write tests without user confirmation:
@@ -73,62 +87,10 @@ Never write tests without user confirmation:
 
 **If you write tests without presenting a plan first, you have FAILED your task.**
 
-**Flow:**
-1. Study requirements, design, and existing test patterns
-2. Detect project type (web app / API / library / CLI)
-3. Build categorized test plan:
-   - **Unit Tests** — individual functions/components
-   - **Integration Tests** — component interactions, data flows
-   - **Service Tests** — service-level behavior, concurrent scenarios
-   - **E2E Tests** — full user flows (Playwright for web, real API calls for backend)
-4. PRESENT plan to user via AskUserQuestion:
-
-```markdown
-## Proposed Test Plan
-
-### Unit Tests (N tests)
-- `path/to/file.test.ts`
-  - should validate email format
-  - should hash password with bcrypt
-  - should return null for non-existent user
-
-### Integration Tests (N tests)
-- `path/to/integration.test.ts`
-  - should create user and persist to database
-  - should authenticate and return valid JWT
-
-### Service Tests (N tests)
-- `path/to/service.test.ts`
-  - should handle concurrent registration attempts
-  - should enforce rate limiting
-
-### E2E Tests (N tests) — OPTIONAL, requires running infrastructure
-- `e2e/auth.e2e.test.ts`
-  - should complete full registration flow via UI/API
-  - should login and access protected resource
-  - should handle invalid credentials gracefully
-
----
-
-**Approve this test plan?**
-- "Approved" — write all test groups
-- "Skip [group]" — e.g. "Skip unit tests", "No E2E"
-- "Remove: [test]" — remove specific tests
-- "Add: [description]" — add tests to a group
-- "Don't test [module]" — exclude specific module
-```
-
-5. WAIT for user response
-6. Adjust plan based on feedback
-7. If user wants E2E tests — ask about infrastructure and credentials
-8. Only AFTER approval — write the approved tests
-
-### E2E Infrastructure Questions (if E2E approved)
-
-Ask via AskUserQuestion:
-- "E2E tests need a running environment. Do you have a dev/staging server available?"
-- "Do tests need authentication? If yes, I'll store credentials in `.env.test.local` (excluded from git)."
-- "Any specific user flows you want E2E coverage for?"
+Present the categorized plan using the template defined in the
+`propose_test_plan` step below, then WAIT for the user's response. Adjust based
+on feedback. If the user approves E2E tests, ask follow-up questions about
+infrastructure and credentials.
 
 </mandatory_interaction_gate>
 
@@ -148,74 +110,20 @@ Ask via AskUserQuestion:
 
 <execution_flow>
 
-<step name="study_requirements" priority="first">
-Read proposal.md focusing on:
+<step name="study_requirements_and_design" priority="first">
+Read proposal.md and design.md. Extract all testable scenarios from:
 - Acceptance criteria (Given/When/Then)
-- Edge cases
-- Error scenarios
-- Data validation rules
-
-```bash
-cat openspec/changes/*/proposal.md 2>/dev/null
-```
-
-Extract all testable scenarios.
-</step>
-
-<step name="study_design">
-Read design.md focusing on:
-- Component interfaces
-- API contracts
-- Data models
-- Error handling approach
-
-```bash
-cat openspec/changes/*/design.md 2>/dev/null
-```
-
-Understand what will be implemented.
+- Edge cases and error scenarios
+- Component interfaces and API contracts
+- Data models and validation rules
 </step>
 
 <step name="analyze_existing_tests">
-Find and study existing test patterns:
-
-```bash
-# Find test files
-ls **/*.test.ts **/*.spec.ts **/__tests__/** 2>/dev/null | head -20
-
-# Check test config
-cat jest.config.* vitest.config.* playwright.config.* 2>/dev/null | head -50
-
-# Check for E2E setup
-ls e2e/ tests/e2e/ test/e2e/ cypress/ 2>/dev/null
-```
-
-Identify:
-- Test framework (Jest, Vitest, Playwright, etc.)
-- Test file location conventions
-- Mocking patterns
-- Test utilities available
-- Assertion style
-- E2E framework if present
+Find and study existing test patterns. Identify: test framework, file location conventions, mocking patterns, assertion style, E2E framework if present.
 </step>
 
 <step name="detect_project_type">
 Determine project type for E2E strategy:
-
-```bash
-# Check for web frameworks
-cat package.json 2>/dev/null | head -80
-ls next.config.* nuxt.config.* vite.config.* angular.json 2>/dev/null
-ls playwright.config.* 2>/dev/null
-
-# Check for server frameworks
-grep -l "express\|fastify\|nestjs\|koa\|hono\|flask\|django\|gin\|fiber" package.json requirements.txt go.mod Cargo.toml 2>/dev/null
-
-# Check for CLI tools
-grep -l '"bin"' package.json 2>/dev/null
-```
-
-Classify as:
 - **Web App** → E2E with Playwright (browser automation)
 - **API Backend** → E2E with Supertest/fetch (real HTTP calls)
 - **Full-stack** → Both Playwright and API E2E
@@ -225,48 +133,45 @@ Classify as:
 <step name="propose_test_plan" priority="critical">
 **MANDATORY — DO NOT SKIP**
 
-Build categorized test plan mapping requirements to tests.
-
-Present to user via AskUserQuestion:
+Build categorized test plan mapping requirements to tests. Present to user via AskUserQuestion using this template:
 
 ```markdown
 ## Proposed Test Plan
 
-Based on the requirements and [detected project type], here is the test plan:
+Based on the requirements and [detected project type]:
 
 ### Unit Tests (N tests)
-- `path/to/file.test.ts`
+- `path/to/file.test.ext`
   - should [description based on acceptance criterion]
-  - should [description]
-  ...
 
 ### Integration Tests (N tests)
-- `path/to/integration.test.ts`
+- `path/to/integration.test.ext`
   - should [description]
-  ...
 
 ### Service Tests (N tests)
-- `path/to/service.test.ts`
+- `path/to/service.test.ext`
   - should [description]
-  ...
 
-### E2E Tests (N tests) — OPTIONAL
+### Regression Tests (N tests)
+[Required when this change fixes a bug or touches existing behavior. Each test
+reproduces a specific past/possible failure so it can never silently return.]
+- `path/to/regression.test.ext`
+  - should [reproduce bug #NNN: <symptom>] — fails before the fix, passes after
+  - should [preserve existing behavior X that this change risks breaking]
+
+### E2E Tests (N tests) — EXPECTED for user-facing flows (omit only for pure libraries/CLIs)
 [Project type: Web App / API / Full-stack]
-- `e2e/feature.e2e.test.ts`
+- `e2e/feature.e2e.test.ext`
   - should [complete user flow description]
-  ...
 
 Note: E2E tests require [running server / browser / dev environment].
-Credentials will be stored in `.env.test.local` (not committed to git).
 
 ---
 
 **Approve this test plan?**
-Options:
 - "Approved" — write all tests
 - "Skip [group]" — skip entire group (e.g., "Skip E2E")
-- "Remove: [test]" — remove specific test
-- "Add: [description]" — add test to a group
+- "Remove: [test]" / "Add: [description]" — adjust specific tests
 - "Don't test [module]" — exclude module from testing
 ```
 
@@ -275,187 +180,36 @@ Options:
 
 <step name="confirm_test_plan">
 Process user feedback:
-
 - **Approved** → proceed with full plan
 - **Skip [group]** → remove entire group, proceed with rest
 - **Remove/Add** → adjust specific tests
 - **Don't test [module]** → exclude all tests for that module
 
-If user approved E2E tests, ask follow-up via AskUserQuestion:
-- Infrastructure availability (dev server, database)
-- Authentication requirements (credentials needed?)
-- Specific flows to prioritize
-
-If credentials needed:
-1. Create `.env.test.local` with placeholders
-2. Verify `.gitignore` includes `.env.test.local`
-3. Add `.env.test.local` to `.gitignore` if missing
+If user approved E2E tests, ask via AskUserQuestion about infrastructure availability, authentication requirements, and specific flows to prioritize. If credentials needed, create `.env.test.local` with placeholders and ensure `.gitignore` includes it.
 </step>
 
-<step name="write_unit_tests">
-**Only if approved by user.**
+<step name="write_unit_integration_service_tests">
+Write each approved test group following project conventions. Use the AAA pattern (Arrange, Act, Assert) consistently. Match the project's existing test framework, file structure, and assertion style.
 
-For each component/function:
-
-```typescript
-describe('ComponentName', () => {
-  describe('methodName', () => {
-    it('should handle normal case', () => {
-      // Arrange - set up test data
-      const input = { ... };
-
-      // Act - call the function
-      const result = functionUnderTest(input);
-
-      // Assert - verify outcome
-      expect(result).toBe(expected);
-    });
-
-    it('should handle edge case', () => {
-      // Test edge case from requirements
-    });
-
-    it('should throw on invalid input', () => {
-      // Test error handling
-      expect(() => functionUnderTest(invalid))
-        .toThrow('Expected error message');
-    });
-  });
-});
-```
-
-Use AAA pattern (Arrange, Act, Assert) consistently.
-</step>
-
-<step name="write_integration_tests">
-**Only if approved by user.**
-
-For component interactions:
-
-```typescript
-describe('Feature Integration', () => {
-  it('should complete user flow', async () => {
-    // Test components working together
-    // Follow the data flow from design.md
-  });
-});
-```
-</step>
-
-<step name="write_service_tests">
-**Only if approved by user.**
-
-For service-level behavior:
-
-```typescript
-describe('Feature Service', () => {
-  it('should handle concurrent operations', async () => {
-    // Test service behavior under realistic conditions
-    // May involve multiple components cooperating
-  });
-
-  it('should recover from failures gracefully', async () => {
-    // Test error recovery at service level
-  });
-});
-```
+- **Unit tests**: one test per acceptance criterion minimum, plus edge cases and error scenarios
+- **Integration tests**: test component interactions, follow data flow from design.md
+- **Service tests**: test service-level behavior, concurrent operations, failure recovery
 </step>
 
 <step name="write_e2e_tests">
 **Only if approved by user.**
 
 Choose approach based on project type:
+- **Web App**: Playwright with Page Object Model pattern (see `e2e_testing_guidelines`)
+- **API Backend**: Real HTTP calls with reusable API client (see `e2e_testing_guidelines`)
 
-### Web App (Playwright)
-
-```typescript
-import { test, expect } from '@playwright/test';
-import { LoginPage } from './pages/login.page';
-
-test.describe('Feature E2E', () => {
-  test('should complete full user flow', async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login(
-      process.env.TEST_USER!,
-      process.env.TEST_PASS!
-    );
-    // ... verify flow completion
-  });
-});
-```
-
-### API Backend (Supertest/fetch)
-
-```typescript
-import { describe, it, expect, beforeAll } from 'vitest';
-
-describe('Feature E2E', () => {
-  let authToken: string;
-  const baseUrl = process.env.TEST_API_URL || 'http://localhost:3000';
-
-  beforeAll(async () => {
-    // Authenticate and store token
-    const res = await fetch(`${baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: process.env.TEST_USER,
-        password: process.env.TEST_PASS,
-      }),
-    });
-    const data = await res.json();
-    authToken = data.token;
-  });
-
-  it('should complete full API flow', async () => {
-    // Call real endpoints with auth token
-    const res = await fetch(`${baseUrl}/api/resource`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    expect(res.status).toBe(200);
-  });
-});
-```
-
-### Credential Setup
-
-If E2E tests need authentication:
-
-1. Create `.env.test.local`:
-```bash
-# E2E Test Credentials — DO NOT COMMIT
-TEST_USER=user@example.com
-TEST_PASS=password
-TEST_API_URL=http://localhost:3000
-```
-
-2. Ensure `.gitignore` includes it:
-```bash
-# Check and add to .gitignore if missing
-grep -q '.env.test.local' .gitignore 2>/dev/null || echo '.env.test.local' >> .gitignore
-```
-
-3. Ask user to fill in actual credentials via AskUserQuestion if needed.
+If credentials needed: create `.env.test.local` with placeholders, ensure `.gitignore` includes it, ask user to fill actual values.
 </step>
 
 <step name="verify_tests_fail">
-Run tests to confirm they fail (red phase):
+Run tests to confirm they fail (red phase). Tests MUST fail because implementation doesn't exist. If any test passes, investigate: wrong assertion, existing implementation, or incorrect test.
 
-```bash
-npm test -- --testPathPattern="<feature>"
-# or
-npm run test -- <test-file>
-```
-
-**Expected outcome:** Tests FAIL because implementation doesn't exist.
-
-If tests pass, something is wrong:
-- Test might be testing wrong thing
-- Implementation might already exist
-- Test might not be asserting correctly
-
-**For E2E tests:** These may not be runnable in red phase if the feature doesn't exist yet. Note this in the summary — E2E tests will be verified after implementation.
+E2E tests may not be runnable in red phase -- note this in the summary.
 </step>
 
 <step name="return_result">
@@ -545,168 +299,87 @@ it('should calculate total with tax', () => {
 ## Edge Cases to Cover
 - Empty inputs (null, undefined, [], '')
 - Boundary values (0, -1, MAX_INT)
-- Invalid types (if applicable)
-- Concurrent operations (if applicable)
-- Error conditions (network, permissions)
+- Invalid types, concurrent operations, error conditions (network, permissions)
 
 ## Mocking Strategy
-- Mock external dependencies (APIs, databases)
-- Don't mock the thing you're testing
+- Mock external dependencies (APIs, databases), not the thing you're testing
 - Use dependency injection patterns
 - Keep mocks simple and focused
 
-```typescript
-// Good - mock external API
-const mockApi = jest.fn().mockResolvedValue({ data: 'test' });
+## Determinism (no flaky tests)
+A test must pass or fail for the same reason every run, in any order:
+- **No real time** — inject/fake the clock; never assert on `now()` or rely on wall-clock timing
+- **No `sleep`-based waits** — wait on conditions/events (e.g. Playwright auto-wait, `waitFor`), never arbitrary delays
+- **No real network or shared external state in unit tests** — those belong to integration/e2e
+- **Seed randomness** — fix seeds so generated data is reproducible
+- **Full isolation** — no shared mutable state between tests; each sets up and tears down its own data (unique IDs per run)
+- **Order-independent** — tests must pass when run in random order
+- Test **behavior, not implementation** — assert observable outcomes, not internal calls; over-mocking makes tests pass while the code is broken
 
-// Bad - mock internal logic
-const mockPrivateMethod = jest.spyOn(obj, 'privateMethod');
-```
+## Test Quality Bar
+- **One behavior per test** — a focused test pinpoints the failure
+- **No logic in tests** — no loops/conditionals/branching; a test should be trivially correct on inspection
+- **Narrow assertions** — assert only the fields relevant to the behavior under test, not the whole object; wide assertions produce noisy failures and break on unrelated changes
+- **DAMP over DRY** — descriptive and readable beats clever deduplication; a little duplication is fine if it makes the test clearer
+- **State verification over interaction verification** — prefer asserting the resulting state to asserting which methods were called
+- **Don't mock types you don't own** — wrap a third-party API in your own adapter and mock the adapter (or use a fake the owner provides); mocking an external service you don't control lets the test pass while the real integration is broken
+- **Don't test trivial code** (plain getters/setters) — no signal
+
+## Snapshots (use sparingly)
+- Only for narrow cases (error messages, logs, code-transform/CSS output) — for anything richer, write explicit `expect()` assertions that encode intent
+- Keep snapshots small (≤ ~50 lines) and review the diff; a failed snapshot is a code-review trigger, NOT a `--update` reflex
+- Mock dynamic values with matchers (`expect.any(Date)`); commit and review snapshot files like code; CI must FAIL on a missing snapshot, never auto-write it
+- Avoid change-detector snapshots that assert implementation detail and break on safe refactors
+
+## Property-Based Testing (where it fits)
+- Use for round-trip properties (encode/decode, serialize/parse) and invariants, or when tempted to write many parametrized cases — the framework generates inputs and shrinks to a minimal failing example (pytest + Hypothesis, fast-check for JS/TS)
 
 </test_writing_guidelines>
 
 <e2e_testing_guidelines>
 
+## Scope: a few critical journeys, not everything
+
+E2E is slow, flaky, and localizes failures poorly. Cover the **3–5 most critical
+user journeys** end to end; push everything else down to integration/unit. If an
+E2E test catches a bug that no lower-level test caught, ADD the lower-level test
+(and consider deleting the redundant E2E one).
+
 ## Web Applications (Playwright)
 
-### Page Object Model
-Encapsulate page interactions in reusable classes:
-
-```typescript
-// pages/login.page.ts
-import { Page } from '@playwright/test';
-
-export class LoginPage {
-  constructor(private page: Page) {}
-
-  async goto() {
-    await this.page.goto('/login');
-  }
-
-  async login(email: string, password: string) {
-    await this.page.getByTestId('email-input').fill(email);
-    await this.page.getByTestId('password-input').fill(password);
-    await this.page.getByTestId('login-button').click();
-  }
-
-  async expectError(message: string) {
-    await expect(this.page.getByTestId('error-message'))
-      .toHaveText(message);
-  }
-}
-```
-
-### Best Practices
-- Use `data-testid` attributes for selectors (stable, intent-clear)
-- Use `test.describe` for grouping related tests
-- Take screenshots on failure (`screenshot: 'only-on-failure'` in config)
-- Use `storageState` for session sharing between tests
-- Keep tests independent — each test should work in isolation
-- Use `test.beforeAll` for one-time setup (login, seed data)
-
-### Session Sharing (Playwright)
-```typescript
-// global-setup.ts
-import { chromium } from '@playwright/test';
-
-async function globalSetup() {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto('/login');
-  await page.getByTestId('email-input').fill(process.env.TEST_USER!);
-  await page.getByTestId('password-input').fill(process.env.TEST_PASS!);
-  await page.getByTestId('login-button').click();
-  await page.context().storageState({ path: '.auth/state.json' });
-  await browser.close();
-}
-
-export default globalSetup;
-```
+- **Role/user-facing locators** (`getByRole('button', {name})`, `getByLabel`) — never brittle CSS/XPath path selectors. `getByTestId` is a last resort
+- **Web-first auto-retrying assertions** (`await expect(locator).toBeVisible()`), NOT `expect(await locator.isVisible()).toBe(true)`. Rely on auto-waiting — never `waitForTimeout`/sleeps
+- **Full isolation** — own storage/cookies/session per test; prefer fixtures over before/after hooks; worker-scoped fixtures for expensive setup
+- **Authenticate once, reuse `storageState`** via a setup project (`dependencies: ['setup']`); per-worker accounts for state-mutating parallel tests
+- **Parallelize + shard** (`fullyParallel: true`, `--shard` in CI); avoid serial mode
+- **Capture traces `on-first-retry`** for cheap CI debugging; a fail-then-pass-on-retry is the quarantine signal
+- Mock third-party deps you don't control via `page.route` — never hit external URLs in E2E
 
 ## Backend APIs (Real HTTP Calls)
 
-### API Client Pattern
-Wrap endpoints in a reusable client:
-
-```typescript
-// e2e/helpers/api-client.ts
-export class ApiClient {
-  private token: string = '';
-
-  constructor(private baseUrl: string) {}
-
-  async login(email: string, password: string) {
-    const res = await fetch(`${this.baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    this.token = data.token;
-    return data;
-  }
-
-  async get(path: string) {
-    return fetch(`${this.baseUrl}${path}`, {
-      headers: { Authorization: `Bearer ${this.token}` },
-    });
-  }
-
-  async post(path: string, body: unknown) {
-    return fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
-      },
-      body: JSON.stringify(body),
-    });
-  }
-}
-```
-
-### Best Practices
-- Start server in `beforeAll`, stop in `afterAll` (or use running dev server)
-- Use unique test data per run (timestamps, UUIDs) to avoid collisions
-- Clean up created data in `afterAll` / `afterEach`
-- Test both success and error responses
-- Verify response status codes AND body content
+- Wrap endpoints in a reusable API client class (auth token management, typed methods)
+- Use **Testcontainers** for real DB/broker/cache in throwaway, auto-cleaned containers (dynamic ports + wait strategies) — identical local/CI runs, no in-memory-fake drift
+- Test both success and error responses — verify status codes AND body content
 - Test auth flows first — other tests depend on valid tokens
+
+## Service-to-Service: prefer contract tests over full-stack E2E
+
+For interactions between services, use **consumer-driven contract testing** (Pact)
+instead of deploying the whole system: each side is tested in isolation, the consumer
+generates the contract, the provider verifies it. Gate deploys with `can-i-deploy`.
+This gives integration confidence without browser/full-environment flakiness.
 
 ## Credentials & Auth
 
-### Storage
 - All credentials in `.env.test.local` — NEVER committed to git
 - Verify `.gitignore` includes `.env.test.local` before creating file
-- Add to `.gitignore` automatically if missing
-
-### `.env.test.local` Template
-```bash
-# E2E Test Credentials — DO NOT COMMIT
-# Fill in with your test environment values
-
-# Authentication
-TEST_USER=user@example.com
-TEST_PASS=your-password-here
-
-# API
-TEST_API_URL=http://localhost:3000
-
-# Database (if direct access needed)
-TEST_DB_URL=postgresql://user:pass@localhost:5432/testdb
-```
-
-### Session Sharing Between Tests
-- **Playwright**: Use `storageState` (browser cookies/localStorage persisted to file)
-- **API**: Global setup authenticates once, saves token to env or fixture
-- **Both**: First test authenticates, subsequent tests reuse session
-- **Never** hardcode credentials in test files
+- Session sharing: Playwright uses `storageState`, API tests use global auth setup
+- Never hardcode credentials in test files
 
 ## Test Data Management
 
-- Use unique identifiers per test run: `const id = \`test-${Date.now()}\``
-- Seed required data in `beforeAll` setup
-- Clean up created data in `afterAll` teardown
+- Use unique identifiers per test run (timestamps, UUIDs) to avoid collisions
+- Seed required data in `beforeAll`, clean up in `afterAll`
 - Use test-specific database/schema when possible
 - Never rely on data from previous test runs
 
@@ -733,10 +406,7 @@ TEST_DB_URL=postgresql://user:pass@localhost:5432/testdb
 - Create flaky tests (random failures)
 - Test implementation details
 - Write tests that already pass (red phase!)
-- Share state between tests
 - Use magic numbers without context
-- Hardcode credentials in test files
-- Commit credential files to git
 
 </guardrails>
 

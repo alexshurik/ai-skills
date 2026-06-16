@@ -1,7 +1,7 @@
 ---
 name: sk-code-review
-version: 3.1.0
-description: Standalone code review for uncommitted changes. Delegates to sk-code-reviewer agent for the full review process.
+version: 4.0.0
+description: Standalone code review for uncommitted changes. Delegates to sk-review-orchestrator for the full review pipeline.
 license: MIT
 
 # Claude Code
@@ -50,34 +50,26 @@ If no code-style.md exists, ask the user if they want to generate one first (`/s
 
 ## Step 3: Run Review
 
-Spawn the **sk-code-reviewer** agent to perform the full review:
+Spawn the **sk-review-orchestrator** agent:
 
 ```
 Task tool:
-  subagent_type: "sk-code-reviewer"
+  subagent_type: "sk-review-orchestrator"
   prompt: |
-    Review the codebase in the current repository.
+    Review uncommitted changes in the current repository.
 
     Context:
     - Design doc: [path if user selected one, or "none"]
     - Code style: [path if exists, or "none"]
-
-    CRITICAL — follow steps IN ORDER, do NOT skip any:
-
-    1. Detect project stack
-    2. Research best practices (if framework/domain detected)
-    3. Run linters
-    4. **MANDATORY: check_and_install_tools step** — check which analysis
-       tools are missing, then use AskUserQuestion to ask the user which
-       ones to install. WAIT for user response. Install approved tools.
-       DO NOT skip this step. DO NOT just list tools in the report.
-    5. Run deep analysis with ALL available tools (including just-installed)
-    6. Review each changed file against all checklists
-    7. Provide structured verdict: APPROVED or CHANGES REQUESTED
 ```
 
-**If Task tool is not available** (e.g., Codex, Cursor):
-Apply the review process from the `sk-code-reviewer` agent definition directly. The agent file contains the complete review checklists, tool commands, and severity mappings.
+**If the Task / subagent tool is not available** (e.g., Codex, Cursor),
+the orchestrator's flow runs as a single role inside the current
+session: read `~/.claude/agents/sk-review-orchestrator.md` (or
+`workflow/agents/sk-review-orchestrator.md` from the skills repo) and
+execute its `<execution_flow>` step-by-step. Subagents become sequential
+sections of the review rather than parallel calls. Do NOT improvise a
+different review process — always drive from the orchestrator definition.
 
 ---
 

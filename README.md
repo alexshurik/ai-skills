@@ -57,7 +57,7 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 | Doc Review | Doc Reviewer | `DOC_REVIEW.md` | Optional, verifies alignment |
 | Testing | Tester | Test files (failing) | Proposes test plan for approval |
 | Implementation | Developer | Code (tests pass) | — |
-| Code Review | Code Reviewer | Verdict | Researches best practices, runs analysis tools, may loop back to Developer |
+| Code Review | Review Orchestrator | Verdict | Resolves stack profiles, dispatches parallel review passes, may loop back to Developer |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 
 Every phase requires **explicit user approval** before proceeding to the next one.
@@ -68,7 +68,7 @@ Every phase requires **explicit user approval** before proceeding to the next on
 /sk-team-quick "Fix null pointer in login handler"
 ```
 
-Two phases only: Developer (fix + tests) → Code Review.
+Four phases: Architect (design note) → Developer (fix + tests) → Review Orchestrator → Acceptance Reviewer.
 
 ## All Commands
 
@@ -82,7 +82,7 @@ Two phases only: Developer (fix + tests) → Code Review.
 | `/sk-discover-project` | Discover project structure and tech stack |
 | `/sk-explore-codebase` | Generate navigation rules for AI |
 | `/sk-plan-mode` | Structured planning with file-based plan storage |
-| `/sk-code-review` | Deep code review with best practices research and analysis tools |
+| `/sk-code-review` | Deep code review with stack-specific profiles and parallel review passes |
 | `/sk-explore-codestyle` | Generate code style guidelines |
 | `/sk-copy-context` | Copy session context to clipboard |
 
@@ -96,7 +96,7 @@ Two phases only: Developer (fix + tests) → Code Review.
 | `sk-doc-reviewer` | Documentation consistency and alignment review |
 | `sk-tester` | TDD red phase — test plan approval, E2E support |
 | `sk-developer` | TDD green phase — implementation |
-| `sk-code-reviewer` | Deep review with best practices research, analysis tools, SOLID, security |
+| `sk-review-orchestrator` | Orchestrates parallel review passes with stack-specific profiles |
 | `sk-acceptance-reviewer` | Business validation and QA |
 
 ## Artifacts
@@ -128,7 +128,9 @@ skills/
 ├── planning/            # Planning workflows
 ├── utilities/           # Standalone tools
 ├── context/             # Context management
-├── shared/templates/    # Artifact templates
+├── shared/
+│   ├── templates/       # Artifact templates
+│   └── best-practices/  # Stack-specific review profiles
 ├── scripts/             # Installation scripts
 ├── adapters/            # Platform-specific adapters
 ├── AGENTS.md            # Cross-platform agent docs

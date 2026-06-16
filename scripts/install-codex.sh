@@ -62,7 +62,36 @@ for agent in "$REPO_DIR"/workflow/agents/*.md; do
     fi
 done
 
-# 5. Copy commands as skills
+# 5. Copy review steps
+echo "Installing review steps..."
+if [ -d "$REPO_DIR/workflow/agents/review-steps" ]; then
+    mkdir -p "$CODEX_DIR/review-steps"
+    for step in "$REPO_DIR"/workflow/agents/review-steps/*.md; do
+        if [ -f "$step" ]; then
+            name=$(basename "$step")
+            cp "$step" "$CODEX_DIR/review-steps/$name"
+            echo "  ✓ Copied review step: $name"
+        fi
+    done
+fi
+
+# 6. Copy best-practice profiles
+echo "Installing best-practice profiles..."
+if [ -d "$REPO_DIR/shared/best-practices" ]; then
+    cp -R "$REPO_DIR/shared/best-practices" "$CODEX_DIR/best-practices"
+    echo "  ✓ Copied: best-practices/"
+
+    # Agents reference the Claude-Code path ~/.claude/agents/best-practices.
+    # Rewrite it to the Codex install location so the resolver resolves here.
+    echo "Rewriting best-practices paths for Codex..."
+    for skill in "$CODEX_DIR"/*/SKILL.md; do
+        [ -f "$skill" ] || continue
+        sed -i.bak "s|~/.claude/agents/best-practices|$CODEX_DIR/best-practices|g" "$skill"
+        rm -f "$skill.bak"
+    done
+fi
+
+# 7. Copy commands as skills
 echo "Installing commands as skills..."
 for cmd in "$REPO_DIR"/onboarding/*.md; do
     if [ -f "$cmd" ]; then

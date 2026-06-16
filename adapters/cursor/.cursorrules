@@ -56,8 +56,8 @@ Verify business requirements are met (QA acceptance). Creates VERIFICATION.md wi
 ### sk-architect
 Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
 
-### sk-code-reviewer
-Review code quality, patterns, and security. Provides actionable feedback or approves changes.
+### sk-review-orchestrator
+Orchestrate code review through specialized subagents. Resolves stack-specific profiles, dispatches parallel review passes, aggregates findings.
 
 ### sk-developer
 Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.

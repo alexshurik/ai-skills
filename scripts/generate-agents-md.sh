@@ -100,6 +100,29 @@ for agent in "$REPO_DIR"/workflow/agents/*.md; do
     fi
 done
 
+# Best-practice profiles (review-steps live under workflow/agents/review-steps/ and are
+# internal sub-passes of sk-review-orchestrator, intentionally not listed as top-level agents)
+cat >> "$OUTPUT" << 'BPHEADER'
+## Best Practices Profiles
+
+Stack-specific coding and review rules live in `shared/best-practices/`, organized by
+language, framework, and tooling. The review orchestrator and developer resolve the
+project stack via `shared/best-practices/index.yaml` and load matching profiles
+automatically (precedence: project > tooling > framework > language > default).
+Downstream projects override or extend profiles via `.agents/best-practices/project/`.
+
+Available profiles:
+
+BPHEADER
+
+for category in languages frameworks tooling; do
+    dir="$REPO_DIR/shared/best-practices/$category"
+    [ -d "$dir" ] || continue
+    names=$(find "$dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | paste -sd ',' - | sed 's/,/, /g')
+    [ -n "$names" ] && echo "- **$category**: $names" >> "$OUTPUT"
+done
+echo "" >> "$OUTPUT"
+
 cat >> "$OUTPUT" << 'FOOTER'
 
 ## Usage
