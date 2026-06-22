@@ -4,7 +4,13 @@ Python-specific coding rules. Applied on top of the default coder profile.
 
 ## PEP Compliance
 
-Follow PEP 8, PEP 257, PEP 484 strictly.
+Follow PEP 8 and PEP 484 strictly. PEP 257 governs docstring **format when a
+docstring is present** — it does NOT mean "add docstrings everywhere." Whether (and
+where) to write docstrings follows the PROJECT: the default profile says **no
+module/file-level docstrings**, and if the surrounding code omits class/function
+docstrings, do not add them just to satisfy a generic habit. When the project DOES
+use docstrings, match its style (below). Let the project's `ruff` config (`D` rules,
+if enabled) and a loaded project profile be the authority over these examples.
 
 ### Type Hints (PEP 484)
 

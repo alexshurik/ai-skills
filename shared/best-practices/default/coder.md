@@ -12,8 +12,20 @@ See language-specific profiles for idiomatic examples.
 
 ## Follow Project Patterns
 
-Match existing code style. Look at neighbouring files before introducing
-a new convention:
+**The project's own conventions OUTRANK the generic examples in these profiles.** The
+code snippets here show idiomatic defaults; they are the fallback for greenfield code,
+NOT a license to impose a style the repo doesn't use. On any conflict, match the repo.
+
+- If a project profile is loaded (`.agents/best-practices/project/coder.md`, highest
+  precedence), it is authoritative — follow it over any example below.
+- The project's own formatter + linter are the final arbiter of style. Run them on
+  the code you write and conform (see your agent's format/lint step). Do not hand-pick
+  a style the linter would rewrite.
+- Look at neighbouring files before introducing ANY new convention — and do not add a
+  pattern the surrounding code doesn't already use (e.g. don't add module/file
+  docstrings, decorators, or naming flavors that appear nowhere else).
+
+Match existing code style:
 
 - Naming (camelCase, snake_case, PascalCase — match what's there)
 - File organization and import order

@@ -98,13 +98,33 @@ Each domain follows: `api/`, `services/`, `schemas/`, `repositories/`, `tests/`
 - Schemas: `{Model}Read`, `{Model}Write`, `{Model}Update`
 ```
 
-### 4. Summary
+### 4. Generate Project Convention Profile
+
+Also derive the project's CODE-STYLE conventions into the profile slot that the
+`sk-developer` / `sk-review-orchestrator` agents load at highest precedence —
+`.agents/best-practices/project/coder.md` and `reviewer.md`. This is what makes
+generated code match THIS repo (naming, docstrings, imports, error handling, typing,
+tests) instead of the model's generic defaults.
+
+Follow `shared/best-practices/project-conventions-guide.md` exactly:
+- Read tooling config (ruff/eslint/.editorconfig/tsconfig…) + `AGENTS.md`/`CLAUDE.md` —
+  these are authoritative — and sample 8–15 real files.
+- Derive rules FROM EVIDENCE (count, don't guess: "module docstrings 0/14 → none").
+- Capture only project-specific signal + the exact format/lint/type/test commands.
+- Write both `.agents/best-practices/project/coder.md` and `reviewer.md` using the
+  template in the guide; show the user the result for a quick confirm.
+
+(This differs from the navigation rules above: navigation = "where to put files",
+the profile = "how to write the code".)
+
+### 5. Summary
 
 Display:
 - Number of domains found
 - Number of services, repositories, utilities discovered
-- Path to generated file
-- Reminder: rules auto-load in new Claude sessions
+- Paths to generated files (navigation rules + project convention profile)
+- Reminder: navigation rules auto-load in new Claude sessions; the convention profile
+  is loaded by the `sk-*` dev/review agents
 
 ## Focus Areas
 
@@ -116,6 +136,11 @@ If argument provided:
 
 ## Output
 
-Write to: `.claude/rules/codebase-navigation.md`
+Write to:
+- `.claude/rules/codebase-navigation.md` — navigation hints (auto-loads in sessions)
+- `.agents/best-practices/project/coder.md` + `reviewer.md` — project convention
+  profile, loaded at highest precedence by the `sk-*` dev/review agents
 
-This file auto-loads in Claude Code sessions, providing navigation hints before creating new code.
+The navigation file auto-loads in Claude Code sessions, providing navigation hints
+before creating new code. The convention profile makes generated code match the
+repo's actual style.
