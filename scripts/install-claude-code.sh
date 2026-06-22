@@ -74,6 +74,13 @@ if [ -d "$REPO_DIR/workflow/agents/review-steps" ]; then
     echo "  ✓ Linked: agents/review-steps/"
 fi
 
+# 6b. Shared agent docs (handoff/clarification protocol) → ~/.claude/agents/shared/
+echo "Installing shared agent docs..."
+if [ -d "$REPO_DIR/workflow/agents/shared" ]; then
+    ln -sfn "$REPO_DIR/workflow/agents/shared" "$CLAUDE_DIR/agents/shared"
+    echo "  ✓ Linked: agents/shared/"
+fi
+
 # 7. Best-practice profiles → ~/.claude/agents/best-practices/
 echo "Installing best-practice profiles..."
 ln -sfn "$REPO_DIR/shared/best-practices" "$CLAUDE_DIR/agents/best-practices"

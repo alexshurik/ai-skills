@@ -75,6 +75,19 @@ if [ -d "$REPO_DIR/workflow/agents/review-steps" ]; then
     done
 fi
 
+# 5b. Copy shared agent docs (handoff/clarification protocol)
+echo "Installing shared agent docs..."
+if [ -d "$REPO_DIR/workflow/agents/shared" ]; then
+    mkdir -p "$CODEX_DIR/shared"
+    for doc in "$REPO_DIR"/workflow/agents/shared/*.md; do
+        if [ -f "$doc" ]; then
+            name=$(basename "$doc")
+            cp "$doc" "$CODEX_DIR/shared/$name"
+            echo "  ✓ Copied shared doc: $name"
+        fi
+    done
+fi
+
 # 6. Copy best-practice profiles
 echo "Installing best-practice profiles..."
 if [ -d "$REPO_DIR/shared/best-practices" ]; then
