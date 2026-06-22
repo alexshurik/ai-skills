@@ -86,9 +86,34 @@ cd ../<feature-name>-worktree
 
 ## Hard Constraints
 
-- NEVER answer agent questions on behalf of the user. If an agent returns open questions, show them to the user verbatim and wait for answers.
+- Agents are SUBAGENTS and cannot reach the user directly — their `AskUserQuestion`
+  does not surface. They ask by **returning a `## NEEDS USER INPUT` block**; YOU own
+  the user's screen. See "Clarification Loop" below.
+- NEVER answer agent questions on behalf of the user. When an agent returns
+  `## NEEDS USER INPUT`, surface the questions verbatim, collect answers, and
+  re-invoke the SAME agent with the answers appended — never guess for the user.
 - NEVER auto-proceed to the next phase. After showing results, STOP and wait for explicit user approval.
-- NEVER paraphrase structured agent output. Show the specific artifacts listed in each phase's "After agent completes" block verbatim.
+- NEVER paraphrase structured agent output. Show the agent's returned handoff block
+  and the artifacts listed in each phase's "After agent completes" block verbatim —
+  never collapse a returned result to "<agent> done".
+
+---
+
+## Clarification Loop (how agents ask the user)
+
+Every WITH-USER-QUESTIONS agent does its read-only work, then — if it needs a
+decision — STOPS and returns a `## NEEDS USER INPUT` block (questions, each with
+options and a recommendation) instead of writing its artifact. When you receive it:
+
+1. Present the questions to the user (render them with AskUserQuestion, or inline).
+2. Wait for the user's answers. Do not answer for them; do not proceed.
+3. Re-invoke the SAME agent with its original prompt PLUS an `## ANSWERS` section
+   carrying the user's responses verbatim.
+4. The agent may return another `## NEEDS USER INPUT` round — repeat until it returns
+   its artifact + handoff block. Only then move to "After agent completes".
+
+This loop replaces any in-subagent AskUserQuestion. The dispatch prompts below tell
+each agent to use it.
 
 ---
 
@@ -107,22 +132,23 @@ Task tool:
 
     YOUR TASK:
     1. READ the existing codebase to understand context (quick scan)
-    2. ASK USER clarifying questions using AskUserQuestion tool
+    2. RETURN a `## NEEDS USER INPUT` block (do NOT call AskUserQuestion — it will
+       not reach the user; I relay it for you)
        - MINIMUM 3 questions, up to 5
        - Ask about: target users, key use cases, constraints, edge cases, expected behavior
-       - Group into 1-2 AskUserQuestion calls (max 4 questions each)
-    3. PRESENT your understanding back to the user via AskUserQuestion:
-       - "Here's what I understand we're building: [summary]. Correct?"
-       - Proposed scope boundaries
-    4. WAIT for user confirmation
-    5. Only AFTER user approves — create proposal.md
+       - Each question: why it matters, options, your recommendation. STOP after returning.
+    3. I re-invoke you with the user's `## ANSWERS`. Return another round PRESENTING
+       your understanding for confirmation: "Here's what I understand we're building:
+       [summary]. Correct?" + proposed scope boundaries.
+    4. Only AFTER the confirmation is in your prompt — create proposal.md
 
     Create requirements in: openspec/changes/<feature-name>/proposal.md
 
     CRITICAL RULES:
-    - You MUST use AskUserQuestion BEFORE creating proposal.md
+    - You MUST return your questions (NEEDS USER INPUT) BEFORE creating proposal.md
     - Do NOT assume you understand the feature without asking
-    - Do NOT create proposal.md until user confirms your understanding
+    - Do NOT create proposal.md until the user's answers are in your prompt
+    - Do NOT guess the answers yourself — that is answering for the user
     - If you skip questions and go straight to writing, you have FAILED
 ```
 
@@ -189,24 +215,23 @@ Task tool:
     YOUR TASK:
     1. READ proposal.md thoroughly
     2. EXPLORE codebase to understand existing patterns
-    3. ASK USER clarifying questions using AskUserQuestion tool
+    3. RETURN a `## NEEDS USER INPUT` block (do NOT call AskUserQuestion — it will
+       not reach the user; I relay it for you)
        - MINIMUM 2-3 questions
-       - Present technical approach options with trade-offs
-       - Ask about integration preferences
-       - Ask about technology choices where applicable
-    4. PRESENT your technical approach via AskUserQuestion:
-       - Key architectural decisions
-       - Component structure
-       - Technology choices
-       - Task breakdown overview
-       - "Does this approach work for you?"
-    5. WAIT for user confirmation
-    6. Only AFTER user approves — create design.md and tasks.md
+       - Present technical approach options with trade-offs + your recommendation
+       - Ask about integration preferences and technology choices where applicable
+       - STOP after returning.
+    4. I re-invoke you with the user's `## ANSWERS`. Return another round PRESENTING
+       your technical approach for confirmation: key architectural decisions,
+       component structure, technology choices, task breakdown overview, "Does this
+       approach work for you?"
+    5. Only AFTER the confirmation is in your prompt — create design.md and tasks.md
 
     CRITICAL RULES:
-    - You MUST use AskUserQuestion BEFORE creating design.md or tasks.md
+    - You MUST return your questions (NEEDS USER INPUT) BEFORE creating design.md or tasks.md
     - Do NOT assume the technical approach without asking
-    - Do NOT create design files until user confirms your approach
+    - Do NOT create design files until the user's answers are in your prompt
+    - Do NOT guess the answers yourself — that is answering for the user
     - If you skip questions and go straight to writing, you have FAILED
     - Match existing patterns or justify deviations
     - Present options if there are trade-offs
@@ -249,8 +274,9 @@ Task tool:
 
     Review all documentation for consistency, gaps, and alignment.
     Build traceability matrix: requirement → design → task.
-    Ask user clarifying questions to verify their mental model.
-    Create DOC_REVIEW.md with findings and verdict.
+    Return a `## NEEDS USER INPUT` block to verify their mental model (do NOT call
+    AskUserQuestion — I relay it; I re-invoke you with the answers).
+    Only after the answers are in your prompt — create DOC_REVIEW.md with findings and verdict.
 ```
 
 **After agent completes:**
@@ -279,21 +305,24 @@ Task tool:
     YOUR TASK:
     1. READ all artifacts and analyze existing test patterns
     2. DETECT project type (web app, API, library, CLI)
-    3. PROPOSE a categorized test plan to user via AskUserQuestion:
+    3. RETURN your categorized test plan inside a `## NEEDS USER INPUT` block (do NOT
+       call AskUserQuestion — it will not reach the user; I relay it for you):
        - Unit tests (with descriptions)
        - Integration tests (with descriptions)
        - Service tests (with descriptions)
-       - E2E tests (ask user if they want these — OPTIONAL)
-    4. WAIT for user to approve/modify/skip groups
-    5. Only AFTER approval — write the approved tests
+       - E2E tests (ask whether they want these — OPTIONAL)
+       - STOP after returning.
+    4. I re-invoke you with the user's approve/modify/skip `## ANSWERS`. If E2E is
+       approved, return a follow-up round for credentials/infrastructure.
+    5. Only AFTER the approval is in your prompt — write the approved tests
 
     CRITICAL RULES:
-    - You MUST present the test plan BEFORE writing any test code
+    - You MUST return the test plan (NEEDS USER INPUT) BEFORE writing any test code
     - User can skip entire groups (e.g., "Skip E2E", "Skip unit tests")
     - User can modify specific tests (add/remove)
-    - If user wants E2E tests, ask about credentials and infrastructure
+    - If user wants E2E tests, ask about credentials and infrastructure (another round)
     - Store E2E credentials in .env.test.local (not committed)
-    - Do NOT write tests until user approves the plan
+    - Do NOT write tests until the approval is in your prompt
     - If you skip the test plan and go straight to writing, you have FAILED
 ```
 
@@ -425,7 +454,8 @@ Task tool:
     MANDATORY REVISION RULES:
     1. READ the previous artifact to understand what was done
     2. ADDRESS EVERY feedback point listed above — do not skip any
-    3. ASK the user if anything is unclear about the feedback (use AskUserQuestion)
+    3. If anything about the feedback is unclear, RETURN a `## NEEDS USER INPUT` block
+       (do NOT call AskUserQuestion); I relay it and re-invoke you with the answers
     4. EXPLAIN what you changed and why in your result summary
     5. If you cannot address a feedback point, explain why
 

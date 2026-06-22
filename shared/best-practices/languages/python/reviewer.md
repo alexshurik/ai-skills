@@ -66,6 +66,13 @@ All `coder.md` rules apply as review checks — confirm they hold rather than re
 
 ## Static Analysis Tools
 
+> **Run every tool below through the project runner**, not the bare binary shown in
+> the examples — e.g. `uv run ruff check`, `uv run mypy --strict src/`,
+> `uv run complexipy src/ -d low` when the repo uses uv (or `poetry run …`, a
+> `.venv` activation, etc.). The bare `ruff`/`mypy`/`complexipy` in the snippets is
+> illustrative; a global binary is usually the wrong version and will misfire on the
+> project's pinned config. See "Running Static-Analysis Tools" in the default profile.
+
 ### ruff (Primary Linter)
 
 All-in-one Python linter and formatter. Replaces flake8, isort, pycodestyle, pyflakes, and many plugins.

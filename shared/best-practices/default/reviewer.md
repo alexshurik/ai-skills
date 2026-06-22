@@ -13,6 +13,29 @@ Scope boundaries (to avoid double-coverage across review passes):
 - This profile covers code-quality, error-handling, declarative-style, and
   test-coverage checks that apply at the per-file / per-function level.
 
+## Running Static-Analysis Tools (all languages)
+
+Every linter, type-checker, complexity, audit, and test tool in the language
+profiles below MUST be invoked through the project's pinned environment, never as
+a bare global binary. A global tool is usually a different version and will
+silently misfire on the project's config — error on an unknown/removed rule
+selector, or report "command not found" for a project-only dev dependency — which
+corrupts the review without anyone noticing.
+
+- Resolve the runner from the project: `uv.lock`/`[tool.uv]` → `uv run`,
+  `poetry.lock` → `poetry run`, `pdm.lock` → `pdm run`, `Pipfile.lock` → `pipenv run`,
+  a bare `.venv/` → activate it; `pnpm-lock.yaml` → `pnpm exec`, `yarn.lock` → `yarn`,
+  else `npx`; Go/Rust use `go`/`cargo` directly. A `.pre-commit-config.yaml` or CI
+  lint job, if present, is the authoritative command — replicate it verbatim.
+- The orchestrator passes the resolved `$RUN` prefix in your prompt; use `$RUN <tool>`.
+- A config that references rules the installed tool doesn't recognize means the
+  WRONG version is running — switch to the pinned tool, never downgrade the config.
+- **A tool that fails to execute is not a pass and not a skip.** Distinguish "ran and
+  found issues" (non-zero exit = findings) from "failed to run" (command-not-found,
+  unknown selector, config-parse error, traceback). On a run failure, do NOT
+  substitute a by-eye estimate and do NOT mark the dimension clean — report it as
+  `UNVERIFIED: could not execute <tool>` with the exact command and error.
+
 ## Code Quality Checklist
 
 ### Readability

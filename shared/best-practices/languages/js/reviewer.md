@@ -6,6 +6,12 @@ Applied on top of default reviewer checklist when the project contains `package.
 
 ## Linting
 
+> **Match the project's package manager** for every command below: the snippets show
+> `npm`/`npx`, but if the repo has `pnpm-lock.yaml` use `pnpm exec`/`pnpm run`, with
+> `yarn.lock` use `yarn`. Running the wrong manager (or a global tool) can resolve a
+> different version than the lockfile pins. See "Running Static-Analysis Tools" in the
+> default profile.
+
 Run project lint scripts first, then targeted checks:
 
 ```bash
