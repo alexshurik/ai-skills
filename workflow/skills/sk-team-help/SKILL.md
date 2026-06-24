@@ -1,6 +1,6 @@
 ---
 name: sk-team-help
-version: 1.0.0
+version: 1.1.0
 description: Show help and documentation for multi-agent team workflow
 license: MIT
 
@@ -39,31 +39,36 @@ A structured workflow system with specialized agents for software development.
      (skill: sk-team-feature / sk-team-quick / sk-team-status)
         Routes tasks, controls workflow, tracks state
                               │
-         ┌────────────────────┼────────────────────┐
-         ▼                    ▼                    ▼
-    DISCOVERY             PLANNING            EXECUTION
-         │                    │                    │
-         ▼                    ▼               ┌────┴────┐
-  sk-product-          sk-architect           ▼         ▼
-  analyst                                  sk-       sk-
-  (PM + BA)                               tester   developer
-                                           (TDD)
-                                             │
-                                       ┌─────┴─────┐
-                                       ▼           ▼
-                                   sk-review-  sk-acceptance-
-                                   orchestrator reviewer
+   ┌──────────────┬───────────┼──────────────┬───────────────┐
+   ▼              ▼           ▼              ▼               ▼
+DISCOVERY    [RESEARCH]   PLANNING     [DOC REVIEW]      EXECUTION
+   │              │           │              │               │
+   ▼              ▼           ▼              ▼          ┌─────┴─────┐
+sk-product-  sk-          sk-architect  sk-doc-          ▼           ▼
+analyst      researcher                 reviewer       sk-        sk-
+(PM + BA)    (optional)                 (optional)    tester    developer
+                                                       (TDD)
+                                                         │
+                                                   ┌─────┴─────┐
+                                                   ▼           ▼
+                                               sk-review-  sk-acceptance-
+                                               orchestrator reviewer
 ```
+
+Research and Doc Review are **optional** phases — the orchestrator offers them and
+runs them only on request.
 
 ## Agents (subagent_type for Task tool)
 
 | Agent | Role | Purpose |
 |-------|------|---------|
 | `sk-product-analyst` | Discovery | WHAT & WHY - requirements, acceptance criteria |
+| `sk-researcher` | Research (optional) | Investigate unknown domains, APIs, best practices |
 | `sk-architect` | Planning | HOW - system design, task breakdown |
+| `sk-doc-reviewer` | Doc Review (optional) | Consistency & alignment check before testing |
 | `sk-tester` | TDD Red | Write failing tests before code |
 | `sk-developer` | TDD Green | Implement code to pass tests |
-| `sk-review-orchestrator` | Review | Code quality, security, patterns |
+| `sk-review-orchestrator` | Review | Dispatches parallel sub-passes: security, architecture, stack rules |
 | `sk-acceptance-reviewer` | Acceptance | Verify business requirements met |
 
 ## Workflows
@@ -74,12 +79,17 @@ For new features, significant changes, complex work:
 
 ```
 1. sk-product-analyst → proposal.md (vision + requirements)
+   1.5 sk-researcher → RESEARCH.md (optional — unknown domains/APIs)
 2. sk-architect → design.md + tasks.md (system design)
+   2.5 sk-doc-reviewer → DOC_REVIEW.md (optional — alignment check)
 3. sk-tester → Tests (failing - TDD red phase)
 4. sk-developer → Code (tests pass - TDD green phase)
 5. sk-review-orchestrator → Quality check (may loop to Developer)
 6. sk-acceptance-reviewer → VERIFICATION.md (final check)
 ```
+
+**Approval is required between every phase** — the orchestrator stops after each phase
+and waits for explicit user approval before continuing.
 
 **Example:**
 ```
@@ -88,11 +98,13 @@ For new features, significant changes, complex work:
 
 ### Quick Workflow (`/sk-team-quick`)
 
-For bugfixes, typos, small changes:
+For bugfixes, typos, small changes (four phases):
 
 ```
-1. sk-developer → Fix + Tests
-2. sk-review-orchestrator → Quick review
+1. sk-architect → Brief design note (quick mode)
+2. sk-developer → Fix + Tests
+3. sk-review-orchestrator → Quality check (security, architecture, stack rules)
+4. sk-acceptance-reviewer → Verify fix + write docs (quick mode)
 ```
 
 **Example:**
@@ -107,8 +119,10 @@ All artifacts stored in OpenSpec structure:
 ```
 openspec/changes/<feature-name>/
 ├── proposal.md      # Vision, requirements, acceptance criteria
+├── RESEARCH.md      # Technology findings (optional)
 ├── design.md        # System design, architecture decisions
 ├── tasks.md         # Implementation task breakdown
+├── DOC_REVIEW.md    # Alignment verification (optional)
 └── VERIFICATION.md  # Final acceptance verification
 ```
 
@@ -139,11 +153,28 @@ Each agent runs in isolated context with specific tools.
 | Agent | Color |
 |-------|-------|
 | sk-product-analyst | Blue |
+| sk-researcher | Teal |
 | sk-architect | Green |
+| sk-doc-reviewer | Magenta |
 | sk-tester | Yellow |
 | sk-developer | Cyan |
 | sk-review-orchestrator | Orange |
 | sk-acceptance-reviewer | Purple |
+
+## How Agents Stay On-Project
+
+- **Project conventions.** `sk-developer` and `sk-review-orchestrator` load stack-specific
+  coder/reviewer profiles and a project-specific layer
+  (`.agents/best-practices/project/`) so generated code matches the repo's own style
+  instead of generic defaults. The project layer is derived from the repo's tooling config
+  and sampled files at onboarding, or by `sk-developer` on first run if missing.
+  `sk-developer` also runs the project's pinned formatter + linter on its own output before
+  returning.
+
+- **Clarification (handoff protocol).** Subagents cannot reach the user directly. When one
+  hits a genuine blocker it returns a `## NEEDS USER INPUT` block; the orchestrator surfaces
+  the questions verbatim, collects answers, and re-dispatches — it never answers on your
+  behalf or auto-proceeds.
 
 ## Best Practices
 

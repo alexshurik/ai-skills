@@ -117,23 +117,70 @@ All feature artifacts are stored in `openspec/changes/<feature-name>/`:
 
 Structure inspired by [OpenSpec](https://openspec.dev/). No additional tools needed — directories are created automatically.
 
+## Best-Practice Profiles & Project Conventions
+
+`sk-developer` and `sk-review-orchestrator` load stack-specific **coder** and **reviewer**
+profiles so generated code and review checks match the target stack. Profiles live in
+`shared/best-practices/` and are resolved by precedence (later overrides earlier):
+
+```
+default  →  language  →  framework  →  tooling  →  project
+```
+
+- **Universal layers** (`default/`, `languages/`, `frameworks/`, `tooling/`) ship with the
+  repo and stay generic. Stack is auto-detected via `index.yaml`; see `resolver.md`.
+- **Project layer** (`.agents/best-practices/project/coder.md` + `reviewer.md`) is the
+  **highest-precedence** layer and is written **into the target repo**, capturing *that*
+  repo's actual conventions (naming, docstring policy, imports, typing, test style, and the
+  exact format/lint/type/test commands). It is generated from evidence — tooling config
+  (`pyproject.toml`, `eslint.config`, `.editorconfig`, …) plus 8–15 sampled files — by
+  `sk-explore-codebase`/`sk-onboard` at onboarding, or by `sk-developer` on first run if
+  missing. Greenfield repos (no code to observe) are asked instead of guessed. The full
+  extraction spec is `shared/best-practices/project-conventions-guide.md`.
+
+This is why agents produce code in the project's own style instead of generic defaults.
+`sk-developer` also runs the project's pinned formatter + linter on its own output (through
+the resolved `$RUN` prefix — `uv`/`poetry`/`pdm`/`pnpm`/`yarn`/`npx`, honoring pre-commit/CI)
+and conforms before returning. The review orchestrator runs static-analysis tools through
+the same `$RUN` prefix and treats a tool that fails to execute as **UNVERIFIED** rather than
+a silent pass, reporting command + version + exit-code provenance.
+
+## Agent Clarification (Handoff Protocol)
+
+Subagents have **no channel to the user** — `AskUserQuestion` does not reach them and their
+final message goes to the orchestrator, not the user. When an agent hits a genuine blocker it
+**returns a `## NEEDS USER INPUT` block** instead of guessing; the orchestrator surfaces the
+questions verbatim, collects answers, and re-dispatches. Agents also return a handoff block at
+the end of each phase, which the orchestrator surfaces verbatim rather than paraphrasing. The
+canonical spec is `workflow/agents/shared/handoff-protocol.md`, installed alongside the agents.
+
 ## Directory Structure
 
 ```
 skills/
 ├── workflow/
-│   ├── skills/          # Orchestrator commands
-│   └── agents/          # Agent definitions (8 agents)
-├── onboarding/          # Project onboarding commands
-├── planning/            # Planning workflows
-├── utilities/           # Standalone tools
-├── context/             # Context management
+│   ├── skills/                  # Orchestrator commands (sk-team-*)
+│   └── agents/                  # 8 workflow agents
+│       ├── review-steps/        # Review sub-passes (security, architecture, stack-rules, instruction-quality)
+│       └── shared/              # Cross-agent docs (handoff-protocol.md)
+├── onboarding/                  # Project onboarding commands
+├── planning/                    # Planning workflows (sk-plan-mode)
+├── utilities/                   # Standalone tools (sk-code-review, sk-explore-codestyle)
+├── context/                     # Context management (sk-copy-context)
 ├── shared/
-│   ├── templates/       # Artifact templates
-│   └── best-practices/  # Stack-specific review profiles
-├── scripts/             # Installation scripts
-├── adapters/            # Platform-specific adapters
-├── AGENTS.md            # Cross-platform agent docs
+│   ├── templates/               # Artifact templates
+│   ├── context-handoff.md       # Phase-to-phase context passing
+│   └── best-practices/          # Coder + reviewer profiles
+│       ├── default/             # Universal fallback profiles
+│       ├── languages/           # python, js, typescript, go
+│       ├── frameworks/          # fastapi, gin, vue
+│       ├── tooling/             # ansible, docker, github-actions
+│       ├── index.yaml           # Stack detection signals
+│       ├── resolver.md          # Profile resolution logic
+│       └── project-conventions-guide.md  # How agents derive a repo's own profile
+├── scripts/                     # Installation scripts
+├── adapters/                    # Platform-specific adapters
+├── AGENTS.md                    # Cross-platform agent docs (auto-generated)
 └── README.md
 ```
 
