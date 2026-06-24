@@ -121,7 +121,9 @@ each agent to use it.
 
 ### Phase 1: Discovery (Product Analyst)
 
-**CRITICAL**: Product Analyst MUST ask clarifying questions before writing proposal.
+**CRITICAL**: Product Analyst resolves genuine ambiguity before writing the proposal —
+but asks only what the request and codebase don't already answer, and never guesses a
+real product decision.
 
 ```
 Task tool:
@@ -131,24 +133,28 @@ Task tool:
     Worktree: ../<feature-name>-worktree
 
     YOUR TASK:
-    1. READ the existing codebase to understand context (quick scan)
-    2. RETURN a `## NEEDS USER INPUT` block (do NOT call AskUserQuestion — it will
-       not reach the user; I relay it for you)
-       - MINIMUM 3 questions, up to 5
-       - Ask about: target users, key use cases, constraints, edge cases, expected behavior
+    1. READ the existing codebase / specs to understand context (quick scan)
+    2. If genuine, material ambiguity remains, RETURN a `## NEEDS USER INPUT` block (do
+       NOT call AskUserQuestion — it will not reach the user; I relay it for you)
+       - Ask ONLY questions whose answers are missing from the request/code AND material
+         (target users, key use cases, constraints, edge cases, expected behavior).
+       - No quota — a precise request may need zero questions; a vague one, several.
+         Do not invent questions to fill categories.
        - Each question: why it matters, options, your recommendation. STOP after returning.
-    3. I re-invoke you with the user's `## ANSWERS`. Return another round PRESENTING
-       your understanding for confirmation: "Here's what I understand we're building:
-       [summary]. Correct?" + proposed scope boundaries.
+    3. I re-invoke you with the user's `## ANSWERS`. Return a round PRESENTING your
+       understanding for confirmation: "Here's what I understand we're building:
+       [summary]. Correct?" + proposed scope boundaries. (If step 2 had no questions,
+       go straight to this confirmation round.)
     4. Only AFTER the confirmation is in your prompt — create proposal.md
 
     Create requirements in: openspec/changes/<feature-name>/proposal.md
 
     CRITICAL RULES:
-    - You MUST return your questions (NEEDS USER INPUT) BEFORE creating proposal.md
-    - Do NOT assume you understand the feature without asking
-    - Do NOT create proposal.md until the user's answers are in your prompt
-    - Do NOT guess the answers yourself — that is answering for the user
+    - Where genuine ambiguity exists, you MUST return NEEDS USER INPUT before proposal.md —
+      but do NOT manufacture questions when the request is already clear.
+    - Always end with a scope-confirmation round before writing proposal.md
+    - Do NOT create proposal.md until the user's confirmation is in your prompt
+    - Do NOT guess a real product decision yourself — that is answering for the user
     - If you skip questions and go straight to writing, you have FAILED
 ```
 
@@ -202,7 +208,8 @@ Task tool:
 
 ### Phase 2: Planning (Architect)
 
-**CRITICAL**: Architect MUST ask clarifying questions before writing design.
+**CRITICAL**: Architect defaults to the project's existing answer and asks only about
+genuinely open, high-cost decisions — but always confirms the approach before writing.
 
 ```
 Task tool:
@@ -214,27 +221,26 @@ Task tool:
 
     YOUR TASK:
     1. READ proposal.md thoroughly
-    2. EXPLORE codebase to understand existing patterns
-    3. RETURN a `## NEEDS USER INPUT` block (do NOT call AskUserQuestion — it will
-       not reach the user; I relay it for you)
-       - MINIMUM 2-3 questions
-       - Present technical approach options with trade-offs + your recommendation
-       - Ask about integration preferences and technology choices where applicable
+    2. EXPLORE codebase + project-conventions profile to understand existing patterns
+    3. If existing patterns/proposal/conventions already determine the design, skip to
+       step 4. If a genuinely open, high-cost decision remains (irreversible/far-reaching
+       choice, or a true fork with no precedent), RETURN a `## NEEDS USER INPUT` block
+       (do NOT call AskUserQuestion — it will not reach the user; I relay it for you):
+       - Only those decisions, each with trade-offs + your recommendation. No quota —
+         a well-scoped change against established patterns may need zero questions.
        - STOP after returning.
-    4. I re-invoke you with the user's `## ANSWERS`. Return another round PRESENTING
-       your technical approach for confirmation: key architectural decisions,
-       component structure, technology choices, task breakdown overview, "Does this
-       approach work for you?"
+    4. Return a round PRESENTING your technical approach for confirmation: key
+       architectural decisions, component structure, technology choices, task breakdown
+       overview, "Does this approach work for you?"
     5. Only AFTER the confirmation is in your prompt — create design.md and tasks.md
 
     CRITICAL RULES:
-    - You MUST return your questions (NEEDS USER INPUT) BEFORE creating design.md or tasks.md
-    - Do NOT assume the technical approach without asking
-    - Do NOT create design files until the user's answers are in your prompt
-    - Do NOT guess the answers yourself — that is answering for the user
-    - If you skip questions and go straight to writing, you have FAILED
-    - Match existing patterns or justify deviations
-    - Present options if there are trade-offs
+    - Follow existing patterns/conventions silently; do NOT ask what the repo already answers.
+    - Where a high-cost decision is genuinely open, you MUST return NEEDS USER INPUT first —
+      and you MUST NOT guess it yourself (that is answering for the user).
+    - Always end with an approach-confirmation round before writing artifacts.
+    - Do NOT create design files until the user's confirmation is in your prompt.
+    - Match existing patterns or justify deviations.
 ```
 
 **After agent completes:**

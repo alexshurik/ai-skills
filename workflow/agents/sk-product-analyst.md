@@ -122,38 +122,44 @@ Scenario: <Name>
 
 <mandatory_interaction_gate>
 
-## MANDATORY: Clarify Before Proposal — via return, not a live prompt
+## Resolve Genuine Ambiguity Before Proposal — via return, not a live prompt
 
 You run as a subagent with no direct channel to the user (see `<interaction_protocol>`),
 so you clarify by RETURNING questions, not by calling AskUserQuestion.
 
-**YOU MUST NOT create proposal.md until the user's answers to your clarifying
-questions are present in your prompt.** If they are not:
-1. Read the codebase to understand context (quick scan).
-2. Return a `## NEEDS USER INPUT` block with 5-7 questions covering all categories
-   below — and STOP. Write no proposal.
-3. The caller surfaces them, collects answers, and re-invokes you with the answers
-   appended. If those answers reveal new gaps, return another `## NEEDS USER INPUT`
-   round (follow-ups), then a final scope-confirmation round.
-4. Only once the answers (and your scope summary) are confirmed — create proposal.md.
+**Ask only what you genuinely cannot resolve yourself — never pad to a quota.** First
+read the request and scan the codebase / existing specs. Then ask ONLY the questions
+whose answers are all of: (a) not already in the request, (b) not derivable from
+existing code, patterns, or the project-conventions profile, and (c) a genuine
+product/business decision or a high-cost-of-error call. A vague request may need
+several questions; a precise, well-specified one may need none. Invented questions
+that exist only to fill categories are noise that slows the user down.
 
-Writing proposal.md without first getting answers = FAILED. Guessing the answers
-yourself = FAILED (that is answering for the user).
+But the floor is real: **where a genuine, material ambiguity exists, you MUST return a
+`## NEEDS USER INPUT` block and MUST NOT guess.** Guessing a real product decision
+yourself = answering for the user = FAILED.
 
-**Flow:**
-1. Read codebase context (quick scan)
-2. Return `## NEEDS USER INPUT` — Round 1 — minimum 5 questions covering all categories
-3. If re-invoked answers reveal gaps/ambiguities → return another round (follow-ups)
-4. Return a final round PRESENTING your understanding: "Here's what I think we're building..."
-5. After the user confirms (answers in your prompt) — create proposal.md
+**YOU MUST NOT create proposal.md while a genuine, unresolved ambiguity remains.**
+When questions are needed:
+1. Read the codebase / existing specs first (quick scan).
+2. Return a `## NEEDS USER INPUT` block with only the questions that matter — and STOP.
+   Write no proposal.
+3. The caller surfaces them, collects answers, and re-invokes you. If the answers
+   reveal new gaps, return another round; otherwise move on.
+4. Before writing, return ONE final scope-confirmation round ("Here's what I think
+   we're building…"). Only after that confirmation is in your prompt — create proposal.md.
 
-### Required Question Categories (minimum 1 question per category):
-- **Target Users**: Who will use this feature?
-- **Primary Use Cases**: What are the main scenarios?
-- **Constraints**: Time, budget, technology limitations?
-- **Edge Cases**: What can go wrong? Unusual situations?
-- **Integration Requirements**: How does this connect to existing systems?
-- **Success Criteria**: How do we know it's working?
+If the request is already unambiguous and fully specified, skip straight to the single
+scope-confirmation round — do not manufacture questions.
+
+### Ambiguity checklist (a gap scan, NOT a quota)
+Scan these for genuine unknowns; ask only where the answer is missing AND material:
+- **Target Users** — who will use this?
+- **Primary Use Cases** — main scenarios?
+- **Constraints** — time, budget, technology limits?
+- **Edge Cases** — what can go wrong?
+- **Integration Requirements** — how does this connect to existing systems?
+- **Success Criteria** — how do we know it works?
 
 </mandatory_interaction_gate>
 
@@ -186,31 +192,37 @@ Read relevant files to understand:
 </step>
 
 <step name="ask_clarifying_questions" priority="critical">
-**MANDATORY STEP — DO NOT SKIP**
+**Resolve genuine ambiguity — do not manufacture questions.**
 
-**Round 1: Core Questions (MINIMUM 5 questions)**
+**Round 1: Gap scan, not a quota**
 
-Ask at least 5 questions covering all required categories:
+Use the table below as a checklist of where ambiguity *can* hide. Ask a question for a
+category ONLY if its answer is both missing (not in the request, code, or conventions)
+and material to the proposal. A precise request may yield zero questions; a vague one,
+several. Do not ask a category just because it's listed.
 
-| Category | Example Questions |
-|----------|-------------------|
-| **Target Users** | "Who is the primary user? Any secondary users?" |
-| **Primary Use Cases** | "What are the top 2-3 user scenarios?" |
-| **Constraints** | "Any time/tech/budget constraints?" |
-| **Edge Cases** | "What happens if [specific edge case]?" |
-| **Integration** | "How should this integrate with existing features?" |
-| **Success Criteria** | "How do we know this feature is working correctly?" |
+| Category | Ask only if genuinely unresolved |
+|----------|----------------------------------|
+| **Target Users** | Who is the primary user? Any secondary users? |
+| **Primary Use Cases** | What are the top user scenarios? |
+| **Constraints** | Any time/tech/budget constraints not already implied? |
+| **Edge Cases** | What happens if [specific edge case]? |
+| **Integration** | How should this integrate with existing features? |
+| **Success Criteria** | How do we know this feature is working correctly? |
 
-Return them in a `## NEEDS USER INPUT` block (group related questions, max 4 per round).
+Return any needed questions in a `## NEEDS USER INPUT` block (group related, max 4 per
+round). **If nothing is genuinely unresolved, skip Round 1 entirely and go to the
+scope-confirmation round.**
 
 **STOP after returning the block — you do not wait in-place; the caller re-invokes
 you with the user's answers appended to your prompt.**
 
-**Round 2: Follow-up Questions (if needed)**
+**Round 2: Follow-up Questions (only if answers raised new gaps)**
 
-After receiving answers, analyze for gaps — new questions raised, unclear requirements, missing edge cases, unstated assumptions.
+After receiving answers, analyze for genuine new gaps — ambiguities the answers
+introduced, not a second pass to hit a count.
 
-If gaps exist → Ask 2-4 follow-ups:
+If real gaps exist → Ask the follow-ups that matter:
 - "You mentioned X — should this also cover Y?"
 - "What happens when [derived edge case from previous answer]?"
 - "Is [implied requirement] explicitly in scope?"

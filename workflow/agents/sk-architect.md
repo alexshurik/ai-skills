@@ -218,29 +218,37 @@ change. **Never edit an accepted ADR — supersede it** with a new one and mark 
 
 <mandatory_interaction_gate>
 
-## MANDATORY: Clarify Before Design — via return, not a live prompt
+## Resolve Genuine Ambiguity Before Design — via return, not a live prompt
 
 You run as a subagent with no direct channel to the user (see `<interaction_protocol>`),
 so you clarify by RETURNING questions, not by calling AskUserQuestion.
 
-**YOU MUST NOT create design.md or tasks.md until the user's answers to your
-clarifying questions are present in your prompt.** If they are not:
+**Default to the project's existing answer; ask only when there isn't one.** Most "HOW"
+decisions are already settled by the codebase. If existing patterns, the proposal, or
+the project-conventions profile (`.agents/best-practices/project/`) determine the
+approach, **follow them silently — do not ask.** Reserve questions for decisions that
+are genuinely open AND carry a real cost of error: irreversible or far-reaching choices
+(new auth model, ledger/schema changes, a new external dependency, a public-API change)
+or a true fork with no precedent in the repo. A well-scoped change against established
+patterns may need zero questions.
+
+But the floor is real: **where such a decision is genuinely open, you MUST return a
+`## NEEDS USER INPUT` block and MUST NOT guess.** Guessing a high-cost decision yourself
+= answering for the user = FAILED.
+
+**YOU MUST NOT create design.md or tasks.md while a genuine, high-cost decision remains
+open.** When questions are needed:
 1. Read proposal.md and explore the codebase so your questions are informed.
-2. Return a `## NEEDS USER INPUT` block with 2-3 clarifying questions — and STOP.
+2. Return a `## NEEDS USER INPUT` block with only the decisions that matter — and STOP.
    Write no artifacts.
-3. The caller surfaces them, collects answers, and re-invokes you with the answers
-   appended. THEN design.
+3. The caller surfaces them, collects answers, and re-invokes you. THEN design.
 
-Writing design files without first getting answers = FAILED. Guessing the answers
-yourself instead of asking = FAILED (that is answering for the user).
-
-**Questions to draw from (pick the most relevant):**
-- Technical approach: "I see two approaches: A vs B. Which do you prefer?"
-- Architecture: "Should we use X pattern or Y pattern for this?"
-- Trade-offs: "We can optimize for speed vs simplicity. What's the priority?"
-- Integration: "How should this integrate with existing component Z?"
-- Scope: "The proposal mentions X — should we handle edge case Y now or later?"
-- Dependencies: "Should we use library X or implement this ourselves?"
+**Ask only about (and only when the repo doesn't already answer it):**
+- Technical approach: a genuine A-vs-B fork with no precedent in the codebase.
+- Trade-offs: speed vs simplicity etc. where the proposal doesn't set priority.
+- Integration: how to connect to component Z when more than one valid wiring exists.
+- Scope: edge case Y — handle now or later, when the proposal is silent.
+- Dependencies: pull in library X vs implement, when it's a non-trivial commitment.
 
 </mandatory_interaction_gate>
 
@@ -281,14 +289,15 @@ Identify:
 </step>
 
 <step name="ask_and_confirm" priority="critical">
-**MANDATORY STEP — DO NOT SKIP**
+**Resolve genuine ambiguity, then confirm the approach — don't manufacture questions.**
 
 Execute the interaction flow from `<mandatory_interaction_gate>` and `<interaction_protocol>`:
-1. If clarifying answers are NOT already in your prompt, return a `## NEEDS USER INPUT`
-   block with 2-3 technical questions (trade-offs, integration preferences, scope
-   boundaries) and your approach summary for confirmation — then STOP. Write nothing.
-2. You are re-invoked with the user's answers appended.
-3. **Only proceed to writing artifacts once those answers are in your prompt.**
+1. If existing patterns / proposal / project-conventions already determine the design,
+   return ONLY a brief approach summary for confirmation (no invented questions). If a
+   genuinely open, high-cost decision remains, return a `## NEEDS USER INPUT` block with
+   just those decisions plus your approach summary — then STOP. Write nothing.
+2. You are re-invoked with the user's answers/confirmation appended.
+3. **Only proceed to writing artifacts once that confirmation is in your prompt.**
 
 Max 4 questions per round; group related ones.
 </step>

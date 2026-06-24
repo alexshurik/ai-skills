@@ -8,7 +8,9 @@ Run the installation script:
 ./scripts/install-codex.sh
 ```
 
-By default, this copies skills to `~/.codex/skills/`.
+By default, this copies skills to `~/.agents/skills/` — the location Codex scans for
+user-level skills (the agent-agnostic open standard, shared with other agents). The
+older `~/.codex/skills/` path is no longer scanned per current Codex docs.
 
 To use a different location:
 ```bash

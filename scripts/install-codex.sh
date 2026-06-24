@@ -5,7 +5,10 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-CODEX_DIR="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+# Codex discovers user-level skills in $HOME/.agents/skills (the agent-agnostic open
+# standard, shared with other agents). The old ~/.codex/skills location is not scanned
+# per current Codex docs. Override with CODEX_SKILLS_DIR if needed.
+CODEX_DIR="${CODEX_SKILLS_DIR:-$HOME/.agents/skills}"
 
 echo "Installing sk-* for OpenAI Codex..."
 echo "Repository: $REPO_DIR"
