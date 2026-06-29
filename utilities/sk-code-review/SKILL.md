@@ -41,26 +41,42 @@ If no code-style.md exists, ask the user if they want to generate one first (`/s
 
 ## Step 3: Run Review
 
-Spawn the **sk-review-orchestrator** agent:
+You are a skill running at the **TOP level** (in the main loop), so you can spawn
+subagents. **Do NOT spawn `sk-review-orchestrator` as a subagent.** A subagent
+cannot spawn its own subagents, so a nested orchestrator could never run its
+parallel lens passes (its step 6) — it would silently collapse to one shallow
+single-pass review and still render a verdict. Instead, **execute the
+orchestrator flow yourself, here, in this top-level context**, so the fan-out is
+legal.
+
+Read the flow definition (single source of truth — do not reinvent it):
 
 ```
-Task tool:
-  subagent_type: "sk-review-orchestrator"
-  prompt: |
-    Review uncommitted changes in the current repository.
-
-    Context:
-    - Design doc: [path if user selected one, or "none"]
-    - Code style: [path if exists, or "none"]
+Read("~/.claude/agents/sk-review-orchestrator.md")
+  or Read("workflow/agents/sk-review-orchestrator.md")   # from the skills repo
 ```
 
-**If the Task / subagent tool is not available** (e.g., Codex, Cursor),
-the orchestrator's flow runs as a single role inside the current
-session: read `~/.claude/agents/sk-review-orchestrator.md` (or
-`workflow/agents/sk-review-orchestrator.md` from the skills repo) and
-execute its `<execution_flow>` step-by-step. Subagents become sequential
-sections of the review rather than parallel calls. Do NOT improvise a
-different review process — always drive from the orchestrator definition.
+Then run its `<execution_flow>` step by step in THIS context:
+
+1. **Steps 1–5** (scope, profile resolution, tool discovery, static analysis) —
+   run inline with your Read/Bash/Glob/Grep tools.
+2. **Step 6 (dispatch)** — spawn ALL FOUR lens agents **IN PARALLEL** via Task,
+   in a single message (multiple tool uses), each with full file content plus the
+   data step 6 specifies: `sk-review-security`, `sk-review-architecture`,
+   `sk-review-stack-rules`, `sk-review-instruction-quality`. This is the whole
+   reason the flow runs top-level — the fan-out is legal here.
+3. **Steps 7–8** (aggregate, verdict) — run inline. Honor the verdict-downgrade
+   and the ✓ parallel / ⊟ inline / ⊘ skipped disclosure rules in the flow.
+
+Pass into the flow:
+- Design doc: [path if the user selected one in Step 2, or "none"]
+- Code style: [path if exists, or "none"]
+
+**If the Task tool is genuinely unavailable** (e.g., Codex, Cursor — no subagents
+at all), run the four lens passes as **sequential inline sections** instead of
+parallel Task calls, driven by `workflow/agents/review-steps/*.md`, and **say so
+in the report** (mark each pass ⊟ inline). Do NOT improvise a different process —
+always drive from the orchestrator definition.
 
 ---
 
