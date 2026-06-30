@@ -33,7 +33,7 @@ for link in "$CLAUDE_DIR/agents/"sk-*.md; do
 done
 
 echo "Removing agent resource links..."
-for res in review-steps shared best-practices; do
+for res in review-steps shared best-practices static-analysis; do
     link="$CLAUDE_DIR/agents/$res"
     if [ -L "$link" ]; then
         rm -f "$link"

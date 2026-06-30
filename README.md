@@ -57,7 +57,7 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 | Doc Review | Doc Reviewer | `DOC_REVIEW.md` | Optional, verifies alignment |
 | Testing | Tester | Test files (failing) | Proposes test plan for approval |
 | Implementation | Developer | Code (tests pass) | — |
-| Code Review | Review Orchestrator | Verdict | Resolves stack profiles, dispatches parallel review passes, may loop back to Developer |
+| Code Review | Review Orchestrator | Verdict | Resolves stack profiles, runs the static-analysis battery, dispatches parallel review passes, may loop back to Developer |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 
 Every phase requires **explicit user approval** before proceeding to the next one.
@@ -170,6 +170,7 @@ skills/
 ├── shared/
 │   ├── templates/               # Artifact templates
 │   ├── context-handoff.md       # Phase-to-phase context passing
+│   ├── static-analysis/         # Deep-analysis battery (run-static-analysis.sh) for review step 5
 │   └── best-practices/          # Coder + reviewer profiles
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go
