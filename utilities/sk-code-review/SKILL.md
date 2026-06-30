@@ -59,7 +59,10 @@ Read("~/.claude/agents/sk-review-orchestrator.md")
 Then run its `<execution_flow>` step by step in THIS context:
 
 1. **Steps 1–5** (scope, profile resolution, tool discovery, static analysis) —
-   run inline with your Read/Bash/Glob/Grep tools.
+   run inline with your Read/Bash/Glob/Grep tools. Step 5 is NOT optional and NOT
+   hand-run: invoke the deep-analysis battery script
+   (`~/.claude/agents/static-analysis/run-static-analysis.sh`) and paste its
+   provenance table into the verdict. A green pre-commit/CI is not a substitute.
 2. **Step 6 (dispatch)** — spawn ALL FOUR lens agents **IN PARALLEL** via Task,
    in a single message (multiple tool uses), each with full file content plus the
    data step 6 specifies: `sk-review-security`, `sk-review-architecture`,

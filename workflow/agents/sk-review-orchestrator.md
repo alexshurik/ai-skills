@@ -245,19 +245,35 @@ Record: pass/fail, number of tests, coverage percentage if available.
 Pass test results to subagents along with static analysis output.
 
 **Run project linters next** through `$RUN` (`$RUN ruff check`, `$RUN npm run lint`,
-`go vet ./...`, etc.), then deep analysis tools (`$RUN bandit`, `$RUN complexipy`,
-`$RUN radon`, `semgrep`, `lizard`, `jscpd`, etc.).
+`go vet ./...`, etc.).
 
-Consolidate all output into a single static analysis report. If a tool takes more than 30 seconds, skip it and note in the report.
+### Then run the deep-analysis battery — ONE command, not a hand-run
 
-**A tool that FAILS TO RUN is not a pass and not a skip.** Distinguish two outcomes:
-- The tool **ran and reported issues** (non-zero exit = findings) → normal; record the findings.
-- The tool **failed to execute** — command-not-found, unknown/removed rule selector,
-  config-parse error, version mismatch, traceback instead of results → this dimension
-  is UNVERIFIED. Re-attempt via `$RUN`. If it still won't run, record a top-level
-  `UNVERIFIED: could not execute <tool>` entry (NOT a footnote) with the exact command,
-  the error, and the unchecked dimension. NEVER substitute a manual/by-eye estimate for
-  a tool you could not run, and never mark the dimension passed or skipped.
+The quantitative battery (complexity, cognitive complexity, maintainability,
+duplication, dead code, SAST) is NOT optional and is NOT hand-run tool-by-tool —
+that is exactly what gets silently skipped under load. Run the canonical script,
+which resolves `$RUN`, probes every tool, runs it, and emits a provenance table:
+
+```bash
+export RUN   # pass the runner resolved in step 4 (e.g. "uv run"); the script also self-resolves
+bash ~/.claude/agents/static-analysis/run-static-analysis.sh <changed files / package dir>
+  # repo fallback: bash shared/static-analysis/run-static-analysis.sh <paths>
+```
+
+Capture its **`STATIC ANALYSIS PROVENANCE` table and `SUMMARY` line verbatim** — they
+go straight into the verdict's Deep Analysis section (step 8). Do not paraphrase the
+numbers and do not regenerate them by eye.
+
+**Absence is UNVERIFIED, never a silent pass — and pre-commit/CI does NOT count.**
+- A tool that **ran and reported issues** (non-zero exit = findings) → record the findings.
+- A tool that **failed to execute** (command-not-found, unknown/removed selector,
+  config-parse error, traceback) OR that you **did not run at all** → that dimension is
+  **UNVERIFIED**. The script already marks both as `UNVERIFIED`; surface them as a
+  top-level entry (NOT a footnote) with the command and the unchecked dimension.
+- A green pre-commit hook, CI job, or "complexipy runs on commit" is **NOT a substitute**
+  for the review running the dimension and recording its number here. Relying on a hook =
+  the dimension is UNVERIFIED for this review. NEVER substitute a by-eye estimate for a
+  tool you could not (or did not) run, and never mark the dimension passed or skipped.
 
 Record, **with provenance** (so every claim is reproducible):
 - Linter output (pass/fail per linter) — exact command, tool version, exit code
@@ -319,14 +335,22 @@ Merge results from all 4 subagents:
 Decide: **APPROVED** only if (a) zero BLOCKER and zero MAJOR findings AND (b)
 every one of the four review passes ACTUALLY RAN — as a parallel Task **or** an
 inline section — and returned valid findings (none errored, and none was silently
-dropped because fan-out was unavailable) AND (c) no gate tool was left UNVERIFIED
-(failed to execute) in step 5. If any pass did not run or could not be verified,
-or a gate tool failed to run, the verdict is **CHANGES REQUESTED (could not
-complete review)** — never APPROVE on the back of a pass or a gate that did not
-actually run. "Lenses skipped because I'm a nested subagent" is exactly this
-failure: run them inline instead (step 6 fallback), or downgrade — do not
-silently collapse to a shallow pass and call it APPROVED. Otherwise with real
-BLOCKER/MAJOR findings: **CHANGES REQUESTED**.
+dropped because fan-out was unavailable) AND (c) the step-5 deep-analysis battery
+ran and its `STATIC ANALYSIS PROVENANCE` table is present in the verdict with NO
+gate dimension left UNVERIFIED. If any pass did not run or could not be verified,
+or the battery did not run, or a gate dimension is UNVERIFIED, the verdict is
+**CHANGES REQUESTED (could not complete review)** — never APPROVE on the back of a
+pass, a battery, or a gate that did not actually run. Two failures that are exactly
+this case, not exceptions to it:
+- "Lenses skipped because I'm a nested subagent" → run them inline (step 6 fallback) or downgrade.
+- "Complexity/duplication is covered by pre-commit/CI" → that is NOT this review running
+  the dimension; the dimension is UNVERIFIED until the battery records its number here.
+
+Otherwise with real BLOCKER/MAJOR findings: **CHANGES REQUESTED**.
+
+The verdict MUST embed the step-5 provenance table verbatim. A verdict with an
+absent or partial Deep Analysis section is itself a "could not complete review" —
+an empty battery is not a clean battery.
 
 "What Was Checked" MUST mark each pass ✓ parallel / ⊟ inline / ⊘ skipped(reason)
 — never a bare checkbox that hides whether (and how) the pass ran.
@@ -433,12 +457,20 @@ Mark each pass: ✓ parallel (Task) · ⊟ inline section (fan-out unavailable) 
 - [✓|⊟|⊘] Architecture and maintainability (sk-review-architecture)
 - [✓|⊟|⊘] Stack-specific rules (sk-review-stack-rules)
 - [✓|⊟|⊘] Instruction quality (sk-review-instruction-quality) — ⊘ if not an agent-instruction repo
-- [✓] Static analysis ([list tools run]; note any not available or that failed to run)
+- [✓] Static-analysis battery (step-5 script) — provenance table below
 
 ### Deep Analysis
-| Tool | Result |
-|------|--------|
-| [tool] | Clean / [N] findings addressed |
+Paste the step-5 `STATIC ANALYSIS PROVENANCE` table and `SUMMARY` line VERBATIM:
+
+```
+Dimension | Tool | Version | Command | Exit | Status
+----------|------|---------|---------|------|-------
+[rows from run-static-analysis.sh]
+SUMMARY: N OK · M FINDINGS · K UNVERIFIED
+```
+
+APPROVED requires K (UNVERIFIED) = 0 on every gate dimension. Any UNVERIFIED gate
+→ this is "could not complete review", not APPROVED.
 
 ### Notes
 - [Any observations or minor suggestions]
@@ -538,7 +570,8 @@ exit codes) and any UNVERIFIED gate so the user sees what actually ran.**
 ## DO
 - Resolve profiles and report which were loaded (MANDATORY)
 - Run tool availability check and ask user before installing (MANDATORY)
-- Run static analysis BEFORE dispatching subagents
+- Run the step-5 deep-analysis battery via `run-static-analysis.sh` BEFORE
+  dispatching subagents, and paste its provenance table into the verdict (MANDATORY)
 - Dispatch all 4 passes in PARALLEL when top-level; run them inline (sequential
   sections) when fan-out is unavailable — but always run all 4
 - Disclose HOW each pass ran (✓ parallel / ⊟ inline / ⊘ skipped) in "What Was
@@ -556,6 +589,9 @@ exit codes) and any UNVERIFIED gate so the user sees what actually ran.**
 - Echo discovered secret values into findings/verdict output -- redact them (show only the file:line and the kind of secret)
 - Silently skip profile levels -- always report what was and wasn't loaded
 - APPROVE when a review pass failed to run -- that is "could not complete review"
+- Skip the deep-analysis battery or rely on pre-commit/CI as a substitute -- a
+  dimension not run by THIS review is UNVERIFIED; an UNVERIFIED gate blocks APPROVED
+- APPROVE with an absent or partial Deep Analysis provenance table
 - Silently collapse to one shallow pass when fan-out is unavailable -- run the
   four lenses inline and disclose it (⊟), never quietly drop them
 - Prompt "about to run the review -- ok?" -- run the full battery by default;

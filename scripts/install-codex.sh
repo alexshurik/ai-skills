@@ -113,6 +113,17 @@ if [ -d "$REPO_DIR/shared/best-practices" ]; then
     echo "  ✓ Copied: best-practices/"
 fi
 
+# 9b. Static-analysis battery (review step 5) → agents/static-analysis/
+#     Lives under agents/ so the `~/.claude/agents/` path rewrite (step 10) maps the
+#     orchestrator's reference to it automatically.
+echo "Installing static-analysis battery..."
+if [ -d "$REPO_DIR/shared/static-analysis" ]; then
+    rm -rf "$CODEX_DIR/agents/static-analysis"
+    cp -R "$REPO_DIR/shared/static-analysis" "$CODEX_DIR/agents/static-analysis"
+    chmod +x "$CODEX_DIR/agents/static-analysis/"*.sh 2>/dev/null || true
+    echo "  ✓ Copied: agents/static-analysis/"
+fi
+
 # 10. Rewrite Claude-Code paths to the Codex install location so the resolver, handoff
 #     protocol, and agent cross-references resolve here. Scope the rewrite to the files
 #     WE installed — $CODEX_DIR is a shared standard dir that may hold other tools'

@@ -86,6 +86,13 @@ echo "Installing best-practice profiles..."
 ln -sfn "$REPO_DIR/shared/best-practices" "$CLAUDE_DIR/agents/best-practices"
 echo "  ✓ Linked: agents/best-practices/"
 
+# 7b. Static-analysis battery (review step 5) → ~/.claude/agents/static-analysis/
+echo "Installing static-analysis battery..."
+if [ -d "$REPO_DIR/shared/static-analysis" ]; then
+    ln -sfn "$REPO_DIR/shared/static-analysis" "$CLAUDE_DIR/agents/static-analysis"
+    echo "  ✓ Linked: agents/static-analysis/"
+fi
+
 # 8. Commands → ~/.claude/commands/
 echo "Installing commands..."
 for cmd in "$REPO_DIR"/onboarding/*.md; do
