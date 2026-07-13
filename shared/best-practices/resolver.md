@@ -17,7 +17,11 @@ then `shared/best-practices/<file>`.
 ### Step 1: Read the index
 
 Read `best-practices/index.yaml`. This file lists detection signals and maps
-them to profile paths.
+them to profile paths. **Load each profile from the exact `profiles:` path the index
+gives — never rebuild a path from the category name.** Most profiles live under
+`<category>/<name>/`, but a cross-cutting profile may live at top level (e.g. `ui/` is a
+framework-agnostic design profile registered among `frameworks:` but stored at
+`best-practices/ui/`); the index path is authoritative.
 
 **Floor behaviour:** if `index.yaml` cannot be read (missing/unparseable),
 do NOT abort — fall back to loading `default/{coder|reviewer}.md` only and

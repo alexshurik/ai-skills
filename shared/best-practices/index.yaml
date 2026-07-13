@@ -72,6 +72,33 @@ detection:
   # There is no parent-child inheritance — a fastapi project loads both
   # the fastapi/ and python/ profiles because both sets of signals match.
   frameworks:
+    # Framework-agnostic UI/design profile. Fires whenever the work is frontend —
+    # any JS UI framework, Tailwind, or plain HTML/CSS — so the anti-slop design
+    # rules load across React/Vue/Svelte/Angular/Solid and vanilla CSS alike.
+    # Its files live at top level (best-practices/ui/) rather than under a
+    # single framework, because the rules are cross-framework by design. It STACKS
+    # with any framework profile (topically disjoint — design vs framework idioms),
+    # so its alphabetical order among frameworks is immaterial.
+    ui:
+      signals:
+        - grep: "react|preact|vue|svelte|@angular/core|solid-js|\\blit\\b|astro|next|nuxt|@remix-run|tailwindcss"
+          in: [package.json]
+        - file: tailwind.config.js
+        - file: tailwind.config.ts
+        - file: tailwind.config.cjs
+        - file: tailwind.config.mjs
+        - glob: "*.vue"
+        - glob: "*.svelte"
+        - glob: "*.jsx"
+        - glob: "*.tsx"
+        - glob: "*.css"
+        - glob: "*.scss"
+        - file: index.html
+        - glob: "*.html"
+      profiles:
+        coder: ui/coder.md
+        reviewer: ui/reviewer.md
+
     fastapi:
       signals:
         - grep: "fastapi"

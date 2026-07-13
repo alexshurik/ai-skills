@@ -106,7 +106,8 @@ cat >> "$OUTPUT" << 'BPHEADER'
 ## Best Practices Profiles
 
 Stack-specific coding and review rules live in `shared/best-practices/`, organized by
-language, framework, and tooling. The review orchestrator and developer resolve the
+language, framework, and tooling, plus a framework-agnostic UI (anti-slop design)
+profile that loads for any React/Vue/Svelte/Angular/Tailwind/HTML+CSS work. The review orchestrator and developer resolve the
 project stack via `shared/best-practices/index.yaml` and load matching profiles
 automatically (precedence: project > tooling > framework > language > default).
 Downstream projects override or extend profiles via `.agents/best-practices/project/`.
@@ -121,6 +122,9 @@ for category in languages frameworks tooling; do
     names=$(find "$dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | paste -sd ',' - | sed 's/,/, /g')
     [ -n "$names" ] && echo "- **$category**: $names" >> "$OUTPUT"
 done
+# Framework-agnostic UI/design profile lives at top level, not under a single framework
+[ -d "$REPO_DIR/shared/best-practices/ui" ] && \
+    echo "- **ui** (framework-agnostic): anti-slop UI/design rules (coder + reviewer)" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
 cat >> "$OUTPUT" << 'FOOTER'

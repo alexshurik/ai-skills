@@ -62,7 +62,8 @@ Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user
 ## Best Practices Profiles
 
 Stack-specific coding and review rules live in `shared/best-practices/`, organized by
-language, framework, and tooling. The review orchestrator and developer resolve the
+language, framework, and tooling, plus a framework-agnostic UI (anti-slop design)
+profile that loads for any React/Vue/Svelte/Angular/Tailwind/HTML+CSS work. The review orchestrator and developer resolve the
 project stack via `shared/best-practices/index.yaml` and load matching profiles
 automatically (precedence: project > tooling > framework > language > default).
 Downstream projects override or extend profiles via `.agents/best-practices/project/`.
@@ -72,6 +73,7 @@ Available profiles:
 - **languages**: go, js, python, typescript
 - **frameworks**: fastapi, gin, vue
 - **tooling**: ansible, docker, github-actions, kubernetes, terraform
+- **ui** (framework-agnostic): anti-slop UI/design rules (coder + reviewer)
 
 
 ## Usage

@@ -127,7 +127,7 @@ profiles so generated code and review checks match the target stack. Profiles li
 default  →  language  →  framework  →  tooling  →  project
 ```
 
-- **Universal layers** (`default/`, `languages/`, `frameworks/`, `tooling/`) ship with the
+- **Universal layers** (`default/`, `languages/`, `frameworks/`, `ui/`, `tooling/`) ship with the
   repo and stay generic. Stack is auto-detected via `index.yaml`; see `resolver.md`.
 - **Project layer** (`.agents/best-practices/project/coder.md` + `reviewer.md`) is the
   **highest-precedence** layer and is written **into the target repo**, capturing *that*
@@ -175,6 +175,7 @@ skills/
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go
 │       ├── frameworks/          # fastapi, gin, vue
+│       ├── ui/                  # Framework-agnostic anti-slop UI/design profile (coder + reviewer + catalog)
 │       ├── tooling/             # ansible, docker, github-actions
 │       ├── index.yaml           # Stack detection signals
 │       ├── resolver.md          # Profile resolution logic
