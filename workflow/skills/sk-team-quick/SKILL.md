@@ -63,7 +63,7 @@ Skipped phases:
 |-------|---------------|---------|
 | Architect | `sk-architect` | Brief design note |
 | Developer | `sk-developer` | Fix + tests |
-| Review Orchestrator | `sk-review-orchestrator` | Quality check (security, architecture, stack rules) |
+| Review Orchestrator | `sk-review-orchestrator` | Complete multi-lens review using available tools (no install prompt) |
 | Acceptance Reviewer | `sk-acceptance-reviewer` | Verify fix + write docs |
 
 ## Workflow Execution
@@ -150,8 +150,11 @@ Agent tool:
     Quick fix (QUICK MODE): <description>
     Design note at: openspec/changes/<fix-name>/design.md
 
-    Review the implementation. This is a quick fix — do NOT run the tool-install
-    prompt; use only analysis tools already present and note any that are absent.
+    Review the implementation with complete tracked/untracked scope and every
+    applicable contract/security, architecture, abstraction, structure, imports,
+    stack, and instruction-quality lens. This is a quick fix — do NOT run the
+    tool-install prompt; use only analysis tools already present and note missing
+    required dimensions as UNVERIFIED.
 ```
 
 **After agent completes:**

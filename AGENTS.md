@@ -7,7 +7,7 @@
 
 ### Workflow (Multi-Agent Team)
 
-- `/sk-team-feature` - Full workflow for new feature development with multi-agent team. User approval required between each phase. Worktree-based isolation.
+- `/sk-team-feature` - Run a worktree-isolated multi-agent feature workflow with explicit approval gates from discovery through retrospective and acceptance archive.
 - `/sk-team-help` - Show help and documentation for multi-agent team workflow
 - `/sk-team-quick` - Quick workflow for bugfixes, typos, and small changes
 - `/sk-team-status` - Show status of current team workflow
@@ -20,8 +20,8 @@
 
 ### Utilities
 
-- `/sk-code-review` - Standalone code review for uncommitted changes. Delegates to sk-review-orchestrator for the full review pipeline.
-- `/sk-explore-codestyle` - Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
+- `/sk-code-review` - Review committed, staged, unstaged, and untracked changes through the full baseline-aware multi-lens pipeline without modifying source code.
+- `/sk-explore-codestyle` - Derive project-specific coder, reviewer, and evidence profiles from enforced tooling, approved repository guidance, and representative source samples without promoting legacy frequency into rules.
 
 ### Planning
 
@@ -39,10 +39,10 @@ The following agents are available for task delegation:
 Verify business requirements are met (QA acceptance). Creates VERIFICATION.md with final verdict.
 
 ### sk-architect
-Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
+Design how to implement an approved change, prove boundary ownership and decision completeness, and create design.md, tasks.md, and required ADRs.
 
 ### sk-developer
-Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
+Implement approved tasks with TDD while enforcing architecture boundaries, project-authoritative conventions, and pre-write structure and abstraction gates.
 
 ### sk-doc-reviewer
 Review documentation for consistency, gaps, and alignment before testing. Verifies user's mental model matches the plan.
@@ -54,7 +54,7 @@ Transform ideas into detailed requirements (PM + BA). Creates proposal.md with v
 Research unknown domains, technologies, APIs, and best practices before planning. Creates RESEARCH.md with findings, options, and recommendations.
 
 ### sk-review-orchestrator
-Coordinate code review through specialized subagents. Resolve stack-specific profiles, run static analysis, dispatch parallel review passes, aggregate findings, render verdict.
+Review complete tracked and untracked changes through independent contract/security, architecture, abstraction, structure, import, stack, and instruction-quality lenses with baseline-aware verdicts.
 
 ### sk-tester
 Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.
@@ -67,6 +67,8 @@ profile that loads for any React/Vue/Svelte/Angular/Tailwind/HTML+CSS work. The 
 project stack via `shared/best-practices/index.yaml` and load matching profiles
 automatically (precedence: project > tooling > framework > language > default).
 Downstream projects override or extend profiles via `.agents/best-practices/project/`.
+Project `coder.md`/`reviewer.md` contain Enforced and Approved rules only;
+`evidence.md` keeps Observed and Legacy/uncertain patterns non-normative.
 
 Available profiles:
 

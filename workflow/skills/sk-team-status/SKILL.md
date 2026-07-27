@@ -52,8 +52,9 @@ ls openspec/changes/<name>/ 2>/dev/null
 | Above + DOC_REVIEW.md | Doc Review | Complete - Testing next |
 | Above + test files (failing) | Testing | Complete - Implementation next |
 | Above + implementation (tests pass) | Implementation | Complete - Review next |
-| Above + approved review | Review | Complete - Acceptance next |
-| VERIFICATION.md | Acceptance | WORKFLOW COMPLETE |
+| Above + `CODE_REVIEW.md` APPROVED | Review | Complete - Acceptance next |
+| Above + `VERIFICATION.md` ACCEPTED | Acceptance | Complete - Retrospective next |
+| Above + `RETROSPECTIVE.md` | Retrospective | Complete - Archive approval next |
 
 ### 4. Check Test Status
 
@@ -78,7 +79,9 @@ npm test 2>&1 | tail -30
   - [x] tasks.md - Tasks broken down
   - [ ] Tests - Pending
   - [ ] Implementation - Pending
+  - [ ] CODE_REVIEW.md - Pending
   - [ ] VERIFICATION.md - Pending
+  - [ ] RETROSPECTIVE.md - Pending
 - **Next Action**: Invoke sk-tester for TDD red phase
 - **Resume**: `/sk-team-feature` to continue
 
@@ -93,6 +96,8 @@ npm test 2>&1 | tail -30
 | In Testing | 0 |
 | In Implementation | 1 |
 | In Review | 0 |
+| In Retrospective | 0 |
+| Ready to Archive | 0 |
 | Complete | 2 |
 | **Total Active** | **4** |
 
@@ -141,7 +146,8 @@ Example: `/sk-team-quick Fix typo in login error message`
 If artifacts exist but workflow seems stuck:
 - proposal.md exists but no design.md
 - Tests exist but no implementation
-- Implementation exists but no VERIFICATION.md
+- Implementation exists but no approved CODE_REVIEW.md
+- VERIFICATION.md exists but no RETROSPECTIVE.md
 
 Report these as potentially stale and suggest resuming.
 

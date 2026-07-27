@@ -8,9 +8,19 @@ Run the installation script:
 ./scripts/install-codex.sh
 ```
 
-By default, this copies skills to `~/.agents/skills/` — the location Codex scans for
-user-level skills (the agent-agnostic open standard, shared with other agents). The
-older `~/.codex/skills/` path is no longer scanned per current Codex docs.
+By default, this installs skills to `~/.agents/skills/`. Some environments may
+still discover legacy user entries under `~/.codex/skills/`; duplicate names can
+therefore load conflicting instructions.
+
+The installer validates and verifies the current target, then runs the installation
+doctor. If legacy duplicates remain, inspect the report and migrate only this
+repository's entries:
+
+```bash
+./scripts/migrate-legacy-codex.sh
+```
+
+The migration preserves `~/.codex/skills/.system` and unrelated skills.
 
 To use a different location:
 ```bash
@@ -62,12 +72,21 @@ Use the sk-product-analyst agent to gather requirements.
 
 ## Updating
 
-Unlike Claude Code (which uses symlinks), Codex uses copied files. To update:
+Codex uses manifest-rendered copied directories, including skill references,
+scripts, and UI metadata. To update:
 
 ```bash
 cd /path/to/skills
 git pull
 ./scripts/install-codex.sh
+```
+
+Verify or diagnose:
+
+```bash
+./scripts/validate-skills.sh
+./scripts/doctor-installation.sh
+./scripts/verify-installation.sh codex ~/.agents/skills
 ```
 
 ## Compatibility Notes

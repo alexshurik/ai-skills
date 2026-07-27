@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "historical_fixture": {
+    "source_repo_env": "DELI_CHECK_BACKEND_REPO",
+    "base": "ee6100b",
+    "head": "5aa47ea",
+    "builder": "build-historical-fixture.sh"
+  },
+  "prompts": {
+    "architect": "prompts/architect.md",
+    "developer": "prompts/developer.md",
+    "codestyle": "prompts/codestyle.md",
+    "review": "prompts/review.md",
+    "retrospective": "prompts/retrospective.md"
+  },
+  "targeted_cases": [
+    "cases/developer-weak-design",
+    "cases/local-import-claim",
+    "cases/deployment-scope-creep",
+    "cases/codestyle-frequency-trap",
+    "cases/review-scope-baseline",
+    "cases/retrospective-routing"
+  ],
+  "required_assertions": [
+    "custom cross-cutting limiter logic in a transport/API owner is reported",
+    "serialized-store key, codec, expiry, and transaction mechanics in the use-case service are reported",
+    "mechanism-oriented application service vocabulary is reported",
+    "one-use aliases, constants, wrappers, and micro-files are inventoried",
+    "an untyped token payload crossing a trust boundary is reported",
+    "a circular-import claim without clean-process reproduction is rejected",
+    "an unauthorized second secret-delivery/deployment path is rejected",
+    "untracked files are included",
+    "baseline findings are separated",
+    "APPROVED is impossible while a required applicable gate is missing"
+  ]
+}

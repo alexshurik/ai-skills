@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Feature"
+  short_description: "Run the full gated feature workflow"
+  default_prompt: "Use $sk-team-feature to develop this feature through discovery, design, testing, review, acceptance, and retrospective."

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "limits": {
+    "catalog_skill_lines": 500,
+    "agent_prompt_lines": 500
+  },
+  "catalog": [
+    {"name": "sk-team-feature", "source": "workflow/skills/sk-team-feature"},
+    {"name": "sk-team-help", "source": "workflow/skills/sk-team-help"},
+    {"name": "sk-team-quick", "source": "workflow/skills/sk-team-quick"},
+    {"name": "sk-team-status", "source": "workflow/skills/sk-team-status"},
+    {"name": "sk-code-review", "source": "utilities/sk-code-review"},
+    {"name": "sk-explore-codestyle", "source": "utilities/sk-explore-codestyle"},
+    {"name": "sk-copy-context", "source": "context/sk-copy-context"},
+    {"name": "sk-plan-mode", "source": "planning/sk-plan-mode"}
+  ],
+  "onboarding": [
+    {"name": "sk-discover-project", "source": "onboarding/sk-discover-project.md"},
+    {"name": "sk-explore-codebase", "source": "onboarding/sk-explore-codebase.md"},
+    {"name": "sk-onboard", "source": "onboarding/sk-onboard.md"}
+  ],
+  "agents": [
+    {"name": "sk-acceptance-reviewer", "source": "workflow/agents/sk-acceptance-reviewer.md"},
+    {"name": "sk-architect", "source": "workflow/agents/sk-architect.md"},
+    {"name": "sk-developer", "source": "workflow/agents/sk-developer.md"},
+    {"name": "sk-doc-reviewer", "source": "workflow/agents/sk-doc-reviewer.md"},
+    {"name": "sk-product-analyst", "source": "workflow/agents/sk-product-analyst.md"},
+    {"name": "sk-researcher", "source": "workflow/agents/sk-researcher.md"},
+    {"name": "sk-review-orchestrator", "source": "workflow/agents/sk-review-orchestrator.md"},
+    {"name": "sk-tester", "source": "workflow/agents/sk-tester.md"}
+  ],
+  "review_steps": [
+    {"name": "sk-review-abstraction", "source": "workflow/agents/review-steps/abstraction.md"},
+    {"name": "sk-review-architecture", "source": "workflow/agents/review-steps/architecture.md"},
+    {"name": "sk-review-imports", "source": "workflow/agents/review-steps/imports.md"},
+    {"name": "sk-review-instruction-quality", "source": "workflow/agents/review-steps/instruction-quality.md"},
+    {"name": "sk-review-security", "source": "workflow/agents/review-steps/security.md"},
+    {"name": "sk-review-stack-rules", "source": "workflow/agents/review-steps/stack-rules.md"},
+    {"name": "sk-review-structure", "source": "workflow/agents/review-steps/structure.md"}
+  ],
+  "resources": [
+    {
+      "name": "agent-shared",
+      "source": "workflow/agents/shared",
+      "codex_target": "shared",
+      "claude_target": "agents/shared",
+      "kimi_target": "agents/references/shared"
+    },
+    {
+      "name": "agent-references",
+      "source": "workflow/agents/references",
+      "codex_target": "agents/references",
+      "claude_target": "agents/references",
+      "kimi_target": "agents/references/references"
+    },
+    {
+      "name": "best-practices",
+      "source": "shared/best-practices",
+      "codex_target": "best-practices",
+      "claude_target": "agents/best-practices",
+      "kimi_target": "agents/references/best-practices"
+    },
+    {
+      "name": "static-analysis",
+      "source": "shared/static-analysis",
+      "codex_target": "agents/static-analysis",
+      "claude_target": "agents/static-analysis",
+      "kimi_target": "agents/references/static-analysis"
+    },
+    {
+      "name": "review-evidence",
+      "source": "shared/review-evidence",
+      "codex_target": "agents/review-evidence",
+      "claude_target": "agents/review-evidence",
+      "kimi_target": "agents/references/review-evidence"
+    },
+    {
+      "name": "templates",
+      "source": "shared/templates",
+      "codex_target": "agents/templates",
+      "claude_target": "agents/templates",
+      "kimi_target": "agents/references/templates"
+    }
+  ]
+}

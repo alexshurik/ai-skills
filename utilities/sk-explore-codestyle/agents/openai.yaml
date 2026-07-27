@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explore Codestyle"
+  short_description: "Derive authoritative project conventions"
+  default_prompt: "Use $sk-explore-codestyle to classify and generate this repository's project convention profiles."

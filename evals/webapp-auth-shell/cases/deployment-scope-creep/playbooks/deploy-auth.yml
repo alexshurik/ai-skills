@@ -1,0 +1,9 @@
+---
+- name: Deliver application authentication configuration
+  hosts: application
+  tasks:
+    - name: Copy generated production environment
+      ansible.builtin.template:
+        src: production-auth.env.j2
+        dest: /srv/application/.env
+        mode: "0600"

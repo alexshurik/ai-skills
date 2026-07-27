@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Quick"
+  short_description: "Run the gated quick-change workflow"
+  default_prompt: "Use $sk-team-quick to implement this small change through design, development, review, and acceptance."

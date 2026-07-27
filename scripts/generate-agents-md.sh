@@ -6,8 +6,24 @@ set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT="$REPO_DIR/AGENTS.md"
+CHECK_ONLY=false
 
-echo "Generating AGENTS.md..."
+if [ "${1:-}" = "--check" ]; then
+    CHECK_ONLY=true
+    OUTPUT="$(mktemp /tmp/sk-agents-md.XXXXXX)"
+    trap 'rm -f "$OUTPUT"' EXIT
+elif [ "${1:-}" = "--output" ]; then
+    if [ -z "${2:-}" ]; then
+        echo "Usage: $0 [--check | --output <path>]" >&2
+        exit 2
+    fi
+    OUTPUT="$2"
+elif [ "$#" -ne 0 ]; then
+    echo "Usage: $0 [--check | --output <path>]" >&2
+    exit 2
+fi
+
+echo "Generating AGENTS.md candidate..."
 
 # Function to extract description from file
 extract_desc() {
@@ -111,6 +127,8 @@ profile that loads for any React/Vue/Svelte/Angular/Tailwind/HTML+CSS work. The 
 project stack via `shared/best-practices/index.yaml` and load matching profiles
 automatically (precedence: project > tooling > framework > language > default).
 Downstream projects override or extend profiles via `.agents/best-practices/project/`.
+Project `coder.md`/`reviewer.md` contain Enforced and Approved rules only;
+`evidence.md` keeps Observed and Legacy/uncertain patterns non-normative.
 
 Available profiles:
 
@@ -159,5 +177,15 @@ cp adapters/cursor/.cursorrules /path/to/project/
 MIT
 FOOTER
 
-echo "Generated: $OUTPUT"
-echo "Lines: $(wc -l < "$OUTPUT" | tr -d ' ')"
+if [ "$CHECK_ONLY" = true ]; then
+    if cmp -s "$OUTPUT" "$REPO_DIR/AGENTS.md"; then
+        echo "AGENTS.md is current."
+    else
+        echo "AGENTS.md is stale. Run scripts/generate-agents-md.sh." >&2
+        diff -u "$REPO_DIR/AGENTS.md" "$OUTPUT" || true
+        exit 1
+    fi
+else
+    echo "Generated: $OUTPUT"
+    echo "Lines: $(wc -l < "$OUTPUT" | tr -d ' ')"
+fi

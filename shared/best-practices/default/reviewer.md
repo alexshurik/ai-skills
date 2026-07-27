@@ -5,9 +5,12 @@ when no more specific language/framework profile is loaded. Language-specific
 rules are layered on top from language profiles.
 
 Scope boundaries (to avoid double-coverage across review passes):
-- **Structural principles** (SOLID, KISS/DRY/YAGNI, layer boundaries, design
-  patterns, performance, design.md compliance) are owned by the **architecture
-  review pass** — they are NOT repeated here.
+- **Design ownership, vocabulary, dependency direction, cross-cutting reuse,
+  reliability, and design compliance** belong to the architecture lens.
+- **One-use abstractions and navigation cost** belong to the abstraction lens.
+- **File/module size, responsibility, placement, and fragmentation** belong to the
+  structure lens.
+- **Local/dynamic imports and cycle evidence** belong to the imports lens.
 - **Severity mapping, focus/priority order, and feedback style** are owned by
   the **orchestrator** — they are NOT repeated here.
 - This profile covers code-quality, error-handling, declarative-style, and
@@ -46,7 +49,8 @@ corrupts the review without anyone noticing.
 - [ ] Functions longer than 70 lines MUST be split into smaller sub-methods
 - [ ] No deeply nested conditionals (>3 levels is a smell)
 - [ ] Early returns reduce nesting
-- [ ] No file-level docstrings at the top of the file -- they add noise and become stale
+- [ ] File/module docstrings follow an Enforced or Approved project/language rule;
+  sample frequency alone is not a review rule
 - [ ] Comments only for complex/non-obvious logic -- if code needs a comment, first try to simplify it. If genuinely complex (tricky algorithm, workaround, business rule), comment WHY, not WHAT
 - [ ] Blank line grouping -- related statements grouped together, unrelated ones separated. Code reads like "paragraphs"
 - [ ] Long comprehensions/chains broken across multiple lines for readability

@@ -1,107 +1,166 @@
-# Deriving the Project Convention Profile
+# Deriving Project Convention Profiles
 
-How to produce `.agents/best-practices/project/coder.md` (and `reviewer.md`) — the
-**highest-precedence** layer in the profile chain (see `resolver.md`). This layer is
-where a SPECIFIC repo's conventions live, so generated code matches the project
-instead of the model's generic defaults.
+Generate `.agents/best-practices/project/` so implementation and review follow
+approved project-specific rules without turning legacy frequency into authority.
+Read `convention-evidence-model.md` before deriving any rule.
 
-This is the single source of truth for the extraction logic. It is referenced by
-`sk-explore-codebase` (onboarding generates it) and by `sk-developer` (which
-generates it on first run if missing). Both inline the essentials; keep them in sync
-with this file.
+## Outputs
 
-> **Not a violation of "skills produce universal rules."** The universal profiles in
-> this repo stay universal. The profile produced here is project-specific and is
-> written **into the target repo** (`.agents/best-practices/project/`), never into
-> the skills repo. It complements the universal layer; it does not replace it.
+Create three artifacts:
 
----
+- `coder.md` — Enforced and Approved instructions only;
+- `reviewer.md` — checks tied to the same normative rule IDs;
+- `evidence.md` — Observed and Legacy/uncertain patterns, contradictions, and
+  promotion questions.
 
-## When to (re)generate
+The project profile is the highest-precedence profile layer, so non-normative
+observations must never be written into `coder.md` or `reviewer.md`.
 
-Generate when `.agents/best-practices/project/coder.md` is ABSENT. Three cases:
+## When to generate or refresh
 
-1. **Established repo (code + config present)** — derive from evidence (below).
-2. **Repo with code but thin/no tooling config** — derive from sampled files only.
-3. **Greenfield (no code yet)** — you cannot observe conventions, so ASK. Return a
-   `## NEEDS USER INPUT` block (per the interaction protocol) covering the decisions
-   below, then write the profile from the answers. Do NOT invent conventions silently.
+Generate when `coder.md` is absent. Offer refresh when tooling, repository
+guidance, accepted ADRs, or major code organization changes.
 
-Persist the result and show it to the user for a quick confirm — it is a reviewable
-artifact, not a hidden cache.
+Handle three repository states:
 
----
+1. **Established:** config, guidance, and source exist — classify all evidence.
+2. **Thin tooling:** guidance/source exist — Approved rules remain normative;
+   samples remain Observed.
+3. **Greenfield:** there is no meaningful source sample — ask about naming,
+   typing, error handling, tests, module organization, and boundary ownership.
+   Record answers as Approved; do not fabricate Observed conventions.
 
-## Sources, in authority order
+Show generated artifacts for confirmation. Human confirmation may promote explicit
+items from Observed to Approved; it does not automatically approve the whole sample.
 
-1. **Tooling config = conventions-as-code (highest authority).** These are
-   machine-enforced, so they win over anything you infer:
-   - Python: `pyproject.toml` `[tool.ruff]`/`[tool.ruff.lint]`/`[tool.mypy]`,
-     `ruff.toml`, `setup.cfg`, `.flake8`, `mypy.ini`
-   - JS/TS: `eslint.config.*`/`.eslintrc*`, `.prettierrc*`, `tsconfig.json`,
-     `biome.json`
-   - Cross-language: `.editorconfig`
-   - Go: `.golangci.yml`, `gofmt` (implicit) · Rust: `rustfmt.toml`, `clippy.toml`
-   Record the **exact selected rule sets / options** — they tell you naming rules,
-   line length, quote style, import order, docstring policy, etc.
-2. **`AGENTS.md` / `CLAUDE.md` / `.cursor/rules/`** — explicit human-written rules.
-3. **The code itself** — sample 8–15 representative, non-generated files across the
-   main packages. Count, don't guess: "module docstrings present in 0/14 files →
-   rule: no module docstrings." Cite the evidence in the profile.
+## Evidence collection
 
-When a source conflicts with your inference from the code, the **config wins** and
-the human-written rules win over raw sampling.
+### Enforced candidates
 
----
+Read actual configuration and authoritative commands:
 
-## What to capture (only project-specific signal)
+- formatter, linter, type checker, build, test, pre-commit, and CI config;
+- package manager and locked runner;
+- language/framework manifests.
 
-Capture what DEVIATES from or SPECIALISES the universal profiles — do not restate
-universal rules. For each, record the observation AND the evidence count:
+Record the exact config path, selected setting/rule, command, scope, and exception.
+Do not claim a tool enforces architecture or vocabulary it cannot inspect.
 
-- **Naming** — classes, functions, modules/files, constants, test files. (Catches
-  "classes are PascalCase, never `_Private` at module scope.")
-- **Docstrings** — module/class/function: present or not, and which style
-  (Google/NumPy/reST/one-line). (Catches "no module/file docstrings here.")
-- **Imports & file layout** — grouping, absolute vs relative, `__init__` re-exports,
-  one-class-per-file vs grouped.
-- **Typing** — how strict; `Any` tolerated?; runtime-validation lib (pydantic/attrs)?
-- **Error handling** — exception hierarchy, custom base, Result-type vs raise.
-- **Tests** — framework, file location/naming, fixture style, assertion style.
-- **Framework idioms** — DI pattern, router/controller layout, ORM/session usage.
-- **Tooling commands** — the EXACT format/lint/type/test commands through the
-  project runner (e.g. `uv run ruff format`, `uv run ruff check --fix`,
-  `uv run mypy src/`). `sk-developer` runs these on its own output.
+### Approved candidates
 
----
+Read current:
 
-## Profile template (`.agents/best-practices/project/coder.md`)
+- `AGENTS.md`, `CLAUDE.md`, contribution/convention docs;
+- accepted ADRs and approved active specifications;
+- project-level rule files.
 
-```markdown
-# Project Coder Profile — <repo name>
+Resolve contradictions. A newer or explicitly superseding decision wins only when
+the repository says so. Otherwise request clarification.
 
-> Auto-derived on <date> from tooling config + N sampled files. Highest-precedence
-> layer: these rules OVERRIDE the generic language/framework examples on any
-> conflict. Re-generate after major style changes. Evidence counts shown inline.
+### Observed and Legacy candidates
 
-## Authoritative tooling (run these; they enforce most style)
-- Format: `<cmd>`   Lint: `<cmd>`   Types: `<cmd>`   Tests: `<cmd>`
-- Key lint rule sets enabled: <list from config>
+Sample 8–15 representative, non-generated files across:
 
-## Naming (observed)
-- Classes: <PascalCase> (18/18) · Functions: <snake_case> (…) · Files: <…>
-- <any project-specific exception>
+- entry points and transport adapters;
+- business/application logic;
+- persistence/integration code;
+- data models;
+- tests;
+- shared modules.
 
-## Docstrings (observed)
-- Module/file: <NONE — 0/14> · Class: <…> · Function: <style, when present>
+Count patterns and counterexamples. Sampling can describe naming, docstrings,
+imports/layout, typing, error handling, tests, framework idioms, and file grouping.
+It cannot approve them.
 
-## Imports & layout · Typing · Error handling · Tests · Framework idioms
-- <observed rule + evidence, one line each — only where project-specific>
+Classify a sample as Legacy/uncertain when it conflicts with an Enforced/Approved
+source, is inconsistent, is deprecated, or has unclear ownership.
 
-## When unsure
-Match the nearest existing file in the same package. This profile overrides the
-generic profile examples; the project's own linter/formatter is the final arbiter.
+Never promote dependency aliases, local/dynamic imports, wrappers, one-use helpers,
+top-level constants, micro-files, shared utility placement, or custom cross-cutting
+integrations from frequency alone.
+
+## Rule record
+
+Each item must include:
+
+```text
+ID: ENF-<topic> | APP-<topic> | OBS-<topic> | LEG-<topic>
+Classification: Enforced | Approved | Observed | Legacy/uncertain
+Source: exact file/section/config or sampled paths
+Evidence: setting or N/M count plus counterexamples
+Scope: affected language/package/component
+Confidence: high | medium | low
+Instruction/check: only for Enforced or Approved
 ```
 
-Also write a short `reviewer.md` mirroring the same rules as review checks (so the
-reviewer flags deviations), or a one-line pointer back to this file.
+Use stable IDs so `coder.md` and `reviewer.md` cannot drift independently.
+
+## `coder.md` template
+
+```markdown
+# Project Coder Profile — <repository>
+
+> Normative project layer. Contains Enforced and Approved rules only.
+> See `evidence.md` for non-normative observations and legacy patterns.
+
+## Authoritative commands
+- [ENF-tooling] Format: `<cmd>` · Lint: `<cmd>` · Types: `<cmd>` · Tests: `<cmd>`
+  Source: `<path/section>`
+
+## Approved architecture and conventions
+- [APP-topic] <imperative instruction>
+  Source: `<path/section>` · Scope: `<scope>`
+
+## Enforced implementation rules
+- [ENF-topic] <imperative instruction>
+  Source: `<config setting>` · Verify: `<cmd>`
+
+## Conflicts and escalation
+- Follow the cited source. If two normative sources conflict, stop and request
+  resolution. Never use sample frequency as the tie-breaker.
+```
+
+## `reviewer.md` template
+
+```markdown
+# Project Reviewer Profile — <repository>
+
+Review only the normative IDs from `coder.md`.
+
+- [ENF-topic] Verify `<mechanically enforced behavior>` with `<cmd>`.
+- [APP-topic] Verify `<approved architecture/convention>` against `<source>`.
+
+Report Observed/Legacy evidence separately when relevant; do not treat it as a
+violation unless an Enforced/Approved rule prohibits the pattern.
+```
+
+## `evidence.md` template
+
+```markdown
+# Project Convention Evidence — <repository>
+
+## Observed — non-normative
+- [OBS-topic] Pattern: `<description>`
+  Evidence: N/M files (`paths`) · Counterexamples: `<paths>` · Confidence: `<level>`
+  Promotion question: `<question or none>`
+
+## Legacy or uncertain — do not copy by frequency
+- [LEG-topic] Pattern: `<description>`
+  Evidence: `<paths/count>` · Conflict: `<ENF/APP source or uncertainty>`
+  Containment/migration: `<note if known>`
+
+## Decisions needed
+- [ ] Promote/reject `<OBS-ID>` with an explicit repository source.
+```
+
+## Quality gate
+
+Before returning:
+
+- every coder/reviewer item is Enforced or Approved;
+- every normative item has a source and stable ID;
+- reviewer IDs match coder IDs;
+- sample counts and counterexamples remain in `evidence.md`;
+- uncertain patterns are questions, not instructions;
+- exact safe format/lint/type/test commands are recorded;
+- the user is shown what was generated or changed.

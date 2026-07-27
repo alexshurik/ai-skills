@@ -1,91 +1,87 @@
 ---
 name: sk-code-review
-description: Standalone code review for uncommitted changes. Delegates to sk-review-orchestrator for the full review pipeline.
-license: MIT
-allowed-tools: Task, Read, Bash, Glob, Grep, AskUserQuestion
+description: Review committed, staged, unstaged, and untracked changes through the full baseline-aware multi-lens pipeline without modifying source code.
 ---
 
-# Code Review for Uncommitted Changes
+# Review Repository Changes
 
-**IMPORTANT: Context Reset.** Treat this as a fresh review session. Ignore any prior conversation context. Your only focus is analyzing the uncommitted changes objectively.
+Treat this as a fresh, read-only review. Ignore prior conclusions and derive scope,
+authority, evidence, findings, and verdict from the repository.
 
----
+## 1. Confirm scope exists
 
-## Step 1: Check for Changes
+Run the installed change-evidence collector:
 
-```bash
-git status --porcelain
+```text
+~/.claude/agents/review-evidence/collect-change-evidence.sh --format json
+or shared/review-evidence/collect-change-evidence.sh --format json
 ```
 
-**If no changes:** Output "No uncommitted changes to review." and stop.
+If committed, staged, unstaged, untracked, deleted, and renamed scopes are all
+empty, report `No changes to review` and stop.
 
----
+## 2. Find authority
 
-## Step 2: Gather Context
+Find applicable proposal/design/tasks/ADRs and repository guidance. If multiple
+active designs could define the contract, ask the user to select one.
 
-### Check for design documents
-```bash
-find . -maxdepth 3 -name "design.md" -o -name "*.spec.md" -o -name "PROPOSAL.md" 2>/dev/null | head -10
+Check for the canonical project profile:
+
+```text
+.agents/best-practices/project/coder.md
+.agents/best-practices/project/reviewer.md
+.agents/best-practices/project/evidence.md
 ```
 
-If design documents exist, ask the user via AskUserQuestion if they want to review changes in context of a specific document.
+If normative coder/reviewer profiles are absent, offer
+`$sk-explore-codestyle`. Do not require a Claude-specific `code-style.md`.
 
-### Check for code style rules
-```bash
-ls -la .claude/rules/code-style.md .claude/CLAUDE.md .cursorrules .cursor/rules/*.mdc AGENTS.md .clinerules .github/copilot-instructions.md 2>/dev/null
+## 3. Execute the orchestrator flow at top level
+
+Do not spawn `sk-review-orchestrator` as one nested subagent. Read its canonical
+flow:
+
+```text
+~/.claude/agents/sk-review-orchestrator.md
+or workflow/agents/sk-review-orchestrator.md
 ```
 
-If no code-style.md exists, ask the user if they want to generate one first (`/sk-explore-codestyle`).
+Execute that workflow in this top-level context so independent lenses may run in
+parallel waves.
 
----
+Required lenses:
 
-## Step 3: Run Review
+1. contract/security;
+2. architecture/layers;
+3. abstraction/navigation;
+4. structure;
+5. imports;
+6. stack rules;
+7. instruction quality when instruction artifacts changed.
 
-You are a skill running at the **TOP level** (in the main loop), so you can spawn
-subagents. **Do NOT spawn `sk-review-orchestrator` as a subagent.** A subagent
-cannot spawn its own subagents, so a nested orchestrator could never run its
-parallel lens passes (its step 6) — it would silently collapse to one shallow
-single-pass review and still render a verdict. Instead, **execute the
-orchestrator flow yourself, here, in this top-level context**, so the fan-out is
-legal.
+Pass complete tracked/untracked scope, full files/base diffs, change evidence,
+design authority, runner, profiles, and static-analysis provenance as specified by
+the orchestrator.
 
-Read the flow definition (single source of truth — do not reinvent it):
+If subagent dispatch is genuinely unavailable, execute every applicable lens as a
+separate inline section from the installed `review-steps/` resources and disclose
+`inline` mode. Never collapse to a single general review.
 
-```
-Read("~/.claude/agents/sk-review-orchestrator.md")
-  or Read("workflow/agents/sk-review-orchestrator.md")   # from the skills repo
-```
+## 4. Enforce verdict semantics
 
-Then run its `<execution_flow>` step by step in THIS context:
+Use the orchestrator's verdict policy:
 
-1. **Steps 1–5** (scope, profile resolution, tool discovery, static analysis) —
-   run inline with your Read/Bash/Glob/Grep tools. Step 5 is NOT optional and NOT
-   hand-run: invoke the deep-analysis battery script
-   (`~/.claude/agents/static-analysis/run-static-analysis.sh`) and paste its
-   provenance table into the verdict. A green pre-commit/CI is not a substitute.
-2. **Step 6 (dispatch)** — spawn ALL FOUR lens agents **IN PARALLEL** via Task,
-   in a single message (multiple tool uses), each with full file content plus the
-   data step 6 specifies: `sk-review-security`, `sk-review-architecture`,
-   `sk-review-stack-rules`, `sk-review-instruction-quality`. This is the whole
-   reason the flow runs top-level — the fan-out is legal here.
-3. **Steps 7–8** (aggregate, verdict) — run inline. Honor the verdict-downgrade
-   and the ✓ parallel / ⊟ inline / ⊘ skipped disclosure rules in the flow.
-
-Pass into the flow:
-- Design doc: [path if the user selected one in Step 2, or "none"]
-- Code style: [path if exists, or "none"]
-
-**If the Task tool is genuinely unavailable** (e.g., Codex, Cursor — no subagents
-at all), run the four lens passes as **sequential inline sections** instead of
-parallel Task calls, driven by `workflow/agents/review-steps/*.md`, and **say so
-in the report** (mark each pass ⊟ inline). Do NOT improvise a different process —
-always drive from the orchestrator definition.
-
----
+- change-caused and touched structural regressions affect the verdict;
+- unchanged baseline debt is shown separately;
+- APPROVED requires every applicable lens, complete untracked scope, complete
+  provenance, and zero required UNVERIFIED dimensions;
+- tests and security scans alone cannot approve architectural shape.
 
 ## Guardrails
 
-- **Read-only for source code** — NEVER make any changes to source code files
-- **No commits** — Do not create, amend, or modify any commits
-- **No git operations** — Only read git state, never modify it
-- **Objective review** — Focus on the code, not on validating prior decisions
+- Read-only for source and feature artifacts.
+- Do not create commits, branches, or tags.
+- Do not auto-install tools.
+- Do not expose secret values.
+- Do not promote Observed/Legacy project evidence into review rules.
+- Show full findings, baseline section, commands, exit codes, and verdict.

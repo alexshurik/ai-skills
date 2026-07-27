@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Workflow Help"
+  short_description: "Explain the gated multi-agent workflow"
+  default_prompt: "Use $sk-team-help to explain the available team workflows, gates, artifacts, and commands."

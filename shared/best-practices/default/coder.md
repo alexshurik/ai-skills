@@ -10,34 +10,34 @@ distinct caller appears. Three similar lines beat a premature abstraction.
 
 See language-specific profiles for idiomatic examples.
 
-## Follow Project Patterns
+## Follow Project Authority
 
-**The project's own conventions OUTRANK the generic examples in these profiles.** The
-code snippets here show idiomatic defaults; they are the fallback for greenfield code,
-NOT a license to impose a style the repo doesn't use. On any conflict, match the repo.
+Use this precedence:
 
-- If a project profile is loaded (`.agents/best-practices/project/coder.md`, highest
-  precedence), it is authoritative — follow it over any example below.
-- The project's own formatter + linter are the final arbiter of style. Run them on
-  the code you write and conform (see your agent's format/lint step). Do not hand-pick
-  a style the linter would rewrite.
-- Look at neighbouring files before introducing ANY new convention — and do not add a
-  pattern the surrounding code doesn't already use (e.g. don't add module/file
-  docstrings, decorators, or naming flavors that appear nowhere else).
+```text
+approved specification / ADR / repository guidance
+  > enforced tooling
+  > approved project profile
+  > observed neighboring code
+```
 
-Match existing code style:
-
-- Naming (camelCase, snake_case, PascalCase — match what's there)
-- File organization and import order
-- Error handling (exceptions, Result types, error returns — match the project)
-- Async style (async/await vs callbacks vs promises) — match the project
+- Load `.agents/best-practices/project/coder.md` when present. It contains only
+  Enforced and Approved project rules.
+- Treat `.agents/best-practices/project/evidence.md` and neighboring code as
+  evidence, not automatic instructions.
+- Run the project's formatter/linter/type/build commands through its pinned runner.
+- When a frequent pattern conflicts with a higher authority, follow the authority.
+  Stop for clarification when the conflict affects architecture or public behavior.
+- In greenfield code without project authority, use language/framework profiles as
+  defaults and make material choices explicit.
 
 ## Write Readable Code
 
 - Clear, intention-revealing variable names — **no single-letter names**, even for counters
 - Short functions: < 20 lines ideal, **70 lines hard max** — split longer functions into sub-methods
 - Functions have **< 4 parameters** — use an options/config object if more
-- **No file-level docstrings** at the top of the file — they add noise and become stale
+- File/module docstrings follow Enforced or Approved project/language guidance;
+  sample absence/presence alone does not create a rule
 - **No dead code, commented-out code, or debug statements** left in
 - **Comments only for complex/non-obvious logic** — if the code needs a comment to be understood, first try to simplify the code. If it's genuinely complex (tricky algorithm, workaround, business rule), then comment WHY, not WHAT. Don't litter code with obvious comments.
 - **Blank line grouping**: separate logical blocks within a function with blank lines — group related statements together, split unrelated ones.
@@ -72,14 +72,17 @@ See language-specific profiles for declarative pattern examples.
 ## No Hardcoded Values
 
 - URLs, API endpoints, base paths — config/env vars
-- Timeouts, retry counts, limits — named constants
-- Magic numbers/strings used more than once — extract to constants
+- Timeouts, retry counts, and limits live with their approved configuration/policy owner
+- Extract a constant when it represents stable policy or has multiple meaningful
+  uses; keep one-use validation/algorithm values with their owner
 - Credentials, API keys — **NEVER** hardcode
 
 ## Imports Always at Top of File
 
-- **ALL imports at the top of the file** — never inside functions, methods, or conditional blocks
-- Only exception: avoiding circular imports (must be commented why)
+- Keep imports at module scope by default
+- Retain a local/dynamic import only for an Approved framework/lazy-loading reason
+  or a cycle reproduced in a clean process; name the exact reason and add import
+  regression coverage when the workaround is material
 - Group imports with blank lines between groups:
   1. Standard library
   2. Third-party
@@ -107,13 +110,16 @@ AI-generated code has recognizable bad patterns. Actively avoid them:
 - **No excessive comments** — don't annotate every constant, every function call, every assignment. A file where every other line is a comment is slop. Comments are for WHY, not WHAT.
 - **No trivial wrapper functions** — don't create a function that just calls another function with the same arguments. Call it directly.
 - **No copy-paste with minor edits** — if multiple functions/methods are 90% identical, extract the common logic into a shared helper or base class.
-- **Exception/error classes in their own file** — don't mix exception class definitions with client/business logic.
+- Keep exception/error types with their owning domain or established hierarchy.
+  Do not create a one-class micro-file without project authority or real reuse.
 
 ## Project Structure Awareness
 
 Before creating or placing files, study the existing project layout:
 
-- **Utilities are portable** — utility modules (datetime helpers, string formatters, async wrappers, HTTP helpers) should live in a dedicated utilities directory. They must NOT import from the main project — imagine they could be copied to any other project as-is.
+- **Utilities are portable** — place code in a shared utility only when multiple
+  ownership areas need the same portable behavior. Framework/application
+  integrations belong to the approved infrastructure owner, not generic utilities.
 - **One source of truth for config** — if the project already has a settings/config module, don't create a parallel one. Add to what exists.
 - **Root path in settings** — if scripts or modules need the project root path, store it once in settings and import it everywhere. Don't compute the root path in multiple places.
 - **Growing files into packages** — when a single file (models, schemas, config, constants) grows beyond 300 lines or contains multiple unrelated concerns, convert it to a package directory re-exporting the public API.

@@ -11,8 +11,11 @@ Kimi Code CLI supports these skills through the standard Agent Skills format.
 ```
 
 This will:
-1. Link all skills to `~/.config/agents/skills/`
-2. Create agent definitions in `~/.config/agents/agents/`
+1. Render all complete skill directories to `~/.config/agents/skills/`
+2. Generate thin agent definitions from the canonical manifest
+3. Use the canonical `sk-team-feature` prompt as the team system prompt
+
+The installer no longer embeds a second hard-coded workflow.
 
 ## Usage
 
@@ -55,26 +58,7 @@ Then invoke skills:
 /skill:sk-explore-codebase
 ```
 
-### Option 3: Flow Skills (Automated Workflows)
-
-Flow skills run multi-step workflows automatically following a diagram:
-
-```bash
-kimi
-```
-
-Then execute flow:
-```
-/flow:sk-team-feature-flow Add user authentication
-```
-
-**Difference:**
-- `/skill:sk-team-feature` — Orchestrator controls each phase manually
-- `/flow:sk-team-feature-flow` — Automatic execution through all phases
-
-Use `/skill` for flexibility, `/flow` for hands-off automation.
-
-### Option 4: Project-Level Skills
+### Option 3: Project-Level Skills
 
 For project-specific usage, create `.kimi/skills/` or `.agents/skills/`:
 
@@ -100,20 +84,13 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
 | `sk-explore-codebase` | Generate navigation rules |
 | `sk-copy-context` | Copy context to clipboard |
 
-### Flow Skills (Automated)
-
-| Flow | Description |
-|------|-------------|
-| `sk-team-feature-flow` | Automated feature development (all phases auto-executed) |
-| `sk-team-quick-flow` | Automated quick fixes (Developer → Reviewer only) |
-
 ## Architecture
 
 ```
 ~/.config/agents/
-├── skills/                    # Symlinks to skill directories
-│   ├── sk-team-feature/ → SKILL.md
-│   ├── sk-code-review/ → SKILL.md
+├── skills/                    # Manifest-rendered complete skill directories
+│   ├── sk-team-feature/
+│   ├── sk-code-review/
 │   └── ...
 └── agents/
     ├── sk-team.yaml          # Main agent with subagents
@@ -132,9 +109,8 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
 
 | Feature | Support | Notes |
 |---------|---------|-------|
-| Skills | ✓ Full | All 12 skills work |
+| Skills | ✓ Full | All 11 manifest catalog/onboarding skills work |
 | Subagents | ✓ Full | Via `Task` tool |
-| Flow skills | ✓ Full | Multi-turn workflows |
 | Slash commands | ✓ Full | `/skill:name` syntax |
 
 ## Limitations

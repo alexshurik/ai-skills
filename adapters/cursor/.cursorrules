@@ -8,7 +8,7 @@
 ## Workflow Commands
 
 ### /sk-team-feature
-Full workflow for new feature development with multi-agent team
+Run a worktree-isolated multi-agent feature workflow with explicit approval gates from discovery through retrospective and acceptance archive.
 
 ### /sk-team-help
 Show help and documentation for multi-agent team workflow
@@ -32,16 +32,16 @@ Full project onboarding - discover structure + generate navigation rules
 
 ## Planning Commands
 
-### /sk-plan-mode
+/sk-plan-mode
 Structured planning workflow with file-based plan storage. Separates research from execution through 4 phases. Wait for explicit user approval before making changes.
 
 ## Utility Commands
 
 ### /sk-code-review
-Review uncommitted changes with fresh context. Skips automated checks, focuses on patterns linters miss.
+Review committed, staged, unstaged, and untracked changes through the full baseline-aware multi-lens pipeline without modifying source code.
 
 ### /sk-explore-codestyle
-Analyze project code and generate universal code style guidelines. Detects stack, extracts linter rules, identifies patterns linters don't catch.
+Derive project-specific coder, reviewer, and evidence profiles from enforced tooling, approved repository guidance, and representative source samples without promoting legacy frequency into rules.
 
 ## Context Commands
 
@@ -54,17 +54,23 @@ Copy current session context to clipboard
 Verify business requirements are met (QA acceptance). Creates VERIFICATION.md with final verdict.
 
 ### sk-architect
-Design HOW to implement - system design and task breakdown. Creates design.md and tasks.md.
-
-### sk-review-orchestrator
-Orchestrate code review through specialized subagents. Resolves stack-specific profiles, dispatches parallel review passes, aggregates findings.
+Design how to implement an approved change, prove boundary ownership and decision completeness, and create design.md, tasks.md, and required ADRs.
 
 ### sk-developer
-Implement code that passes tests (TDD green phase). Writes clean, maintainable code following project patterns.
+Implement approved tasks with TDD while enforcing architecture boundaries, project-authoritative conventions, and pre-write structure and abstraction gates.
+
+### sk-doc-reviewer
+Review documentation for consistency, gaps, and alignment before testing. Verifies user's mental model matches the plan.
 
 ### sk-product-analyst
 Transform ideas into detailed requirements (PM + BA). Creates proposal.md with vision, user stories, and acceptance criteria.
 
+### sk-researcher
+Research unknown domains, technologies, APIs, and best practices before planning. Creates RESEARCH.md with findings, options, and recommendations.
+
+### sk-review-orchestrator
+Review complete tracked and untracked changes through independent contract/security, architecture, abstraction, structure, import, stack, and instruction-quality lenses with baseline-aware verdicts.
+
 ### sk-tester
-Write tests BEFORE code (TDD red phase). Creates failing tests based on requirements.
+Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.
 

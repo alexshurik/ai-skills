@@ -1,586 +1,211 @@
 ---
 name: sk-team-feature
-version: 2.2.0
-description: Full workflow for new feature development with multi-agent team. User approval required between each phase. Worktree-based isolation.
-license: MIT
-
-# Claude Code
-allowed-tools: Task, Read, Write, Glob, Grep, Bash, AskUserQuestion
-
-# Cross-platform hints
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
+description: Run a worktree-isolated multi-agent feature workflow with explicit approval gates from discovery through retrospective and acceptance archive.
 ---
 
-# /sk-team-feature - Full Feature Development Workflow
+# Full Feature Workflow
 
-<sk-team-feature>
+Coordinate a feature through:
 
-You are the **Orchestrator** for a multi-agent development team. A user has requested a new feature to be developed using the full workflow.
-
-## Core Principle
-
-**NEVER proceed to next phase without explicit user approval.**
-
-Each phase ends with:
-1. Summary of what was done
-2. Location of artifacts
-3. **ASK for approval to proceed**
-4. Option to redo phase if needed
-
----
-
-## Your Role
-
-You coordinate specialized agents through the complete software development lifecycle:
-
-```
-Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Review → Acceptance
-    ↑           ↑          ↑            ↑             ↑            ↑              ↑          ↑
-   [APPROVAL REQUIRED BETWEEN EACH PHASE — Research and Doc Review are OPTIONAL]
+```text
+Setup
+  → Discovery
+  → [Research]
+  → Planning
+  → [Documentation Review]
+  → Testing
+  → Implementation
+  ↔ Code Review
+  → Acceptance
+  → Retrospective
+  → Archive
 ```
 
----
+Research and Documentation Review are optional. Every completed phase requires
+explicit user approval before the next phase.
 
-## Workflow Setup: Git Worktree
+## Hard constraints
 
-### Step 0: Create Feature Worktree
+- Agents are subagents and ask the user only by returning
+  `## NEEDS USER INPUT`. Surface questions verbatim, collect answers, and re-invoke
+  the same agent with an `## ANSWERS` block.
+- Never answer agent questions for the user.
+- Never auto-proceed between phases.
+- Surface structured handoff blocks verbatim.
+- Never create a worktree before the user confirms the feature name/path.
+- Never archive without approved code review, acceptance, and retrospective.
+- Never let a feature retrospective edit installed/global skills automatically.
 
-Before starting ANY work:
+## Required resources
 
-1. **Generate feature name** (kebab-case, e.g., "user-authentication")
-2. **Ask user to confirm** the feature name
-3. **Create git worktree** for isolation
+Read the relevant phase section before dispatch:
 
-```bash
-# Check current git status
-git status
+- [phase prompts](references/phase-prompts.md)
 
-# Create worktree for the feature
-git worktree add ../<feature-name>-worktree -b feature/<feature-name>
+For Retrospective read:
 
-# Navigate to worktree
-cd ../<feature-name>-worktree
+```text
+~/.claude/agents/templates/retrospective.md
+or shared/templates/retrospective.md from the skills repo
 ```
 
-4. **Create openspec/changes/<feature-name>/ directory** in the worktree
+## Setup
 
----
+1. Derive a short kebab-case feature name.
+2. Show the proposed branch `feature/<name>` and sibling worktree
+   `../<name>-worktree`.
+3. Wait for explicit approval/change/cancel.
+4. Inspect current git status and preserve unrelated work.
+5. Create the worktree and `openspec/changes/<name>/`.
+6. Record worktree, branch, base commit, and current phase.
 
-## Available Agents
+Do not infer permission for a different branch/path or destructive cleanup.
 
-| Agent | subagent_type | Purpose |
-|-------|---------------|---------|
-| Product Analyst | `sk-product-analyst` | WHAT & WHY - requirements (WITH USER QUESTIONS) |
-| Researcher | `sk-researcher` | RESEARCH - investigate unknown domains, APIs, best practices (OPTIONAL) |
-| Architect | `sk-architect` | HOW - system design (WITH USER QUESTIONS) |
-| Doc Reviewer | `sk-doc-reviewer` | Documentation review - consistency & alignment check (OPTIONAL) |
-| Tester | `sk-tester` | TDD red phase - test plan approval + failing tests (WITH USER QUESTIONS) |
-| Developer | `sk-developer` | TDD green phase - implementation |
-| Review Orchestrator | `sk-review-orchestrator` | Orchestrate code review through specialized subagents |
-| Acceptance Reviewer | `sk-acceptance-reviewer` | Business validation |
+## Clarification loop
 
----
+When an agent returns `## NEEDS USER INPUT`:
 
-## Hard Constraints
+1. show the block verbatim;
+2. stop for the user's answers;
+3. re-invoke the same agent with original prompt plus verbatim answers;
+4. repeat if another material ambiguity appears;
+5. continue only when the agent returns an artifact and handoff.
 
-- Agents are SUBAGENTS and cannot reach the user directly — their `AskUserQuestion`
-  does not surface. They ask by **returning a `## NEEDS USER INPUT` block**; YOU own
-  the user's screen. See "Clarification Loop" below.
-- NEVER answer agent questions on behalf of the user. When an agent returns
-  `## NEEDS USER INPUT`, surface the questions verbatim, collect answers, and
-  re-invoke the SAME agent with the answers appended — never guess for the user.
-- NEVER auto-proceed to the next phase. After showing results, STOP and wait for explicit user approval.
-- NEVER paraphrase structured agent output. Show the agent's returned handoff block
-  and the artifacts listed in each phase's "After agent completes" block verbatim —
-  never collapse a returned result to "<agent> done".
+## Phase execution
 
----
+### 1. Discovery
 
-## Clarification Loop (how agents ask the user)
+Dispatch `sk-product-analyst` using the Discovery prompt. Require scope
+confirmation before `proposal.md`. Show user stories, acceptance criteria,
+non-goals, and open questions; request approval.
 
-Every WITH-USER-QUESTIONS agent does its read-only work, then — if it needs a
-decision — STOPS and returns a `## NEEDS USER INPUT` block (questions, each with
-options and a recommendation) instead of writing its artifact. When you receive it:
+### 1.5 Research — optional
 
-1. Present the questions to the user (render them with AskUserQuestion, or inline).
-2. Wait for the user's answers. Do not answer for them; do not proceed.
-3. Re-invoke the SAME agent with its original prompt PLUS an `## ANSWERS` section
-   carrying the user's responses verbatim.
-4. The agent may return another `## NEEDS USER INPUT` round — repeat until it returns
-   its artifact + handoff block. Only then move to "After agent completes".
+Offer Research only when Discovery identifies a real unknown/high-cost area or the
+user requests it. Ask for topic approval, dispatch `sk-researcher`, show findings/
+recommendation/open decisions, and request approval.
 
-This loop replaces any in-subagent AskUserQuestion. The dispatch prompts below tell
-each agent to use it.
+### 2. Planning
 
----
+Dispatch `sk-architect` using the full decision-completeness prompt. Require user
+approach confirmation before artifacts. Show boundary/architecture summary, file
+map, model/interface changes, growth forecast, risks, and non-goals; request
+approval.
 
-## Phase-by-Phase Execution
+### 2.5 Documentation Review — optional
 
-### Phase 1: Discovery (Product Analyst)
+Recommend for complex, multi-component, public-contract, external-integration, or
+high-risk changes. Dispatch `sk-doc-reviewer`, surface traceability/verdict, route
+NEEDS_CLARIFICATION to Discovery or Planning, and request approval.
 
-**CRITICAL**: Product Analyst resolves genuine ambiguity before writing the proposal —
-but asks only what the request and codebase don't already answer, and never guesses a
-real product decision.
+### 3. Testing
 
-```
-Task tool:
-  subagent_type: "sk-product-analyst"
-  prompt: |
-    Feature request: <user's description>
-    Worktree: ../<feature-name>-worktree
+Dispatch `sk-tester`. Surface its proposed categorized test plan and wait for
+approval before any test code. Keep live/paid/credential-backed suites explicit.
+After Red is demonstrated, show test files/groups/skips and request approval.
 
-    YOUR TASK:
-    1. READ the existing codebase / specs to understand context (quick scan)
-    2. If genuine, material ambiguity remains, RETURN a `## NEEDS USER INPUT` block (do
-       NOT call AskUserQuestion — it will not reach the user; I relay it for you)
-       - Ask ONLY questions whose answers are missing from the request/code AND material
-         (target users, key use cases, constraints, edge cases, expected behavior).
-       - No quota — a precise request may need zero questions; a vague one, several.
-         Do not invent questions to fill categories.
-       - Each question: why it matters, options, your recommendation. STOP after returning.
-    3. I re-invoke you with the user's `## ANSWERS`. Return a round PRESENTING your
-       understanding for confirmation: "Here's what I understand we're building:
-       [summary]. Correct?" + proposed scope boundaries. (If step 2 had no questions,
-       go straight to this confirmation round.)
-    4. Only AFTER the confirmation is in your prompt — create proposal.md
+### 4. Implementation
 
-    Create requirements in: openspec/changes/<feature-name>/proposal.md
+Dispatch `sk-developer`. Require the pre-write architecture gate and full handoff
+evidence. Show files, boundary/abstraction/structure decisions, and exact
+verification; request approval.
 
-    CRITICAL RULES:
-    - Where genuine ambiguity exists, you MUST return NEEDS USER INPUT before proposal.md —
-      but do NOT manufacture questions when the request is already clear.
-    - Always end with a scope-confirmation round before writing proposal.md
-    - Do NOT create proposal.md until the user's confirmation is in your prompt
-    - Do NOT guess a real product decision yourself — that is answering for the user
-    - If you skip questions and go straight to writing, you have FAILED
+### 5. Code Review
+
+Execute the canonical review-orchestrator flow at top level when possible so lenses
+can run in parallel waves. If invoked nested, run every lens inline and disclose it.
+
+Persist the full latest verdict as:
+
+```text
+openspec/changes/<name>/CODE_REVIEW.md
 ```
 
-**After agent completes:**
-1. Read `proposal.md`
-2. Show verbatim: proposal summary, user stories, and any open questions
-3. **ASK FOR APPROVAL**
+If CHANGES REQUESTED, send the complete required findings back to Developer, then
+run a fresh review. Do not proceed on a stale approval. When approved, surface
+scope/pass/provenance/baseline/verdict and request approval for Acceptance.
 
----
+### 6. Acceptance
 
-### Phase 1.5: Research (Researcher) — OPTIONAL
+Dispatch `sk-acceptance-reviewer`. Require an approved `CODE_REVIEW.md`. Show
+criterion evidence and verdict. Route NEEDS WORK to the owning prior phase. Request
+approval before Retrospective.
 
-**When to include:** Product Analyst flagged need for research OR user explicitly requests it
+### 7. Retrospective
 
-**Ask user:**
-```markdown
-Based on the proposal, this feature may benefit from research:
-- [Specific area needing investigation]
+Use the canonical template and the Retrospective prompt. Create:
 
-**Should I run a research phase?**
-- **"Yes"** or **"Research"** → Run Researcher phase
-- **"No"** or **"Skip"** → Proceed directly to Planning
-- **"Research: [specific topic]"** → Focus research on specific area
+```text
+openspec/changes/<name>/RETROSPECTIVE.md
 ```
 
-**If user approves research:**
-```
-Task tool:
-  subagent_type: "sk-researcher"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Proposal: openspec/changes/<name>/proposal.md
+For each durable lesson choose exactly one disposition:
 
-    Research areas identified by Product Analyst:
-    - [Area 1]
-    - [Area 2]
+- repository guide;
+- named existing skill proposal;
+- no promotion.
 
-    Focus on: [specific topic if user specified]
+Keep project-specific architecture, deployment, runtime, vocabulary, and safe
+commands in repository guidance. Require portable value plus reproducible/repeated
+evidence for a skill proposal. Do not edit global skills. Show the retrospective
+and request final archive approval.
 
-    Investigate the unknown areas before planning.
-    Create RESEARCH.md with findings and recommendations.
-```
+## Approval gate
 
-**After agent completes:**
-1. Read `RESEARCH.md`
-2. Show verbatim: executive summary, recommendations, and open questions
-3. **ASK FOR APPROVAL** to proceed to Planning
-
----
-
-### Phase 2: Planning (Architect)
-
-**CRITICAL**: Architect defaults to the project's existing answer and asks only about
-genuinely open, high-cost decisions — but always confirms the approach before writing.
-
-```
-Task tool:
-  subagent_type: "sk-architect"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Proposal: openspec/changes/<name>/proposal.md
-
-    YOUR TASK:
-    1. READ proposal.md thoroughly
-    2. EXPLORE codebase + project-conventions profile to understand existing patterns
-    3. If existing patterns/proposal/conventions already determine the design, skip to
-       step 4. If a genuinely open, high-cost decision remains (irreversible/far-reaching
-       choice, or a true fork with no precedent), RETURN a `## NEEDS USER INPUT` block
-       (do NOT call AskUserQuestion — it will not reach the user; I relay it for you):
-       - Only those decisions, each with trade-offs + your recommendation. No quota —
-         a well-scoped change against established patterns may need zero questions.
-       - STOP after returning.
-    4. Return a round PRESENTING your technical approach for confirmation: key
-       architectural decisions, component structure, technology choices, task breakdown
-       overview, "Does this approach work for you?"
-    5. Only AFTER the confirmation is in your prompt — create design.md and tasks.md
-
-    CRITICAL RULES:
-    - Follow existing patterns/conventions silently; do NOT ask what the repo already answers.
-    - Where a high-cost decision is genuinely open, you MUST return NEEDS USER INPUT first —
-      and you MUST NOT guess it yourself (that is answering for the user).
-    - Always end with an approach-confirmation round before writing artifacts.
-    - Do NOT create design files until the user's confirmation is in your prompt.
-    - Match existing patterns or justify deviations.
-```
-
-**After agent completes:**
-1. Read `design.md` and `tasks.md`
-2. Show verbatim: Architecture Summary, File Map with NEW/MODIFIED markers, Task Summary, and Risks
-3. **ASK FOR APPROVAL**
-
----
-
-### Phase 2.5: Documentation Review (Doc Reviewer) — OPTIONAL
-
-**When to include:** Recommended for complex features with multiple components, external integrations, or non-trivial requirements. Ask user.
-
-**Ask user:**
-```markdown
-Planning is complete. Before writing tests, I recommend a documentation review to:
-- Verify all requirements trace to design decisions and tasks
-- Find gaps or contradictions in the plan
-- Confirm your understanding matches the documented approach
-
-**Should I run a documentation review?**
-- **"Yes"** or **"Review"** → Run Doc Reviewer phase
-- **"No"** or **"Skip"** → Proceed directly to Testing
-```
-
-**If user approves review:**
-```
-Task tool:
-  subagent_type: "sk-doc-reviewer"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Artifacts:
-    - openspec/changes/<name>/proposal.md
-    - openspec/changes/<name>/design.md
-    - openspec/changes/<name>/tasks.md
-
-    Review all documentation for consistency, gaps, and alignment.
-    Build traceability matrix: requirement → design → task.
-    Return a `## NEEDS USER INPUT` block to verify their mental model (do NOT call
-    AskUserQuestion — I relay it; I re-invoke you with the answers).
-    Only after the answers are in your prompt — create DOC_REVIEW.md with findings and verdict.
-```
-
-**After agent completes:**
-1. Read `DOC_REVIEW.md`
-2. Show verbatim: findings summary and verdict
-3. If **NEEDS_CLARIFICATION** — identify which phase needs rework (Planning or Discovery)
-4. **ASK FOR APPROVAL** to proceed to Testing
-
----
-
-### Phase 3: Testing (Tester - TDD Red Phase)
-
-**CRITICAL**: Tester MUST propose a categorized test plan and get user approval before writing tests.
-
-```
-Task tool:
-  subagent_type: "sk-tester"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Artifacts:
-    - openspec/changes/<name>/proposal.md
-    - openspec/changes/<name>/design.md
-    - openspec/changes/<name>/tasks.md
-
-    YOUR TASK:
-    1. READ all artifacts and analyze existing test patterns
-    2. DETECT project type (web app, API, library, CLI)
-    3. RETURN your categorized test plan inside a `## NEEDS USER INPUT` block (do NOT
-       call AskUserQuestion — it will not reach the user; I relay it for you):
-       - Unit tests (with descriptions)
-       - Integration tests (with descriptions)
-       - Service tests (with descriptions)
-       - E2E tests (ask whether they want these — OPTIONAL)
-       - STOP after returning.
-    4. I re-invoke you with the user's approve/modify/skip `## ANSWERS`. If E2E is
-       approved, return a follow-up round for credentials/infrastructure.
-    5. Only AFTER the approval is in your prompt — write the approved tests
-
-    CRITICAL RULES:
-    - You MUST return the test plan (NEEDS USER INPUT) BEFORE writing any test code
-    - User can skip entire groups (e.g., "Skip E2E", "Skip unit tests")
-    - User can modify specific tests (add/remove)
-    - If user wants E2E tests, ask about credentials and infrastructure (another round)
-    - Store E2E credentials in .env.test.local (not committed)
-    - Do NOT write tests until the approval is in your prompt
-    - If you skip the test plan and go straight to writing, you have FAILED
-```
-
-**After agent completes:**
-1. Show verbatim: test files created, coverage summary by group, skipped groups (if any)
-2. **ASK FOR APPROVAL**
-
----
-
-### Phase 4: Implementation (Developer - TDD Green Phase)
-
-```
-Task tool:
-  subagent_type: "sk-developer"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Artifacts:
-    - openspec/changes/<name>/proposal.md
-    - openspec/changes/<name>/design.md
-    - openspec/changes/<name>/tasks.md
-
-    Implement code to make all tests pass.
-```
-
-**After agent completes:**
-1. Show verbatim: files modified/created and test results
-2. **ASK FOR APPROVAL**
-
----
-
-### Phase 5: Code Review (Review Orchestrator)
-
-```
-Task tool:
-  subagent_type: "sk-review-orchestrator"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Design: openspec/changes/<name>/design.md
-
-    Review the implementation.
-```
-
-**After agent completes:**
-1. Show verbatim: full findings list and verdict
-2. If "CHANGES REQUESTED" — go back to Phase 4
-3. **ASK FOR APPROVAL** to proceed
-
----
-
-### Phase 6: Acceptance (Acceptance Reviewer)
-
-```
-Task tool:
-  subagent_type: "sk-acceptance-reviewer"
-  prompt: |
-    Feature: <name>
-    Worktree: ../<feature-name>-worktree
-    Proposal: openspec/changes/<name>/proposal.md
-
-    Verify all acceptance criteria are met.
-```
-
-**After agent completes:**
-1. Show verbatim: acceptance results and verdict
-2. If "NEEDS WORK" — identify phase to redo
-3. **ASK FOR APPROVAL** to finalize
-
----
-
-## User Approval Prompt Template
-
-After EACH phase, use this exact format:
+After every phase show:
 
 ```markdown
-## Phase X Complete: [Phase Name]
+## Phase Complete: <name>
 
-### Summary
-[2-3 sentences about what was accomplished]
+### Handoff
+<verbatim agent/orchestrator block>
 
-### Artifacts Created
-- `openspec/changes/<feature-name>/[artifact]` - [description]
-
-### Key Decisions
-- [Key decision 1]
-- [Key decision 2]
-
----
+### Artifacts
+- `<path>` — purpose
 
 ## APPROVAL REQUIRED
 
-Please review the artifacts above and reply with:
-
-**Options:**
-1. **"Approved"** or **"Continue"** or **"Next"** → Proceed to next phase
-2. **"Show me [artifact]"** → I'll display the full content for review
-3. **"Redo"** or **"Revise"** → Re-run current phase with your feedback
-4. **"Modify: [specific changes]"** → Make specific adjustments
-5. **"Cancel"** → Abort the workflow
-
-**Next phase**: [Next Phase Name]
+- `Approved` / `Continue` / `Next` — proceed
+- `Show <artifact>` — display it
+- `Modify: <changes>` / `Redo` — re-run this phase
+- `Cancel` — stop
 ```
 
----
+Treat vague acknowledgement as non-approval.
 
-## Handling "Redo" Requests
+## Redo
 
-When user asks to redo a phase:
+Re-invoke the same phase with:
 
-1. Ask what specifically needs to change (if user didn't already explain)
-2. Re-invoke the same agent with explicit revision context:
+- original prompt/artifacts;
+- the user's feedback verbatim;
+- requirement to address every point;
+- permission to ask through NEEDS USER INPUT;
+- summary of what changed.
 
-```
-Task tool:
-  subagent_type: "[same-agent]"
-  prompt: |
-    [Original prompt]
+Ask for approval again. Never silently patch an unapproved artifact and continue.
 
-    REVISION REQUESTED BY USER — THIS IS A REDO
+## State detection
 
-    The previous attempt was NOT approved. The user provided this feedback:
+| Evidence | State |
+|---|---|
+| no proposal | Discovery |
+| `proposal.md` | Discovery approved / Planning next |
+| `design.md` + `tasks.md` | Planning approved / Testing next |
+| approved tests in Red | Implementation next |
+| implementation + green evidence | Code Review next |
+| `CODE_REVIEW.md` APPROVED | Acceptance next |
+| `VERIFICATION.md` ACCEPTED | Retrospective next |
+| `RETROSPECTIVE.md` approved | Archive ready |
 
-    FEEDBACK:
-    - [Specific change 1 user requested]
-    - [Specific change 2 user requested]
-    - Focus areas: [what needs improvement]
+File presence alone does not prove user approval; recover approval state from the
+conversation/handoff when resuming.
 
-    MANDATORY REVISION RULES:
-    1. READ the previous artifact to understand what was done
-    2. ADDRESS EVERY feedback point listed above — do not skip any
-    3. If anything about the feedback is unclear, RETURN a `## NEEDS USER INPUT` block
-       (do NOT call AskUserQuestion); I relay it and re-invoke you with the answers
-    4. EXPLAIN what you changed and why in your result summary
-    5. If you cannot address a feedback point, explain why
+## Archive
 
-    Previous artifact location: openspec/changes/<feature-name>/[artifact]
-    You must OVERWRITE the previous artifact with the revised version.
-```
+After final retrospective approval:
 
-3. After redo completes, show summary again with **what changed** highlighted
-4. Ask for approval again — same approval template as before
-
----
-
-## State Management
-
-Track workflow state by checking artifacts:
-
-```bash
-# Check what exists in worktree
-cd ../<feature-name>-worktree
-ls openspec/changes/<feature-name>/ 2>/dev/null
-```
-
-| Artifacts Present | Current Phase | Status |
-|-------------------|---------------|--------|
-| None | Not started | Pending |
-| proposal.md | Discovery done | Waiting for approval |
-| proposal.md, RESEARCH.md | Research done | Waiting for approval |
-| proposal.md, design.md, tasks.md | Planning done | Waiting for approval |
-| Above + DOC_REVIEW.md | Doc Review done | Waiting for approval |
-| Above + test files | Testing done | Waiting for approval |
-| Above + implementation | Implementation done | Waiting for approval |
-| Above + review passed | Review done | Waiting for approval |
-| Above + VERIFICATION.md | Workflow complete | Archived to openspec/completed/ |
-
----
-
-## CRITICAL RULES
-
-### NEVER:
-- Proceed to next phase without explicit "Approved" or similar
-- Create worktree without user confirming feature name
-- Skip asking user about redoing a phase
-- Assume "ok" or "sounds good" is approval (must be explicit)
-
-### ALWAYS:
-- Ask user to confirm feature name before creating worktree
-- Wait for user approval between EACH phase
-- Offer "Redo" option after each phase
-- Show artifact locations after each phase
-- Give clear approval options
-
----
-
-## Start Workflow
-
-When user requests a feature:
-
-```
-User: /sk-team-feature Add user authentication with OAuth
-```
-
-Your response:
-
-```markdown
-**SK-TEAM-FEATURE WORKFLOW STARTING**
-
-## Step 0: Feature Setup
-
-**Proposed feature name**: `user-authentication-oauth`
-**Worktree path**: `../user-authentication-oauth-worktree`
-
-Do you approve this feature name?
-- **"Yes"** or **"Approved"** → I'll create the worktree
-- **"Change to: [name]"** → Use different name
-- **"Cancel"** → Abort
-```
-
-After name approved:
-1. Create worktree
-2. Create openspec directory
-3. Start Phase 1 with Product Analyst
-
----
-
-## Final Completion
-
-When all phases complete and user approves:
-
-**Archive completed feature docs:**
-```bash
-# Move docs from changes/ to completed/
-mkdir -p openspec/completed
-mv openspec/changes/<feature-name> openspec/completed/<feature-name>
-```
-
-Then display:
-
-```markdown
-## FEATURE COMPLETE
-
-**Feature**: `<feature-name>`
-**Worktree**: `../<feature-name>-worktree`
-**Branch**: `feature/<feature-name>`
-
-### All Artifacts (archived)
-- `openspec/completed/<feature-name>/proposal.md` - Requirements
-- `openspec/completed/<feature-name>/RESEARCH.md` - Research findings (if applicable)
-- `openspec/completed/<feature-name>/design.md` - Technical design
-- `openspec/completed/<feature-name>/tasks.md` - Task breakdown (with completion marks)
-- `openspec/completed/<feature-name>/DOC_REVIEW.md` - Documentation review (if applicable)
-- `openspec/completed/<feature-name>/VERIFICATION.md` - Acceptance result
-
-### Next Steps
-1. Review changes in worktree: `cd ../<feature-name>-worktree`
-2. Test the implementation
-3. When ready: `git push origin feature/<feature-name>`
-4. Create PR from the feature branch
-
-To return to main worktree: `cd -`
-```
-
-</sk-team-feature>
+1. move `openspec/changes/<name>` to `openspec/completed/<name>`;
+2. report worktree, branch, base, final verification, and all artifact paths;
+3. show user-owned next steps for push/PR/integration;
+4. do not push, merge, or delete the worktree unless explicitly requested.

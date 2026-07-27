@@ -96,6 +96,11 @@ then load profiles for each and report all matches per component.
 Also read platform-native guidance files if present:
 `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`
 
+Project convention generation may also create
+`.agents/best-practices/project/evidence.md`. It contains Observed and
+Legacy/uncertain evidence only. Do not load it as a coder/reviewer rulebook and do
+not let it override `coder.md` or `reviewer.md`.
+
 ### Step 4: Assemble profile chain
 
 Build the chain by precedence (highest first):

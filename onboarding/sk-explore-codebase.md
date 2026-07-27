@@ -100,19 +100,28 @@ Each domain follows: `api/`, `services/`, `schemas/`, `repositories/`, `tests/`
 
 ### 4. Generate Project Convention Profile
 
-Also derive the project's CODE-STYLE conventions into the profile slot that the
-`sk-developer` / `sk-review-orchestrator` agents load at highest precedence —
-`.agents/best-practices/project/coder.md` and `reviewer.md`. This is what makes
-generated code match THIS repo (naming, docstrings, imports, error handling, typing,
-tests) instead of the model's generic defaults.
+Also derive the project convention profile loaded by `sk-developer` and
+`sk-review-orchestrator` at highest precedence.
 
-Follow `shared/best-practices/project-conventions-guide.md` exactly:
-- Read tooling config (ruff/eslint/.editorconfig/tsconfig…) + `AGENTS.md`/`CLAUDE.md` —
-  these are authoritative — and sample 8–15 real files.
-- Derive rules FROM EVIDENCE (count, don't guess: "module docstrings 0/14 → none").
-- Capture only project-specific signal + the exact format/lint/type/test commands.
-- Write both `.agents/best-practices/project/coder.md` and `reviewer.md` using the
-  template in the guide; show the user the result for a quick confirm.
+Read `shared/best-practices/project-conventions-guide.md` and
+`convention-evidence-model.md` completely:
+
+- classify tooling-backed rules as **Enforced**;
+- classify current repository guidance and accepted decisions as **Approved**;
+- keep sample frequency **Observed** and non-normative;
+- mark contradicted/inconsistent patterns **Legacy/uncertain**;
+- never promote aliases, local imports, wrappers, constants, micro-files, utility
+  placement, or cross-cutting integrations from frequency alone.
+
+Write:
+
+- `.agents/best-practices/project/coder.md` — Enforced/Approved only;
+- `.agents/best-practices/project/reviewer.md` — checks for the same normative IDs;
+- `.agents/best-practices/project/evidence.md` — Observed/Legacy evidence,
+  counterexamples, confidence, and promotion questions.
+
+Show all three artifacts for confirmation. Confirmation promotes only explicitly
+selected observations, not the entire sample.
 
 (This differs from the navigation rules above: navigation = "where to put files",
 the profile = "how to write the code".)
@@ -138,9 +147,11 @@ If argument provided:
 
 Write to:
 - `.claude/rules/codebase-navigation.md` — navigation hints (auto-loads in sessions)
-- `.agents/best-practices/project/coder.md` + `reviewer.md` — project convention
+- `.agents/best-practices/project/coder.md` + `reviewer.md` — normative project
   profile, loaded at highest precedence by the `sk-*` dev/review agents
+- `.agents/best-practices/project/evidence.md` — non-normative observations,
+  legacy patterns, and unresolved promotion questions
 
 The navigation file auto-loads in Claude Code sessions, providing navigation hints
-before creating new code. The convention profile makes generated code match the
-repo's actual style.
+before creating new code. The convention profile follows enforced and approved
+project decisions without copying legacy patterns merely because they are common.

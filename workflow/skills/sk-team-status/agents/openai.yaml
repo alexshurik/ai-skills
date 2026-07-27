@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Status"
+  short_description: "Report current team workflow state"
+  default_prompt: "Use $sk-team-status to inspect and report the current feature workflow state and next gate."

@@ -46,19 +46,20 @@ kimi --agent-file ~/.config/agents/agents/sk-team.yaml
 ```
 
 ```
-Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Code Review → Acceptance
+Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Code Review → Acceptance → Retrospective
 ```
 
 | Phase | Agent | Output | User interaction |
 |-------|-------|--------|------------------|
-| Discovery | Product Analyst | `proposal.md` | Asks 5-7 clarifying questions |
+| Discovery | Product Analyst | `proposal.md` | Resolves material ambiguity and confirms scope |
 | Research | Researcher | `RESEARCH.md` | Optional, for unknown domains |
 | Planning | Architect | `design.md`, `tasks.md` | Asks about approach and trade-offs |
 | Doc Review | Doc Reviewer | `DOC_REVIEW.md` | Optional, verifies alignment |
 | Testing | Tester | Test files (failing) | Proposes test plan for approval |
 | Implementation | Developer | Code (tests pass) | — |
-| Code Review | Review Orchestrator | Verdict | Resolves stack profiles, runs the static-analysis battery, dispatches parallel review passes, may loop back to Developer |
+| Code Review | Review Orchestrator | `CODE_REVIEW.md` | Reviews complete tracked/untracked scope through independent contract/security, architecture, abstraction, structure, import, stack, and instruction lenses |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
+| Retrospective | Orchestrator | `RETROSPECTIVE.md` | Records escaped signals and routes lessons to repo guidance, a named skill proposal, or no promotion |
 
 Every phase requires **explicit user approval** before proceeding to the next one.
 
@@ -111,6 +112,8 @@ All feature artifacts are stored in `openspec/changes/<feature-name>/`:
 | `tasks.md` | Architect | Implementation task breakdown |
 | `DOC_REVIEW.md` | Doc Reviewer | Alignment verification (optional) |
 | `VERIFICATION.md` | Acceptance Reviewer | QA verification report |
+| `CODE_REVIEW.md` | Review Orchestrator | Full latest verdict, baseline section, and tool provenance |
+| `RETROSPECTIVE.md` | Orchestrator | Root causes, prevention, and lesson disposition |
 | `SUMMARY.md` | Acceptance Reviewer | Executive summary |
 | `API_CHANGELOG.md` | Acceptance Reviewer | API changes for frontend |
 | `OPERATIONAL_TASKS.md` | Acceptance Reviewer | Deployment checklist |
@@ -129,21 +132,38 @@ default  →  language  →  framework  →  tooling  →  project
 
 - **Universal layers** (`default/`, `languages/`, `frameworks/`, `ui/`, `tooling/`) ship with the
   repo and stay generic. Stack is auto-detected via `index.yaml`; see `resolver.md`.
-- **Project layer** (`.agents/best-practices/project/coder.md` + `reviewer.md`) is the
-  **highest-precedence** layer and is written **into the target repo**, capturing *that*
-  repo's actual conventions (naming, docstring policy, imports, typing, test style, and the
-  exact format/lint/type/test commands). It is generated from evidence — tooling config
-  (`pyproject.toml`, `eslint.config`, `.editorconfig`, …) plus 8–15 sampled files — by
-  `sk-explore-codebase`/`sk-onboard` at onboarding, or by `sk-developer` on first run if
-  missing. Greenfield repos (no code to observe) are asked instead of guessed. The full
-  extraction spec is `shared/best-practices/project-conventions-guide.md`.
+- **Project layer** is the highest-precedence target-repo layer:
+  `coder.md` and `reviewer.md` contain only **Enforced** tooling rules and
+  **Approved** repository/ADR/spec decisions. `evidence.md` keeps **Observed** and
+  **Legacy/uncertain** source patterns non-normative. Sample frequency never becomes
+  a rule by itself. The extraction contract is
+  `shared/best-practices/project-conventions-guide.md`.
 
 This is why agents produce code in the project's own style instead of generic defaults.
-`sk-developer` also runs the project's pinned formatter + linter on its own output (through
+Before editing, `sk-developer` runs a boundary/typing/reuse/abstraction/structure/import
+gate. It also runs the project's pinned formatter + linter on its own output (through
 the resolved `$RUN` prefix — `uv`/`poetry`/`pdm`/`pnpm`/`yarn`/`npx`, honoring pre-commit/CI)
-and conforms before returning. The review orchestrator runs static-analysis tools through
-the same `$RUN` prefix and treats a tool that fails to execute as **UNVERIFIED** rather than
-a silent pass, reporting command + version + exit-code provenance.
+and conforms before returning. The review orchestrator consumes one deterministic
+change-evidence inventory, runs independent review lenses, separates unchanged
+baseline debt, and treats a tool that fails to execute as **UNVERIFIED**.
+
+## Source of Truth and Installation Verification
+
+This git repository is the only editable source. Home-directory installations are
+generated targets described by `skills-manifest.yaml`.
+
+- `scripts/validate-skills.sh` validates metadata, prompt budgets, resources, and scripts.
+- `scripts/doctor-installation.sh` finds duplicate/conflicting discovered skills.
+- `scripts/verify-installation.sh` compares an install with the manifest-rendered tree.
+- installers first render a complete platform tree in staging, then atomically
+  update only manifest-owned leaf files/links;
+- the installation receipt records exact owned paths, hashes, and symlink targets;
+  unrelated files inside shared target directories are preserved;
+- installers include complete skill resources such as `references/`, `scripts/`,
+  and `agents/openai.yaml`.
+- `scripts/migrate-legacy-codex.sh` moves manifest-owned legacy
+  `~/.codex/skills/sk-*` entries to a recoverable backup without touching `.system`
+  or unrelated skills.
 
 ## Agent Clarification (Handoff Protocol)
 
@@ -161,7 +181,8 @@ skills/
 ├── workflow/
 │   ├── skills/                  # Orchestrator commands (sk-team-*)
 │   └── agents/                  # 8 workflow agents
-│       ├── review-steps/        # Review sub-passes (security, architecture, stack-rules, instruction-quality)
+│       ├── review-steps/        # Seven lenses: security, architecture, abstraction, structure, imports, stack, instructions
+│       ├── references/          # Conditional workflow gates and verdict/tooling policy
 │       └── shared/              # Cross-agent docs (handoff-protocol.md)
 ├── onboarding/                  # Project onboarding commands
 ├── planning/                    # Planning workflows (sk-plan-mode)
@@ -171,6 +192,7 @@ skills/
 │   ├── templates/               # Artifact templates
 │   ├── context-handoff.md       # Phase-to-phase context passing
 │   ├── static-analysis/         # Deep-analysis battery (run-static-analysis.sh) for review step 5
+│   ├── review-evidence/         # Complete diff/untracked/size/import evidence collector
 │   └── best-practices/          # Coder + reviewer profiles
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go
@@ -181,6 +203,9 @@ skills/
 │       ├── resolver.md          # Profile resolution logic
 │       └── project-conventions-guide.md  # How agents derive a repo's own profile
 ├── scripts/                     # Installation scripts
+├── tests/                       # Structural, packaging, and workflow contract tests
+├── evals/                       # Non-installed behavioral regression fixtures
+├── skills-manifest.yaml         # Canonical catalog/internal resource inventory
 ├── adapters/                    # Platform-specific adapters
 ├── AGENTS.md                    # Cross-platform agent docs (auto-generated)
 └── README.md

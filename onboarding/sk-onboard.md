@@ -33,9 +33,10 @@ Execute `/sk-discover-project` to generate `.claude/docs/project-map.md`:
 Execute `/sk-explore-codebase` to generate navigation rules AND the project
 convention profile:
 - `.claude/rules/codebase-navigation.md` — check-before-create rules, structure
-- `.agents/best-practices/project/{coder,reviewer}.md` — code-style conventions
-  (naming, docstrings, imports, error handling, typing, tests) that the `sk-*`
-  dev/review agents load at highest precedence so generated code matches the repo
+- `.agents/best-practices/project/{coder,reviewer}.md` — Enforced and Approved
+  project conventions loaded by `sk-*` implementation/review agents
+- `.agents/best-practices/project/evidence.md` — Observed and Legacy/uncertain
+  source patterns that are evidence, not automatic instructions
 
 ### 3. Summary
 
@@ -65,6 +66,7 @@ Display combined results:
 | `.claude/rules/codebase-navigation.md` | Navigation rules for AI | Yes |
 | `.agents/best-practices/project/coder.md` | Project code-style conventions | Loaded by sk-* agents |
 | `.agents/best-practices/project/reviewer.md` | Same rules as review checks | Loaded by sk-* agents |
+| `.agents/best-practices/project/evidence.md` | Non-normative observations and legacy patterns | No |
 
 ## When to Use
 

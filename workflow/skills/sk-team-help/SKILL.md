@@ -68,7 +68,7 @@ runs them only on request.
 | `sk-doc-reviewer` | Doc Review (optional) | Consistency & alignment check before testing |
 | `sk-tester` | TDD Red | Write failing tests before code |
 | `sk-developer` | TDD Green | Implement code to pass tests |
-| `sk-review-orchestrator` | Review | Dispatches parallel sub-passes: security, architecture, stack rules |
+| `sk-review-orchestrator` | Review | Dispatches contract/security, architecture, abstraction, structure, imports, stack, and instruction-quality lenses |
 | `sk-acceptance-reviewer` | Acceptance | Verify business requirements met |
 
 ## Workflows
@@ -86,6 +86,7 @@ For new features, significant changes, complex work:
 4. sk-developer → Code (tests pass - TDD green phase)
 5. sk-review-orchestrator → Quality check (may loop to Developer)
 6. sk-acceptance-reviewer → VERIFICATION.md (final check)
+7. Orchestrator → RETROSPECTIVE.md (lesson disposition)
 ```
 
 **Approval is required between every phase** — the orchestrator stops after each phase
@@ -103,7 +104,7 @@ For bugfixes, typos, small changes (four phases):
 ```
 1. sk-architect → Brief design note (quick mode)
 2. sk-developer → Fix + Tests
-3. sk-review-orchestrator → Quality check (security, architecture, stack rules)
+3. sk-review-orchestrator → Quality check (all applicable review lenses)
 4. sk-acceptance-reviewer → Verify fix + write docs (quick mode)
 ```
 
@@ -123,7 +124,9 @@ openspec/changes/<feature-name>/
 ├── design.md        # System design, architecture decisions
 ├── tasks.md         # Implementation task breakdown
 ├── DOC_REVIEW.md    # Alignment verification (optional)
-└── VERIFICATION.md  # Final acceptance verification
+├── CODE_REVIEW.md   # Full latest review verdict + provenance
+├── VERIFICATION.md  # Final acceptance verification
+└── RETROSPECTIVE.md # Escaped signals + lesson disposition
 ```
 
 ## TDD Approach
@@ -163,13 +166,20 @@ Each agent runs in isolated context with specific tools.
 
 ## How Agents Stay On-Project
 
-- **Project conventions.** `sk-developer` and `sk-review-orchestrator` load stack-specific
-  coder/reviewer profiles and a project-specific layer
-  (`.agents/best-practices/project/`) so generated code matches the repo's own style
-  instead of generic defaults. The project layer is derived from the repo's tooling config
-  and sampled files at onboarding, or by `sk-developer` on first run if missing.
-  `sk-developer` also runs the project's pinned formatter + linter on its own output before
-  returning.
+- **Project conventions.** `sk-developer` and `sk-review-orchestrator` load
+  stack-specific profiles plus `.agents/best-practices/project/`. Generated
+  `coder.md`/`reviewer.md` contain Enforced and Approved rules only;
+  `evidence.md` keeps Observed and Legacy patterns non-normative. Sample frequency
+  never becomes an instruction by itself.
+
+- **Architecture gates.** Planning names one owner per concern, trust-boundary
+  models, reuse decisions, abstraction budget, module-growth forecast, and
+  infrastructure non-goals. Developer re-checks these before the first edit.
+
+- **Independent review.** Review includes complete tracked/untracked scope and
+  separate lenses for contract/security, layers, abstraction cost, structure,
+  imports, stack rules, and applicable instruction quality. Baseline debt is shown
+  separately from change-caused findings.
 
 - **Clarification (handoff protocol).** Subagents cannot reach the user directly. When one
   hits a genuine blocker it returns a `## NEEDS USER INPUT` block; the orchestrator surfaces

@@ -13,6 +13,10 @@ This creates symlinks in `~/.claude/`:
 - `~/.claude/agents/sk-*` - Task tool agents
 - `~/.claude/commands/sk-*` - Additional commands
 
+The manifest also links review evidence, workflow references, templates, and other
+internal resources required by the skills. Run `scripts/validate-skills.sh` before
+installation and `scripts/verify-installation.sh claude ~/.claude` to verify it.
+
 ## Usage
 
 After installation, restart Claude Code and use:

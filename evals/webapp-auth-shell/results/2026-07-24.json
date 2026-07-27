@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "date": "2026-07-24",
+  "fixture": {
+    "base": "ee6100b",
+    "head": "5aa47ea"
+  },
+  "scores": {
+    "baseline": 2,
+    "first_full_upgraded_review": 5,
+    "final": 10
+  },
+  "runs": [
+    {
+      "id": "baseline-review",
+      "skill_source": "git HEAD before this change",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/baseline-review.md",
+      "output_sha256": "2ccdf9b09889d4ad93b1a3683be94619587b8cdc796dbd34a4bba3d1e69a8c98"
+    },
+    {
+      "id": "upgraded-full-review",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/upgraded-full-review.md",
+      "output_sha256": "9619019a8f448f875c4be9289be3518b10e6d614d0ea8cf3fd2233e594abb634"
+    },
+    {
+      "id": "architecture-abstraction-coverage",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/architecture-abstraction-coverage.md",
+      "output_sha256": "5e5b5e54d3fc1e97726f2d1b47019939a02e12fad44d173a8a369700f43778b4"
+    },
+    {
+      "id": "vocabulary-coverage",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/vocabulary-coverage.md",
+      "output_sha256": "83b880c1edef58c61f7e0450c865ea2e2bc8b48e1b01ea14709635da49d85ae3"
+    },
+    {
+      "id": "transport-boundary-coverage",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/transport-boundary-coverage.md",
+      "output_sha256": "26a7010ee6a2d99aaa40edd0a183abe17743ebb6a46082c06e1167c3156d0425"
+    },
+    {
+      "id": "deployment-scope",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/deployment-scope.md",
+      "output_sha256": "beb91cf85fe7ae98cd8dddd81376df83b291f6f36264c0986d4d633be438c850"
+    },
+    {
+      "id": "codestyle-frequency",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/codestyle-frequency.md",
+      "output_sha256": "a35dfdd647ccdd4c32ab3edf147e1c53afbb6f59cdb761845a7ab6e78513c3ef"
+    },
+    {
+      "id": "architect-gate",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/architect-gate.md",
+      "output_sha256": "af352abf339861e6f41c9ba6b7df9e9cd38a27bcf8619a5fd4c9895a21bb04a5"
+    },
+    {
+      "id": "developer-gate",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/developer-gate.md",
+      "output_sha256": "3c7a7e1c561dbbdb16ef9ae1fcd1e3fde10822b33af62d828f8853baf5c622c8"
+    },
+    {
+      "id": "retrospective-routing",
+      "skill_source": "working tree",
+      "fresh_context": true,
+      "expected_diagnoses_withheld": true,
+      "output": "outputs/retrospective-routing.md",
+      "output_sha256": "7ab466e2cf416b008e744244f90e35ac308cc5135771837d5af3a80a40451951"
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "custom cross-cutting limiter logic in a transport/API owner is reported",
+      "passed": true,
+      "run": "transport-boundary-coverage",
+      "evidence": "The start handler was reported for constructing the limiter key, choosing limits, branching on the limiter result, and only then invoking the login capability."
+    },
+    {
+      "assertion": "serialized-store key, codec, expiry, and transaction mechanics in the use-case service are reported",
+      "passed": true,
+      "run": "architecture-abstraction-coverage",
+      "evidence": "The login state service was reported for combining state-machine policy with Redis keys, JSON records, TTL, deletion, and non-atomic persistence mechanics."
+    },
+    {
+      "assertion": "mechanism-oriented application service vocabulary is reported",
+      "passed": true,
+      "run": "vocabulary-coverage",
+      "evidence": "The application service named after an intermediate nonce state carrier received a MAJOR vocabulary finding."
+    },
+    {
+      "assertion": "one-use aliases, constants, wrappers, and micro-files are inventoried",
+      "passed": true,
+      "run": "architecture-abstraction-coverage",
+      "evidence": "The abstraction inventory covered aliases, constants, wrappers, helpers, interfaces, utilities, and micro-files and reported redundant session wrappers and a one-member controls micro-file."
+    },
+    {
+      "assertion": "an untyped token payload crossing a trust boundary is reported",
+      "passed": true,
+      "run": "upgraded-full-review",
+      "evidence": "The review reported untyped JWT and Redis payload dictionaries and required validated typed boundary models."
+    },
+    {
+      "assertion": "a circular-import claim without clean-process reproduction is rejected",
+      "passed": true,
+      "run": "upgraded-full-review",
+      "evidence": "Both clean import orders succeeded; the new local import received a MAJOR finding because no exact cycle or regression test existed."
+    },
+    {
+      "assertion": "an unauthorized second secret-delivery/deployment path is rejected",
+      "passed": true,
+      "run": "deployment-scope",
+      "evidence": "The neutral deployment fixture received a MAJOR finding because its Ansible environment delivery path contradicted the repository's existing CI/CD authority."
+    },
+    {
+      "assertion": "untracked files are included",
+      "passed": true,
+      "run": "upgraded-full-review",
+      "evidence": "The review scope explicitly included 11 unstaged tracked and 39 untracked files, all 50 reviewed."
+    },
+    {
+      "assertion": "baseline findings are separated",
+      "passed": true,
+      "run": "upgraded-full-review",
+      "evidence": "Unchanged mypy, import, and analyzer debt was rendered under a separate baseline/out-of-scope section."
+    },
+    {
+      "assertion": "APPROVED is impossible while a required applicable gate is missing",
+      "passed": true,
+      "run": "upgraded-full-review",
+      "evidence": "The verdict was CHANGES REQUESTED and explicitly stated that an unverified changed-line coverage dimension independently prevented approval."
+    }
+  ],
+  "companion_outcomes": {
+    "architect": "Stopped before task breakdown for missing owners, trust-boundary proofs, persistence choice, and production authority.",
+    "developer": "Made no edits and returned planning rework for the weak design.",
+    "codestyle": "Kept the repeated 12/12 one-use constant pattern Legacy/uncertain and out of coder.md.",
+    "retrospective": "Created only RETROSPECTIVE.md and routed portable lessons to named existing skills without global edits."
+  }
+}
