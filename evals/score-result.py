@@ -8,33 +8,41 @@ import hashlib
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 
-def load(path: Path) -> dict:
+def load(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as source:
         return json.load(source)
 
 
-def validate_runs(result: dict, result_path: Path) -> dict[str, dict]:
+def validate_run_output(run: dict[str, Any], result_path: Path) -> None:
+    output = result_path.parent / run["output"]
+    if not output.is_file() or not output.read_text(encoding="utf-8").strip():
+        raise ValueError(f"recorded run output missing: {output}")
+    digest = hashlib.sha256(output.read_bytes()).hexdigest()
+    if digest != run.get("output_sha256"):
+        raise ValueError(f"recorded run output hash mismatch: {output}")
+
+
+def validate_runs(
+    result: dict[str, Any],
+    result_path: Path,
+) -> dict[str, dict[str, Any]]:
     runs = {run["id"]: run for run in result["runs"]}
     if not runs or not all(run.get("fresh_context") for run in runs.values()):
         raise ValueError("every recorded behavioral run must use fresh context")
     if not all(run.get("expected_diagnoses_withheld") for run in runs.values()):
         raise ValueError("expected diagnoses leaked into at least one run")
     for run in runs.values():
-        output = result_path.parent / run["output"]
-        if not output.is_file() or not output.read_text(encoding="utf-8").strip():
-            raise ValueError(f"recorded run output missing: {output}")
-        digest = hashlib.sha256(output.read_bytes()).hexdigest()
-        if digest != run.get("output_sha256"):
-            raise ValueError(f"recorded run output hash mismatch: {output}")
+        validate_run_output(run, result_path)
     return runs
 
 
 def validate_assertions(
-    config: dict,
-    result: dict,
-    runs: dict[str, dict],
+    config: dict[str, Any],
+    result: dict[str, Any],
+    runs: dict[str, dict[str, Any]],
 ) -> tuple[int, int]:
     required = set(config["required_assertions"])
     assertions = {item["assertion"]: item for item in result["assertions"]}

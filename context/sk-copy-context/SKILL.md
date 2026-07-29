@@ -1,12 +1,12 @@
 ---
 name: sk-copy-context
-version: 1.0.0
+version: 1.1.0
 description: Copy current session context to clipboard
 license: MIT
 
 # Claude Code
 disable-model-invocation: true
-allowed-tools: Bash
+allowed-tools: Bash, Write
 
 # Cross-platform hints
 platforms:
@@ -23,58 +23,24 @@ Copy a detailed summary of the current session context to clipboard.
 
 ### 1. Generate Detailed Context Summary
 
-Create a comprehensive handoff text:
-
-```
-# Session Context Handoff
-
-## Working Directory
-[full pwd path]
-
-## Current Task
-[Main goal - what the user asked for originally]
-[Sub-tasks if any]
-
-## Progress & Completed Work
-- [What was done step by step]
-- [Key decisions made]
-- [Problems solved]
-
-## Key Files
-- [Files created] - [brief description]
-- [Files modified] - [what changed]
-- [Files read/analyzed] - [why important]
-
-## Current State
-[Where we stopped - what's the current situation]
-[Any pending operations]
-
-## Next Steps
-1. [Immediate next action]
-2. [Following actions]
-
-## Technical Context
-- [Important technical details]
-- [Dependencies, versions, configs]
-- [Commands that were run]
-
-## Decisions & Constraints
-- [Design decisions made and why]
-- [Constraints to keep in mind]
-- [User preferences expressed]
-
-## Open Questions / Blockers
-- [Any unresolved issues]
-- [Things that need clarification]
-```
+Read the canonical [context handoff template](references/context-handoff.md).
+Replace every placeholder with the current session's concrete state; keep all
+sections so the next agent can continue without reconstructing context.
 
 ### 2. Copy to clipboard
 
-```bash
-cat << 'CONTEXT' | pbcopy
-[the detailed context text here]
-CONTEXT
-```
+1. Run `mktemp` to allocate a new temporary file.
+2. Use the host's file-writing tool to write the completed context byte-for-byte
+   to that file. Never place context text in shell source, a command argument,
+   an environment variable, `printf`, or a shell redirection construct.
+3. Resolve `scripts/copy-context.sh` relative to this `SKILL.md` and invoke it
+   with the temporary file path as its only argument.
+4. Remove the temporary file after the helper returns.
+
+The helper selects `pbcopy`, `wl-copy`, `xclip`, or PowerShell without changing
+the context. If it reports that no supported command exists, relay that error
+and do not claim the copy succeeded. Only report success when the helper exits
+with status 0.
 
 ### 3. Tell the user
 

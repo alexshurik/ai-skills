@@ -2,7 +2,7 @@
 
 A collection of AI coding agent skills for multi-agent development workflows.
 
-**Compatible with:** Claude Code, OpenAI Codex, Cursor, Kimi/MiniMax
+**Compatible with:** Claude Code, OpenAI Codex, Cursor, Kimi Code CLI
 
 ## Quick Start
 
@@ -25,14 +25,17 @@ A collection of AI coding agent skills for multi-agent development workflows.
 ./scripts/install-codex.sh
 ```
 
+Use `$sk-team-help`, `$sk-team-feature`, `$sk-team-quick`, or `$sk-onboard`.
+
 ### Cursor
 
 ```bash
-./scripts/generate-cursorrules.sh
-cp adapters/cursor/.cursorrules /path/to/project/
+CURSOR_SKILLS_DIR=/path/to/project/.cursor/skills ./scripts/install-cursor.sh
+./scripts/generate-cursor-rules.sh
+cp -R adapters/cursor/.cursor /path/to/project/
 ```
 
-### Kimi/MiniMax
+### Kimi Code CLI
 
 ```bash
 ./scripts/install-kimi.sh
@@ -42,11 +45,11 @@ kimi --agent-file ~/.config/agents/agents/sk-team.yaml
 ## Multi-Agent Workflow
 
 ```
-/sk-team-feature "Add user authentication"
+sk-team-feature "Add user authentication"
 ```
 
 ```
-Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Code Review → Acceptance → Retrospective
+Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Code Review → Acceptance → Retrospective → Archive
 ```
 
 | Phase | Agent | Output | User interaction |
@@ -60,32 +63,42 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 | Code Review | Review Orchestrator | `CODE_REVIEW.md` | Reviews complete tracked/untracked scope through independent contract/security, architecture, abstraction, structure, import, stack, and instruction lenses |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 | Retrospective | Orchestrator | `RETROSPECTIVE.md` | Records escaped signals and routes lessons to repo guidance, a named skill proposal, or no promotion |
+| Archive | Orchestrator | `openspec/completed/<feature-name>/` | Moves the approved artifact set after final user approval |
 
 Every phase requires **explicit user approval** before proceeding to the next one.
 
 ## Quick Fix Workflow
 
 ```
-/sk-team-quick "Fix null pointer in login handler"
+sk-team-quick "Fix null pointer in login handler"
 ```
 
 Four phases: Architect (design note) → Developer (fix + tests) → Review Orchestrator → Acceptance Reviewer.
 
 ## All Commands
 
-| Command | Description |
+| Skill | Description |
 |---------|-------------|
-| `/sk-team-feature` | Full feature workflow with multi-agent team |
-| `/sk-team-quick` | Quick workflow for bugfixes and small changes |
-| `/sk-team-status` | Show status of active workflows |
-| `/sk-team-help` | Team workflow documentation |
-| `/sk-onboard` | Full project onboarding |
-| `/sk-discover-project` | Discover project structure and tech stack |
-| `/sk-explore-codebase` | Generate navigation rules for AI |
-| `/sk-plan-mode` | Structured planning with file-based plan storage |
-| `/sk-code-review` | Deep code review with stack-specific profiles and parallel review passes |
-| `/sk-explore-codestyle` | Generate code style guidelines |
-| `/sk-copy-context` | Copy session context to clipboard |
+| `sk-team-feature` | Full feature workflow with multi-agent team |
+| `sk-team-quick` | Quick workflow for bugfixes and small changes |
+| `sk-team-status` | Show status of active workflows |
+| `sk-team-help` | Team workflow documentation |
+| `sk-onboard` | Full project onboarding |
+| `sk-discover-project` | Discover project structure and tech stack |
+| `sk-explore-codebase` | Generate navigation rules and project convention profiles |
+| `sk-plan-mode` | Structured planning with file-based plan storage |
+| `sk-code-review` | Deep review of committed, staged, unstaged, and untracked changes |
+| `sk-explore-codestyle` | Generate code style guidelines |
+| `sk-copy-context` | Copy session context to clipboard |
+
+Invocation syntax is host-specific: Claude uses `/skill-name`, Codex uses
+`$skill-name` or `/skills`, Kimi uses `/skill:skill-name`, and Cursor exposes
+installed skills in its slash-command menu.
+
+`sk-copy-context` detects `pbcopy` (macOS), `wl-copy`/`xclip` (Linux), or
+PowerShell clipboard support and fails with an actionable message when none is
+available. It copies from a tool-written temporary file; context text is never
+embedded in shell source.
 
 ### Agents
 
@@ -102,7 +115,8 @@ Four phases: Architect (design note) → Developer (fix + tests) → Review Orch
 
 ## Artifacts
 
-All feature artifacts are stored in `openspec/changes/<feature-name>/`:
+Active feature artifacts are stored in `openspec/changes/<feature-name>/`. After
+approved retrospective and archive, they move to `openspec/completed/<feature-name>/`.
 
 | Artifact | Created by | Purpose |
 |----------|-----------|---------|
@@ -146,24 +160,48 @@ the resolved `$RUN` prefix — `uv`/`poetry`/`pdm`/`pnpm`/`yarn`/`npx`, honoring
 and conforms before returning. The review orchestrator consumes one deterministic
 change-evidence inventory, runs independent review lenses, separates unchanged
 baseline debt, and treats a tool that fails to execute as **UNVERIFIED**.
+The collector traverses changed paths through held no-follow directory
+descriptors and never follows a leaf or ancestor symlink. Current files and base
+blobs are each capped at 4 MiB; base size is checked with `git cat-file -s`
+before the bounded `git show`. Per-file interval diffing is skipped when either
+side exceeds that limit, and otherwise uses a 20 MiB streaming output cap.
+Machine-readable and Markdown output both expose incomplete read/interval status.
 
 ## Source of Truth and Installation Verification
 
 This git repository is the only editable source. Home-directory installations are
 generated targets described by `skills-manifest.yaml`.
 
-- `scripts/validate-skills.sh` validates metadata, prompt budgets, resources, and scripts.
+- `scripts/validate-skills.sh` validates metadata, prompt budgets, manifest path
+  confinement, declared inventory, rendered reference closure, and scripts.
 - `scripts/doctor-installation.sh` finds duplicate/conflicting discovered skills.
 - `scripts/verify-installation.sh` compares an install with the manifest-rendered tree.
-- installers first render a complete platform tree in staging, then atomically
-  update only manifest-owned leaf files/links;
-- the installation receipt records exact owned paths, hashes, and symlink targets;
-  unrelated files inside shared target directories are preserved;
+- installers first render a complete platform tree in staging, reject unowned
+  leaf collisions, and atomically replace each prepared manifest-owned leaf;
+- the versioned installation receipt records a stable suite identity, exact
+  platform/manifest version, owned paths, hashes, and symlink targets. A
+  symlinked, malformed, foreign, or incompatible receipt is never treated as
+  ownership authority, and receipt input is capped at 4 MiB; unrelated files
+  inside shared target directories are preserved;
 - installers include complete skill resources such as `references/`, `scripts/`,
   and `agents/openai.yaml`.
-- `scripts/migrate-legacy-codex.sh` moves manifest-owned legacy
-  `~/.codex/skills/sk-*` entries to a recoverable backup without touching `.system`
-  or unrelated skills.
+- `scripts/migrate-legacy-codex.sh` moves named manifest-owned legacy skills and
+  exact rendered resource leaves to a recoverable backup without touching
+  `.system` or unrelated siblings. The backup root must not already exist and
+  must be on the legacy tree's filesystem; migration uses no-follow directory
+  descriptors, refuses source/backup symlinks, and rolls earlier moves back on
+  failure instead of using a cross-filesystem copy fallback. Exact resource
+  leaves must be regular files or symlinks; named legacy skills must be real
+  directories containing a real regular `SKILL.md`.
+- `scripts/uninstall.sh` preflights all standard platform targets before removing
+  any receipt-owned file and safely skips platforms that are not installed.
+  Every target is paired with an explicit expected platform; platform is never
+  inferred from a filesystem path.
+
+Receipts created before the stable suite/schema fields existed are intentionally
+not auto-upgraded: inspect that installation and remove it with its matching
+older checkout before installing this version. This prevents an untyped file
+from becoming deletion authority merely because it has the receipt filename.
 
 ## Agent Clarification (Handoff Protocol)
 
@@ -187,18 +225,17 @@ skills/
 ├── onboarding/                  # Project onboarding commands
 ├── planning/                    # Planning workflows (sk-plan-mode)
 ├── utilities/                   # Standalone tools (sk-code-review, sk-explore-codestyle)
-├── context/                     # Context management (sk-copy-context)
+├── context/                     # Context management skill and its handoff template
 ├── shared/
 │   ├── templates/               # Artifact templates
-│   ├── context-handoff.md       # Phase-to-phase context passing
-│   ├── static-analysis/         # Deep-analysis battery (run-static-analysis.sh) for review step 5
+│   ├── static-analysis/         # Deep-analysis battery used by review step 4
 │   ├── review-evidence/         # Complete diff/untracked/size/import evidence collector
 │   └── best-practices/          # Coder + reviewer profiles
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go
 │       ├── frameworks/          # fastapi, gin, vue
 │       ├── ui/                  # Framework-agnostic anti-slop UI/design profile (coder + reviewer + catalog)
-│       ├── tooling/             # ansible, docker, github-actions
+│       ├── tooling/             # ansible, docker, github-actions, kubernetes, terraform
 │       ├── index.yaml           # Stack detection signals
 │       ├── resolver.md          # Profile resolution logic
 │       └── project-conventions-guide.md  # How agents derive a repo's own profile
@@ -213,14 +250,24 @@ skills/
 
 ## Customization
 
-**Add a skill:** create `workflow/skills/sk-my-skill/SKILL.md`, run install script.
+**Add a skill:** create its `SKILL.md`, register the source under `catalog` or
+`onboarding` in `skills-manifest.yaml`, run `scripts/validate-skills.sh`, regenerate
+the public docs, then run the relevant installer.
 
-**Add an agent:** create `workflow/agents/sk-my-agent.md`, run install script.
+**Add an agent:** create `workflow/agents/sk-my-agent.md`, register it under
+`agents` in `skills-manifest.yaml`, validate, regenerate docs, and reinstall.
 
 ## Uninstallation
 
 ```bash
 ./scripts/uninstall.sh
+```
+
+Cursor project installs are explicit because their locations vary:
+
+```bash
+python3 scripts/skills_tool.py uninstall \
+  --target cursor /path/to/project/.cursor/skills
 ```
 
 ## License

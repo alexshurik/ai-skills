@@ -11,7 +11,7 @@ platforms:
   kimi: true
 ---
 
-# /sk-team-help - Multi-Agent Team Documentation
+# sk-team-help - Multi-Agent Team Documentation
 
 <sk-team-help>
 
@@ -23,14 +23,17 @@ Display the following help documentation to the user:
 
 A structured workflow system with specialized agents for software development.
 
-## Commands
+## Skills
 
-| Command | Description |
+| Skill | Description |
 |---------|-------------|
-| `/sk-team-feature <description>` | Full workflow for new features |
-| `/sk-team-quick <description>` | Quick workflow for bugfixes |
-| `/sk-team-status` | Show status of active workflows |
-| `/sk-team-help` | Show this help |
+| `sk-team-feature <description>` | Full workflow for new features |
+| `sk-team-quick <description>` | Quick workflow for bugfixes |
+| `sk-team-status` | Show status of active workflows |
+| `sk-team-help` | Show this help |
+
+Claude invokes skills as `/skill-name`, Codex as `$skill-name` or through
+`/skills`, Kimi as `/skill:skill-name`, and Cursor through its slash menu.
 
 ## Architecture
 
@@ -58,7 +61,7 @@ analyst      researcher                 reviewer       sk-        sk-
 Research and Doc Review are **optional** phases — the orchestrator offers them and
 runs them only on request.
 
-## Agents (subagent_type for Task tool)
+## Agents (delegated subagent roles)
 
 | Agent | Role | Purpose |
 |-------|------|---------|
@@ -73,7 +76,7 @@ runs them only on request.
 
 ## Workflows
 
-### Full Workflow (`/sk-team-feature`)
+### Full Workflow (`sk-team-feature`)
 
 For new features, significant changes, complex work:
 
@@ -87,6 +90,7 @@ For new features, significant changes, complex work:
 5. sk-review-orchestrator → Quality check (may loop to Developer)
 6. sk-acceptance-reviewer → VERIFICATION.md (final check)
 7. Orchestrator → RETROSPECTIVE.md (lesson disposition)
+8. Orchestrator → Archive to openspec/completed/<feature-name>/
 ```
 
 **Approval is required between every phase** — the orchestrator stops after each phase
@@ -94,10 +98,10 @@ and waits for explicit user approval before continuing.
 
 **Example:**
 ```
-/sk-team-feature Add user authentication with OAuth2
+Invoke sk-team-feature with: Add user authentication with OAuth2
 ```
 
-### Quick Workflow (`/sk-team-quick`)
+### Quick Workflow (`sk-team-quick`)
 
 For bugfixes, typos, small changes (four phases):
 
@@ -110,12 +114,12 @@ For bugfixes, typos, small changes (four phases):
 
 **Example:**
 ```
-/sk-team-quick Fix null pointer in calculateTotal function
+Invoke sk-team-quick with: Fix null pointer in calculateTotal function
 ```
 
 ## Artifacts
 
-All artifacts stored in OpenSpec structure:
+Active artifacts use the OpenSpec change structure:
 
 ```
 openspec/changes/<feature-name>/
@@ -129,6 +133,9 @@ openspec/changes/<feature-name>/
 └── RETROSPECTIVE.md # Escaped signals + lesson disposition
 ```
 
+After final approval, the complete directory moves from `openspec/changes/` to
+`openspec/completed/`.
+
 ## TDD Approach
 
 The system enforces Test-Driven Development:
@@ -139,10 +146,10 @@ The system enforces Test-Driven Development:
 
 ## Agent Invocation
 
-Orchestrator uses Task tool to invoke agents:
+The orchestrator uses the host's subagent/delegation mechanism. For example:
 
 ```
-Task tool:
+Delegation request:
   subagent_type: "sk-product-analyst"
   prompt: |
     Feature: <description>
@@ -210,13 +217,13 @@ Each agent runs in isolated context with specific tools.
 
 ```
 # Start a new feature
-/sk-team-feature <describe your feature>
+Invoke sk-team-feature with <describe your feature>
 
 # Fix a bug
-/sk-team-quick <describe the bug>
+Invoke sk-team-quick with <describe the bug>
 
 # Check workflow status
-/sk-team-status
+Invoke sk-team-status
 ```
 
 </sk-team-help>

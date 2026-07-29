@@ -1,7 +1,7 @@
 ---
 name: sk-onboard
 version: 1.0.0
-description: Full project onboarding - discover structure + generate navigation rules
+description: Discover a project and generate its map, navigation rules, and authoritative convention profiles
 argument-hint: "[optional: quick|full]"
 license: MIT
 allowed-tools:
@@ -22,7 +22,7 @@ Run both discovery skills to generate complete project documentation for AI agen
 
 ### 1. Run discover-project
 
-Execute `/sk-discover-project` to generate `.claude/docs/project-map.md`:
+Execute `sk-discover-project` to generate `.claude/docs/project-map.md`:
 - Tech stack detection
 - Domain discovery
 - API endpoints mapping
@@ -30,7 +30,7 @@ Execute `/sk-discover-project` to generate `.claude/docs/project-map.md`:
 
 ### 2. Run explore-codebase
 
-Execute `/sk-explore-codebase` to generate navigation rules AND the project
+Execute `sk-explore-codebase` to generate navigation rules AND the project
 convention profile:
 - `.claude/rules/codebase-navigation.md` — check-before-create rules, structure
 - `.agents/best-practices/project/{coder,reviewer}.md` — Enforced and Approved
@@ -43,7 +43,7 @@ convention profile:
 Display combined results:
 - Tech stack summary
 - Number of domains, endpoints, services discovered
-- Paths to both generated files
+- Paths to all generated artifacts
 - Reminder about auto-loading rules
 
 ## Modes
@@ -70,10 +70,10 @@ Display combined results:
 
 ## When to Use
 
-- **New to project:** Run `/sk-onboard` once
-- **After major changes:** Re-run to update both files
-- **Just need navigation:** Run `/sk-explore-codebase` only
-- **Just need overview:** Run `/sk-discover-project` only
+- **New to project:** Run `sk-onboard` once
+- **After major changes:** Re-run to update the project map, navigation, and profiles
+- **Just need navigation/profiles:** Run `sk-explore-codebase` only
+- **Just need overview:** Run `sk-discover-project` only
 
 ## Example Output
 
@@ -85,6 +85,13 @@ After running, you'll have:
 │   └── project-map.md        # "Here's what the project does"
 └── rules/
     └── codebase-navigation.md # "Check here before creating X"
+.agents/
+└── best-practices/
+    └── project/
+        ├── coder.md           # Enforced and Approved coding rules
+        ├── reviewer.md        # Matching review checks
+        └── evidence.md        # Observed and Legacy/uncertain evidence
 ```
 
-The rules file auto-loads in new Claude Code sessions, providing context-aware assistance.
+The Claude rule auto-loads in new Claude Code sessions. The `sk-*` implementation
+and review agents load the project convention profiles on every supported host.

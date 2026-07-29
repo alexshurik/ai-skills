@@ -47,18 +47,9 @@ Use this template when passing context between AI agents or sessions.
 - [Things that need clarification]
 ```
 
-## Usage
+## Guidance
 
-### Copy to Clipboard
-Use `/sk-copy-context` to generate and copy this to clipboard.
-
-### Copy Context
-Use `/sk-copy-context` to copy the current session context to clipboard for use in another agent.
-
-## Tips for Good Handoffs
-
-1. **Be Specific** - Include file paths, line numbers, exact values
-2. **Include Why** - Not just what was done, but why decisions were made
-3. **List Blockers** - Anything that stopped progress
-4. **Note Preferences** - User preferences that affect future work
-5. **Keep Updated** - Update context as work progresses
+1. Include exact paths, line numbers, values, and commands where they matter.
+2. Record why decisions were made, not only what changed.
+3. List unresolved blockers and user preferences explicitly.
+4. Keep the handoff current as the work progresses.

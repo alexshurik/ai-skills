@@ -34,7 +34,7 @@ Check for the canonical project profile:
 ```
 
 If normative coder/reviewer profiles are absent, offer
-`$sk-explore-codestyle`. Do not require a Claude-specific `code-style.md`.
+`sk-explore-codestyle`. Do not require a Claude-specific `code-style.md`.
 
 ## 3. Execute the orchestrator flow at top level
 

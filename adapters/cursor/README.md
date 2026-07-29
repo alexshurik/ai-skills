@@ -1,65 +1,65 @@
 # Cursor Adapter
 
-## Installation
+Current Cursor releases support Agent Skills and Project Rules. Use native skills
+for the workflows; the generated rule is an optional always-on catalog.
 
-Generate `.cursorrules` file:
+## Native Skill Installation
+
+Install into a target project's `.cursor/skills` directory:
+
+```bash
+CURSOR_SKILLS_DIR=/path/to/project/.cursor/skills \
+  ./scripts/install-cursor.sh
+```
+
+Cursor discovers each manifest-owned `SKILL.md` and exposes it through its slash
+menu. Skills may also activate automatically from their descriptions.
+
+Verify or uninstall that explicit project target:
+
+```bash
+./scripts/verify-installation.sh \
+  cursor /path/to/project/.cursor/skills
+python3 scripts/skills_tool.py uninstall \
+  --target cursor /path/to/project/.cursor/skills
+```
+
+## Optional Project Rule
+
+Generate an always-on catalog under `.cursor/rules/`:
+
+```bash
+./scripts/generate-cursor-rules.sh
+cp -R adapters/cursor/.cursor /path/to/project/
+```
+
+The rule lists every manifest-owned public skill and internal role. Edit the copy
+in the target project if it needs project-specific context.
+
+## Legacy Compatibility
+
+`.cursorrules` is still generated for older Cursor versions, but Cursor classifies
+that root-level format as legacy:
 
 ```bash
 ./scripts/generate-cursorrules.sh
+cp adapters/cursor/.cursorrules /path/to/project/
 ```
 
-Then copy to your project:
+Prefer native skills plus `.cursor/rules` or `AGENTS.md` for new installations.
 
-```bash
-cp adapters/cursor/.cursorrules /path/to/your/project/
+## Invocation
+
+Open Cursor's slash menu and select a skill such as:
+
+```text
+/sk-team-help
+/sk-team-feature
+/sk-team-quick
+/sk-onboard
 ```
 
-## Usage
+## See Also
 
-After adding `.cursorrules` to your project, Cursor will have context about available commands:
-
-```
-/sk-team-help       # Team workflow documentation
-/sk-team-feature    # Full feature development
-/sk-team-quick      # Quick fix workflow
-/sk-onboard         # Project onboarding
-```
-
-## How It Works
-
-Cursor reads `.cursorrules` from your project root. The generated file contains:
-
-1. **Command descriptions** - What each `/sk-*` command does
-2. **Agent definitions** - Available agents and their roles
-3. **Usage examples** - How to invoke commands
-
-## Customization
-
-Edit `.cursorrules` after generation to:
-- Add project-specific rules
-- Remove unused commands
-- Add custom instructions
-
-## Template
-
-A `.cursorrules.template` is provided for reference:
-
-```
-# Project Rules
-
-## Available Commands
-
-### /sk-team-feature
-Start full feature development with multi-agent team.
-
-### /sk-team-quick
-Quick fix workflow for bugfixes and small changes.
-
-...
-```
-
-## Limitations
-
-- Cursor doesn't have built-in skill/agent system like Claude Code
-- Commands are documentation only - you manually invoke them in chat
-- No automatic tool restrictions
+- [Cursor 2.4: Subagents, Skills, and Image Generation](https://cursor.com/changelog/2-4)
+- [Cursor Project Rules](https://docs.cursor.com/context/rules)

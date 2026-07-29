@@ -3,23 +3,40 @@
 from __future__ import annotations
 
 import os
-import shutil
+import stat
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from skills_common import REPO_ROOT, TEXT_SUFFIXES
+from skills_common import TEXT_SUFFIXES, repo_source_path, safe_relative
 
 
-def replace_paths(text: str, platform: str, installed_root: Path) -> str:
-    if platform == "codex":
+MAX_RENDER_SOURCE_BYTES = 4 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class RenderContext:
+    platform: str
+    output: Path
+    installed_root: Path
+
+
+def replace_paths(text: str, context: RenderContext) -> str:
+    if context.platform in {"codex", "cursor"}:
         replacements = (
-            ("~/.claude/agents/best-practices", str(installed_root / "best-practices")),
-            ("~/.claude/agents/review-steps", str(installed_root / "review-steps")),
-            ("~/.claude/agents/shared", str(installed_root / "shared")),
-            ("~/.claude/agents/", f"{installed_root / 'agents'}/"),
+            (
+                "~/.claude/agents/best-practices",
+                str(context.installed_root / "best-practices"),
+            ),
+            (
+                "~/.claude/agents/review-steps",
+                str(context.installed_root / "review-steps"),
+            ),
+            ("~/.claude/agents/shared", str(context.installed_root / "shared")),
+            ("~/.claude/agents/", f"{context.installed_root / 'agents'}/"),
         )
-    elif platform == "kimi":
-        references = installed_root / "agents" / "references"
+    elif context.platform == "kimi":
+        references = context.installed_root / "agents" / "references"
         replacements = (
             ("~/.claude/agents/best-practices", str(references / "best-practices")),
             ("~/.claude/agents/review-steps", str(references / "review-steps")),
@@ -33,92 +50,166 @@ def replace_paths(text: str, platform: str, installed_root: Path) -> str:
     return text
 
 
-def copy_rendered(
+def ensure_new_leaf(destination: Path) -> None:
+    if destination.exists() or destination.is_symlink():
+        raise ValueError(f"render target collision: {destination}")
+
+
+def checked_source_stat(source: Path) -> os.stat_result:
+    metadata = source.lstat()
+    if stat.S_ISLNK(metadata.st_mode):
+        raise ValueError(f"render source symlink is not allowed: {source}")
+    if not stat.S_ISDIR(metadata.st_mode) and not stat.S_ISREG(metadata.st_mode):
+        raise ValueError(f"render source is not a regular file/directory: {source}")
+    return metadata
+
+
+def validate_source_tree(source: Path) -> None:
+    metadata = checked_source_stat(source)
+    if not stat.S_ISDIR(metadata.st_mode):
+        return
+    for child in sorted(source.iterdir()):
+        validate_source_tree(child)
+
+
+def read_source_file(source: Path) -> tuple[bytes, int]:
+    before = checked_source_stat(source)
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError(f"render source is not a regular file: {source}")
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
+    descriptor = os.open(source, flags)
+    with os.fdopen(descriptor, "rb") as source_file:
+        opened = os.fstat(source_file.fileno())
+        identity = (before.st_dev, before.st_ino)
+        if not stat.S_ISREG(opened.st_mode):
+            raise ValueError(f"render source changed while opening: {source}")
+        if identity != (opened.st_dev, opened.st_ino):
+            raise ValueError(f"render source changed while opening: {source}")
+        if opened.st_size > MAX_RENDER_SOURCE_BYTES:
+            raise ValueError(f"render source exceeds the size limit: {source}")
+        content = source_file.read(MAX_RENDER_SOURCE_BYTES + 1)
+        if len(content) > MAX_RENDER_SOURCE_BYTES:
+            raise ValueError(f"render source exceeds the size limit: {source}")
+        return content, opened.st_mode
+
+
+def read_source_text(source: Path) -> str:
+    content, _ = read_source_file(source)
+    return content.decode("utf-8")
+
+
+def copy_validated(
     source: Path,
     destination: Path,
-    platform: str,
-    installed_root: Path,
+    context: RenderContext,
 ) -> None:
-    if source.is_dir():
+    metadata = checked_source_stat(source)
+    if stat.S_ISDIR(metadata.st_mode):
+        if destination.exists() and (
+            destination.is_symlink() or not destination.is_dir()
+        ):
+            raise ValueError(f"render target collision: {destination}")
         destination.mkdir(parents=True, exist_ok=True)
         for child in sorted(source.iterdir()):
-            copy_rendered(child, destination / child.name, platform, installed_root)
+            copy_validated(child, destination / child.name, context)
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
+    ensure_new_leaf(destination)
+    content, source_mode = read_source_file(source)
     if source.suffix.lower() in TEXT_SUFFIXES or source.name == "SKILL.md":
         destination.write_text(
-            replace_paths(source.read_text(encoding="utf-8"), platform, installed_root),
+            replace_paths(content.decode("utf-8"), context),
             encoding="utf-8",
         )
     else:
-        shutil.copy2(source, destination)
-    if os.access(source, os.X_OK):
+        destination.write_bytes(content)
+    if source_mode & 0o111:
         destination.chmod(destination.stat().st_mode | 0o111)
+
+
+def copy_rendered(
+    source: Path,
+    destination: Path,
+    context: RenderContext,
+) -> None:
+    validate_source_tree(source)
+    copy_validated(source, destination, context)
 
 
 def render_review_steps(
     manifest: dict[str, Any],
     destination: Path,
-    platform: str,
-    installed_root: Path,
+    context: RenderContext,
 ) -> None:
     for item in manifest["review_steps"]:
-        copy_rendered(
-            REPO_ROOT / item["source"],
-            destination / Path(item["source"]).name,
-            platform,
-            installed_root,
-        )
+        source = repo_source_path(item["source"])
+        copy_rendered(source, destination / source.name, context)
 
 
-def render_codex(manifest: dict[str, Any], output: Path, installed_root: Path) -> None:
+def render_catalog_tree(manifest: dict[str, Any], context: RenderContext) -> None:
     for item in manifest["catalog"]:
         copy_rendered(
-            REPO_ROOT / item["source"], output / item["name"], "codex", installed_root
+            repo_source_path(item["source"]),
+            context.output / item["name"],
+            context,
         )
     for item in manifest["onboarding"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
-            output / item["name"] / "SKILL.md",
-            "codex",
-            installed_root,
+            repo_source_path(item["source"]),
+            context.output / item["name"] / "SKILL.md",
+            context,
         )
     for item in manifest["agents"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
-            output / "agents" / f"{item['name']}.md",
-            "codex",
-            installed_root,
+            repo_source_path(item["source"]),
+            context.output / "agents" / f"{item['name']}.md",
+            context,
         )
-    render_review_steps(manifest, output / "review-steps", "codex", installed_root)
+    render_review_steps(manifest, context.output / "review-steps", context)
+    target_field = f"{context.platform}_target"
     for item in manifest["resources"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
-            output / item["codex_target"],
-            "codex",
-            installed_root,
+            repo_source_path(item["source"]),
+            context.output / safe_relative(item[target_field]),
+            context,
         )
 
 
 def link(source: Path, destination: Path) -> None:
+    validate_source_tree(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
+    ensure_new_leaf(destination)
     destination.symlink_to(source)
 
 
-def render_claude(manifest: dict[str, Any], output: Path) -> None:
+def render_claude(manifest: dict[str, Any], context: RenderContext) -> None:
     for item in manifest["catalog"]:
-        link(REPO_ROOT / item["source"], output / "skills" / item["name"])
-    for item in manifest["onboarding"]:
-        link(REPO_ROOT / item["source"], output / "commands" / f"{item['name']}.md")
-    for item in manifest["agents"]:
-        link(REPO_ROOT / item["source"], output / "agents" / f"{item['name']}.md")
-    for item in manifest["review_steps"]:
         link(
-            REPO_ROOT / item["source"],
-            output / "agents/review-steps" / Path(item["source"]).name,
+            repo_source_path(item["source"]),
+            context.output / "skills" / item["name"],
         )
+    for item in manifest["onboarding"]:
+        link(
+            repo_source_path(item["source"]),
+            context.output / "commands" / f"{item['name']}.md",
+        )
+    for item in manifest["agents"]:
+        link(
+            repo_source_path(item["source"]),
+            context.output / "agents" / f"{item['name']}.md",
+        )
+    for item in manifest["review_steps"]:
+        source = repo_source_path(item["source"])
+        link(source, context.output / "agents/review-steps" / source.name)
     for item in manifest["resources"]:
-        link(REPO_ROOT / item["source"], output / item["claude_target"])
+        link(
+            repo_source_path(item["source"]),
+            context.output / safe_relative(item["claude_target"]),
+        )
 
 
 def kimi_agent_yaml(name: str) -> str:
@@ -126,7 +217,7 @@ def kimi_agent_yaml(name: str) -> str:
         "version: 1\nagent:\n  extend: ./sk-team.yaml\n"
         f"  system_prompt_path: ./references/{name}.md\n"
         "  exclude_tools:\n"
-        '    - "kimi_cli.tools.multiagent:Task"\n'
+        '    - "kimi_cli.tools.agent:Agent"\n'
     )
 
 
@@ -149,61 +240,86 @@ def kimi_team_yaml(manifest: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_kimi(manifest: dict[str, Any], output: Path, installed_root: Path) -> None:
-    skills = output / "skills"
-    references = output / "agents" / "references"
+def kimi_team_prompt(context: RenderContext) -> str:
+    feature_root = repo_source_path("workflow/skills/sk-team-feature")
+    validate_source_tree(feature_root)
+    prompt = replace_paths(
+        read_source_text(feature_root / "SKILL.md"),
+        context,
+    )
+    prompt = prompt.replace(
+        "(references/phase-prompts.md)",
+        "(#embedded-phase-prompts)",
+    )
+    phase_prompts = replace_paths(
+        read_source_text(feature_root / "references/phase-prompts.md"),
+        context,
+    )
+    return (
+        "${KIMI_AGENTS_MD}\n\n"
+        f"{prompt.rstrip()}\n\n"
+        '<a id="embedded-phase-prompts"></a>\n\n'
+        "## Embedded phase prompts\n\n"
+        f"{phase_prompts.rstrip()}\n"
+    )
+
+
+def write_generated(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_new_leaf(path)
+    path.write_text(content, encoding="utf-8")
+
+
+def render_kimi(manifest: dict[str, Any], context: RenderContext) -> None:
+    skills = context.output / "skills"
+    agents = context.output / "agents"
+    references = agents / "references"
     for item in manifest["catalog"]:
         copy_rendered(
-            REPO_ROOT / item["source"], skills / item["name"], "kimi", installed_root
+            repo_source_path(item["source"]),
+            skills / item["name"],
+            context,
         )
     for item in manifest["onboarding"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
+            repo_source_path(item["source"]),
             skills / item["name"] / "SKILL.md",
-            "kimi",
-            installed_root,
+            context,
         )
-    copy_rendered(
-        REPO_ROOT / "workflow/skills/sk-team-feature/SKILL.md",
+    write_generated(
         references / "sk-team-feature.md",
-        "kimi",
-        installed_root,
+        kimi_team_prompt(context),
     )
-    agents = output / "agents"
-    agents.mkdir(parents=True, exist_ok=True)
-    (agents / "sk-team.yaml").write_text(kimi_team_yaml(manifest), encoding="utf-8")
+    write_generated(agents / "sk-team.yaml", kimi_team_yaml(manifest))
     for item in manifest["agents"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
+            repo_source_path(item["source"]),
             references / f"{item['name']}.md",
-            "kimi",
-            installed_root,
+            context,
         )
-        (agents / f"{item['name']}.yaml").write_text(
-            kimi_agent_yaml(item["name"]), encoding="utf-8"
+        write_generated(
+            agents / f"{item['name']}.yaml",
+            kimi_agent_yaml(item["name"]),
         )
-    render_review_steps(manifest, references / "review-steps", "kimi", installed_root)
+    render_review_steps(manifest, references / "review-steps", context)
     for item in manifest["resources"]:
         copy_rendered(
-            REPO_ROOT / item["source"],
-            output / item["kimi_target"],
-            "kimi",
-            installed_root,
+            repo_source_path(item["source"]),
+            context.output / safe_relative(item["kimi_target"]),
+            context,
         )
 
 
-def render_tree(
-    manifest: dict[str, Any],
-    platform: str,
-    output: Path,
-    installed_root: Path,
-) -> None:
-    output.mkdir(parents=True, exist_ok=True)
-    if platform == "codex":
-        render_codex(manifest, output, installed_root)
-    elif platform == "claude":
-        render_claude(manifest, output)
-    elif platform == "kimi":
-        render_kimi(manifest, output, installed_root)
-    else:
-        raise ValueError(f"unsupported platform: {platform}")
+def render_tree(manifest: dict[str, Any], context: RenderContext) -> None:
+    context.output.mkdir(parents=True, exist_ok=True)
+    renderers = {
+        "codex": render_catalog_tree,
+        "cursor": render_catalog_tree,
+        "claude": render_claude,
+        "kimi": render_kimi,
+    }
+    try:
+        renderer = renderers[context.platform]
+    except KeyError as error:
+        raise ValueError(f"unsupported platform: {context.platform}") from error
+    renderer(manifest, context)

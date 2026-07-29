@@ -5,9 +5,10 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 FIXTURE_DIR="$(mktemp -d /tmp/sk-evidence-test.XXXXXX)"
 FIRST_COMMIT_DIR="$(mktemp -d /tmp/sk-evidence-first.XXXXXX)"
+ESCAPE_DIR="$(mktemp -d /tmp/sk-evidence-escape.XXXXXX)"
 OUTPUT="$(mktemp /tmp/sk-evidence-output.XXXXXX)"
 FIRST_OUTPUT="$(mktemp /tmp/sk-evidence-first-output.XXXXXX)"
-trap 'rm -rf "$FIXTURE_DIR" "$FIRST_COMMIT_DIR"; rm -f "$OUTPUT" "$FIRST_OUTPUT"' EXIT
+trap 'rm -rf "$FIXTURE_DIR" "$FIRST_COMMIT_DIR" "$ESCAPE_DIR"; rm -f "$OUTPUT" "$FIRST_OUTPUT"' EXIT
 
 git -C "$FIXTURE_DIR" init -q
 git -C "$FIXTURE_DIR" config user.email "skills-test@example.invalid"
@@ -17,6 +18,7 @@ mkdir -p "$FIXTURE_DIR/src"
 printf 'def stable():\n    return True\n' > "$FIXTURE_DIR/src/stable.py"
 printf 'def renamed():\n    return True\n' > "$FIXTURE_DIR/src/rename_me.py"
 printf 'def removed():\n    return True\n' > "$FIXTURE_DIR/src/delete_me.py"
+printf 'def tracked():\n    return True\n' > "$FIXTURE_DIR/src/tracked_link.py"
 for number in $(seq 1 300); do
     printf 'value_%s = %s\n' "$number" "$number"
 done > "$FIXTURE_DIR/src/threshold.py"
@@ -46,6 +48,15 @@ printf 'value_301 = 301\nvalue_302 = 302\n' >> "$FIXTURE_DIR/src/threshold.py"
 } > "$FIXTURE_DIR/src/large module.py"
 printf 'export async function load() {\n  return import("./lazy.js");\n}\n' \
     > "$FIXTURE_DIR/src/lazy.ts"
+{
+    printf 'from outside import secret\n'
+    for number in $(seq 1 301); do
+        printf 'outside_%s = %s\n' "$number" "$number"
+    done
+} > "$ESCAPE_DIR/outside.py"
+rm "$FIXTURE_DIR/src/tracked_link.py"
+ln -s "$ESCAPE_DIR/outside.py" "$FIXTURE_DIR/src/tracked_link.py"
+ln -s "$ESCAPE_DIR/outside.py" "$FIXTURE_DIR/src/untracked_link.py"
 
 "$REPO_DIR/shared/review-evidence/collect-change-evidence.sh" \
     --repo "$FIXTURE_DIR" \
@@ -80,6 +91,12 @@ assert files["src/delete_me.py"]["current_lines"] is None
 assert files["src/threshold.py"]["base_lines"] == 300
 assert files["src/threshold.py"]["current_lines"] == 302
 assert files["src/threshold.py"]["crossed_300"]
+for relative in ("src/tracked_link.py", "src/untracked_link.py"):
+    assert files[relative]["current_kind"] == "symlink"
+    assert files[relative]["current_symlink_target"].endswith("/outside.py")
+    assert files[relative]["current_lines"] is None
+    assert files[relative]["local_imports"] == []
+    assert not files[relative]["over_300"]
 PY
 
 # A repository with only its first commit has no parent/upstream and must still work.

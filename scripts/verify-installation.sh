@@ -4,7 +4,7 @@
 set -e
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <codex|claude|kimi> <target-root>" >&2
+    echo "Usage: $0 <codex|cursor|claude|kimi> <target-root>" >&2
     exit 2
 fi
 

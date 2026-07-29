@@ -1,69 +1,34 @@
-# Project Rules for Cursor
+# Legacy Cursor Rules Template
+#
+# `.cursorrules` remains available for older Cursor versions. New projects should
+# use native Agent Skills plus `.cursor/rules/sk-skills.mdc` or `AGENTS.md`.
 
-## Available Commands
+## Public Skills
 
-Use these commands in chat to invoke workflows:
+- `/sk-team-feature` — Discovery → optional Research → Planning → optional
+  Documentation Review → Testing → Implementation → Code Review → Acceptance →
+  Retrospective → Archive.
+- `/sk-team-quick` — Architect → Developer → Review → Acceptance.
+- `/sk-team-status` — Show active workflow state.
+- `/sk-team-help` — Show workflow documentation.
+- `/sk-onboard` — Discover the project and generate navigation/convention profiles.
+- `/sk-discover-project` — Map structure, stack, domains, and API surface.
+- `/sk-explore-codebase` — Generate navigation and project convention profiles.
+- `/sk-plan-mode` — Create and approve a structured implementation plan.
+- `/sk-code-review` — Review committed, staged, unstaged, and untracked changes.
+- `/sk-explore-codestyle` — Derive authoritative project coding conventions.
+- `/sk-copy-context` — Copy the current session context for handoff.
 
-### Workflow Commands
+## Internal Roles
 
-#### /sk-team-feature
-Start full feature development with multi-agent team.
-Phases: Discovery → Planning → Testing → Implementation → Review → Acceptance
+- `sk-product-analyst`
+- `sk-researcher`
+- `sk-architect`
+- `sk-doc-reviewer`
+- `sk-tester`
+- `sk-developer`
+- `sk-review-orchestrator`
+- `sk-acceptance-reviewer`
 
-#### /sk-team-quick
-Quick fix workflow for bugfixes, typos, and small changes.
-Phases: Developer → Code Review
-
-#### /sk-team-status
-Show status of active team workflows.
-
-#### /sk-team-help
-Show documentation for multi-agent team workflow.
-
-### Onboarding Commands
-
-#### /sk-onboard
-Full project onboarding - discover structure + generate navigation rules.
-
-#### /sk-discover-project
-Discover project structure, tech stack, domains, and API surface.
-
-#### /sk-explore-codebase
-Explore codebase and generate check-before-create navigation rules.
-
-### Utility Commands
-
-#### /sk-code-review
-Review uncommitted changes with fresh context.
-Focuses on patterns linters miss.
-
-#### /sk-explore-codestyle
-Analyze project and generate code style guidelines.
-Detects stack, extracts linter rules, identifies patterns.
-
-### Context Commands
-
-#### /sk-copy-context
-Copy current session context to clipboard for handoff.
-
-## Agent Roles
-
-When working on features, these agents handle different phases:
-
-- **sk-product-analyst** - Requirements gathering (WHAT & WHY)
-- **sk-architect** - System design (HOW)
-- **sk-tester** - TDD red phase (failing tests)
-- **sk-developer** - TDD green phase (implementation)
-- **sk-review-orchestrator** - Code review orchestration
-- **sk-acceptance-reviewer** - Business validation
-
-## Artifacts Location
-
-All feature artifacts are stored in:
-```
-openspec/changes/<feature-name>/
-├── proposal.md      # Requirements
-├── design.md        # Technical design
-├── tasks.md         # Task breakdown
-└── VERIFICATION.md  # Acceptance result
-```
+Active feature artifacts live under `openspec/changes/<feature-name>/`. Approved
+workflows are archived under `openspec/completed/<feature-name>/`.

@@ -1,4 +1,4 @@
-# Kimi/MiniMax Adapter
+# Kimi Code CLI Adapter
 
 ## Overview
 
@@ -16,6 +16,8 @@ This will:
 3. Use the canonical `sk-team-feature` prompt as the team system prompt
 
 The installer no longer embeds a second hard-coded workflow.
+Generated subagent definitions target the current `Agent` tool introduced in Kimi
+1.25. Upgrade older Kimi installations before using the team agent.
 
 ## Usage
 
@@ -67,6 +69,9 @@ mkdir -p .kimi/skills
 cp -r workflow/skills/sk-team-feature .kimi/skills/
 ```
 
+This copies one directly invocable skill only. Use `install-kimi.sh` for the full
+team plus all internal resources.
+
 ## Available Skills
 
 ### Standard Skills
@@ -77,8 +82,9 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
 | `sk-team-quick` | Quick fix workflow |
 | `sk-team-status` | Check workflow status |
 | `sk-team-help` | Show documentation |
-| `sk-code-review` | Review uncommitted changes |
+| `sk-code-review` | Review committed, staged, unstaged, and untracked changes |
 | `sk-explore-codestyle` | Generate code style guidelines |
+| `sk-plan-mode` | Structured planning with file-based plan storage |
 | `sk-onboard` | Full project onboarding |
 | `sk-discover-project` | Discover project structure |
 | `sk-explore-codebase` | Generate navigation rules |
@@ -100,7 +106,8 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
     ├── sk-developer.yaml
     ├── sk-review-orchestrator.yaml
     ├── sk-acceptance-reviewer.yaml
-    └── references/           # Agent system prompts
+    └── references/           # Agent prompts and shared resources
+        ├── sk-team-feature.md # Generated prompt with embedded phase prompts
         ├── sk-product-analyst.md
         └── ...
 ```
@@ -110,12 +117,12 @@ cp -r workflow/skills/sk-team-feature .kimi/skills/
 | Feature | Support | Notes |
 |---------|---------|-------|
 | Skills | ✓ Full | All 11 manifest catalog/onboarding skills work |
-| Subagents | ✓ Full | Via `Task` tool |
+| Subagents | ✓ Full | Via the current `Agent` tool |
 | Slash commands | ✓ Full | `/skill:name` syntax |
 
 ## Limitations
 
-- **No AGENTS.md auto-loading** — Kimi uses `${KIMI_AGENTS_MD}` variable
+- **AGENTS.md context** — the generated team prompt includes `${KIMI_AGENTS_MD}`
 - **Different paths** — Uses `~/.config/agents/` instead of `~/.claude/`
 
 ## See Also

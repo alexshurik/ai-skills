@@ -43,6 +43,7 @@
       "name": "agent-shared",
       "source": "workflow/agents/shared",
       "codex_target": "shared",
+      "cursor_target": "shared",
       "claude_target": "agents/shared",
       "kimi_target": "agents/references/shared"
     },
@@ -50,6 +51,7 @@
       "name": "agent-references",
       "source": "workflow/agents/references",
       "codex_target": "agents/references",
+      "cursor_target": "agents/references",
       "claude_target": "agents/references",
       "kimi_target": "agents/references/references"
     },
@@ -57,6 +59,7 @@
       "name": "best-practices",
       "source": "shared/best-practices",
       "codex_target": "best-practices",
+      "cursor_target": "best-practices",
       "claude_target": "agents/best-practices",
       "kimi_target": "agents/references/best-practices"
     },
@@ -64,6 +67,7 @@
       "name": "static-analysis",
       "source": "shared/static-analysis",
       "codex_target": "agents/static-analysis",
+      "cursor_target": "agents/static-analysis",
       "claude_target": "agents/static-analysis",
       "kimi_target": "agents/references/static-analysis"
     },
@@ -71,6 +75,7 @@
       "name": "review-evidence",
       "source": "shared/review-evidence",
       "codex_target": "agents/review-evidence",
+      "cursor_target": "agents/review-evidence",
       "claude_target": "agents/review-evidence",
       "kimi_target": "agents/references/review-evidence"
     },
@@ -78,6 +83,7 @@
       "name": "templates",
       "source": "shared/templates",
       "codex_target": "agents/templates",
+      "cursor_target": "agents/templates",
       "claude_target": "agents/templates",
       "kimi_target": "agents/references/templates"
     }

@@ -15,7 +15,7 @@ platforms:
   kimi: true
 ---
 
-# /sk-plan-mode - Structured Planning Workflow
+# sk-plan-mode - Structured Planning Workflow
 
 Activate Plan Mode to separate research from execution. Creates a detailed plan file that requires explicit user approval before any changes are made.
 
@@ -37,7 +37,7 @@ UNDERSTANDING → DESIGN → REVIEW → FINAL PLAN → WAIT FOR APPROVAL → EXE
 ## Quick Start
 
 ```
-/sk-plan-mode Refactor authentication to use OAuth2
+Invoke sk-plan-mode with: Refactor authentication to use OAuth2
 ```
 
 Or manually:
@@ -248,7 +248,7 @@ Always re-read the plan file before execution if user made edits.
 
 ### Example 1: Database Migration
 
-**User**: `/sk-plan-mode Migrate from PostgreSQL to MongoDB`
+**User**: invokes `sk-plan-mode` with "Migrate from PostgreSQL to MongoDB"
 
 **Response**:
 ```
@@ -283,7 +283,7 @@ Please review the plan and reply with "Approved" to proceed.
 
 ### Example 2: API Refactoring
 
-**User**: `/sk-plan-mode Refactor REST API to GraphQL`
+**User**: invokes `sk-plan-mode` with "Refactor REST API to GraphQL"
 
 **Response**:
 ```
@@ -347,9 +347,9 @@ Assistant: *jumps straight to Phase 4 without understanding*
 ## Integration with Other Skills
 
 Plan Mode works well with:
-- `/sk-team-feature` - Use Plan Mode during the Architect phase
-- `/sk-code-review` - Plan Mode first, then review the plan
-- `/sk-explore-codebase` - Use before Plan Mode to understand structure
+- `sk-team-feature` - Use Plan Mode during the Architect phase
+- `sk-code-review` - Plan Mode first, then review the plan
+- `sk-explore-codebase` - Use before Plan Mode to understand structure
 
 ---
 
@@ -362,10 +362,7 @@ Plan Mode is similar to Claude Code's built-in `/plan` command, but:
 - Works across all platforms
 
 ### Kimi CLI
-Use with slash command:
-```
-/skill:sk-plan-mode Migrate database
-```
+Use the host's skill picker or invocation syntax and pass "Migrate database".
 
 Or mention in conversation:
 ```

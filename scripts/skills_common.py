@@ -22,6 +22,23 @@ class Issue:
     message: str
 
 
+def safe_relative(value: str) -> Path:
+    """Return a relative path that cannot escape its intended root."""
+    relative = Path(value)
+    if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+        raise ValueError(f"unsafe manifest/receipt path: {value!r}")
+    return relative
+
+
+def repo_source_path(value: str) -> Path:
+    """Return a lexical manifest source after proving its target is in-repo."""
+    source = REPO_ROOT / safe_relative(value)
+    resolved = source.resolve()
+    if resolved != REPO_ROOT and REPO_ROOT not in resolved.parents:
+        raise ValueError(f"manifest source escapes repository: {value!r}")
+    return source
+
+
 def load_manifest() -> dict[str, Any]:
     # JSON is a strict subset of YAML 1.2 and needs no third-party parser.
     with MANIFEST_PATH.open(encoding="utf-8") as manifest_file:

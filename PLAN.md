@@ -571,6 +571,49 @@ a pass; the fresh agent must find the issues from raw artifacts.
   `~/.codex/skills` now contains only the platform-owned `.system`
   directory.
 
+## Post-audit remediation (2026-07-28)
+
+- Platform docs and generated inventories now describe current Codex, Claude
+  Code, Cursor, and Kimi invocation/discovery contracts. Cursor has a native
+  manifest-owned skill installer plus a generated `.cursor/rules/` catalog;
+  `.cursorrules` remains explicitly legacy.
+- Manifest validation now rejects malformed shapes and path escapes, checks that
+  every installable prompt is declared, renders all four platform trees, and
+  verifies local Markdown reference closure.
+- Installation preflights reject unowned leaf collisions, replacement uses
+  atomic sibling files with rollback, multi-target uninstall preflights every
+  typed/versioned receipt with its explicitly paired platform before mutation.
+  Legacy migration uses an exclusively created same-filesystem backup root,
+  descriptor-relative renames, and rollback while refusing source and backup
+  parent-symlink escapes. Descriptor-relative candidate typing accepts only
+  regular/symlink resource leaves and real skill directories with a regular
+  `SKILL.md`.
+- Receipt parsing now requires a regular non-symlink file, stable suite identity,
+  exact platform/manifest compatibility, canonical safe ownership keys, and
+  valid hash/symlink values before any ownership decision; reads are capped at
+  4 MiB.
+- Render staging rejects top-level and nested source symlinks before creating
+  output, and Kimi prompt assembly uses the same bounded no-follow reader.
+  Review change evidence traverses held no-follow directory descriptors, caps
+  current/base reads at 4 MiB, gates base blobs with `git cat-file -s`, skips
+  per-file diffing when either side is oversized, and enforces a 20 MiB streamed
+  diff-output cap. JSON and Markdown both expose incomplete read/interval status.
+  It records symlink metadata without reading a leaf or ancestor symlink target.
+- Shared manifest-rendered prompts use host-neutral skill names and are rendered
+  under Codex, Cursor, Claude Code, and Kimi contract tests. `sk-copy-context`
+  copies a tool-written file through `pbcopy`, `wl-copy`, `xclip`, or PowerShell;
+  arbitrary context is never shell source and success requires backend exit 0.
+- `manifest_inventory.py` is the single catalog/description formatter used by
+  `AGENTS.md`, legacy Cursor rules, and current Cursor Project Rules. Intentional
+  copies of the runtime handoff protocol are narrowly excluded from duplication
+  analysis; other generator/template duplication was removed.
+- The context handoff template now ships inside `sk-copy-context/references/`, so
+  the skill and its required reference install together on every platform.
+- Repository tests, strict complexity checks, diff whitespace checks, and the
+  full static-analysis battery pass. This remediation did not mutate user-level
+  installations; rerun the relevant installer before treating the 2026-07-27
+  live copies as current.
+
 ## Checklist
 
 - [x] Phase 1: Understanding complete
@@ -580,5 +623,7 @@ a pass; the fresh agent must find the issues from raw artifacts.
 - [x] Ready for approval
 - [x] Implementation and behavioral forward-tests complete
 - [x] Real Codex/Claude/Kimi rollout verified
+- [x] Post-audit source remediation verified
+- [ ] Reinstall live targets from the remediated source
 
-## Status: 🟢 COMPLETE — INSTALLED AND VERIFIED
+## Status: 🟡 SOURCE VERIFIED — LIVE REINSTALL PENDING

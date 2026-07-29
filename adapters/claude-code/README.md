@@ -10,7 +10,7 @@ Run the installation script:
 
 This creates symlinks in `~/.claude/`:
 - `~/.claude/skills/sk-*` - Slash commands
-- `~/.claude/agents/sk-*` - Task tool agents
+- `~/.claude/agents/sk-*` - Subagents launched through the Agent tool (`Task` alias)
 - `~/.claude/commands/sk-*` - Additional commands
 
 The manifest also links review evidence, workflow references, templates, and other
@@ -27,7 +27,7 @@ After installation, restart Claude Code and use:
 /sk-team-quick      # Quick fix workflow
 /sk-team-status     # Check workflow status
 /sk-onboard         # Project onboarding
-/sk-code-review     # Review uncommitted changes
+/sk-code-review     # Review committed, staged, unstaged, and untracked changes
 ```
 
 ## How It Works
@@ -47,12 +47,13 @@ allowed-tools: Task, Read, Write, Glob, Grep, Bash
 # Instructions...
 ```
 
-### Agents (Task Tool)
+### Agents (Agent Tool)
 
-Agents are stored in `~/.claude/agents/<name>.md` and invoked via Task tool:
+Agents are stored in `~/.claude/agents/<name>.md` and invoked through Claude
+Code's subagent tool. Current releases call it Agent; `Task` remains an alias:
 
 ```
-Task tool:
+Agent tool:
   subagent_type: "sk-product-analyst"
   prompt: "..."
 ```
@@ -89,4 +90,5 @@ git pull
 ./scripts/install-claude-code.sh
 ```
 
-Symlinks point to repository files, so updates are automatic after git pull.
+Existing symlinked content updates after `git pull`; rerun the installer when the
+manifest adds or removes an owned path.

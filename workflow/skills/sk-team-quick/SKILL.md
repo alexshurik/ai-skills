@@ -14,7 +14,7 @@ platforms:
   kimi: true
 ---
 
-# /sk-team-quick - Quick Fix Workflow
+# sk-team-quick - Quick Fix Workflow
 
 <sk-team-quick>
 
@@ -42,7 +42,7 @@ This workflow is for:
 - No design decisions needed
 
 **NOT for:**
-- New features (use `/sk-team-feature`)
+- New features (use `sk-team-feature`)
 - Complex changes affecting multiple components
 - Changes requiring design decisions
 
@@ -104,7 +104,8 @@ Agent tool:
     ### Quick fix rules — MUST FOLLOW:
     - Work autonomously — do NOT ask routine clarifying questions. ONLY if you hit a
       genuine blocker that makes the fix ambiguous, return a `## NEEDS USER INPUT`
-      block (I relay it) instead of guessing — or suggest escalating to /sk-team-feature
+      block (I relay it) instead of guessing — or suggest escalating to
+      `sk-team-feature`
     - Do NOT create tasks.md — this is a quick fix
     - Do NOT write component diagrams, API design, data model sections
     - Keep design.md SHORT — aim for 20-40 lines max
@@ -249,7 +250,7 @@ If during the fix it becomes clear this is actually a feature requiring:
 - New data models
 - Complex logic
 
-Then inform the user and suggest using `/sk-team-feature` instead.
+Then inform the user and suggest using `sk-team-feature` instead.
 
 ```markdown
 ## Escalation Notice
@@ -257,7 +258,7 @@ Then inform the user and suggest using `/sk-team-feature` instead.
 This change is more complex than a quick fix because:
 - [Reason]
 
-Recommend using `/sk-team-feature <description>` for proper workflow.
+Recommend invoking `sk-team-feature` with the description for the proper workflow.
 ```
 
 ## Start Now

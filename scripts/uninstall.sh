@@ -9,11 +9,10 @@ CLAUDE_DIR="${CLAUDE_SKILLS_ROOT:-$HOME/.claude}"
 KIMI_DIR="${KIMI_AGENTS_ROOT:-$HOME/.config/agents}"
 
 python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
-    --target "$CODEX_DIR"
-python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
-    --target "$CLAUDE_DIR"
-python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
-    --target "$KIMI_DIR"
+    --missing-ok \
+    --target codex "$CODEX_DIR" \
+    --target claude "$CLAUDE_DIR" \
+    --target kimi "$KIMI_DIR"
 
 echo "Current manifest-owned installations removed."
 echo "Legacy ~/.codex/skills entries were not deleted."

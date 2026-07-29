@@ -7,23 +7,10 @@ Use this template when creating new skills compatible with OpenAI Codex.
 ```yaml
 ---
 name: sk-example
-version: 1.0.0
-description: Brief description of what this skill does
-license: MIT
-
-# Tools this skill needs
-allowed-tools: Read, Write, Bash, Glob, Grep
-
-# Cross-platform compatibility
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
+description: Explain when Codex should and should not use this skill.
 ---
 
-# /sk-example - Skill Title
-
-<sk-example>
+# Skill Title
 
 ## Purpose
 
@@ -53,22 +40,24 @@ What to produce at the end.
 - What NOT to do
 - Constraints to follow
 
-</sk-example>
 ```
 
 ## Best Practices
 
-1. **Use XML tags** - Wrap main content in `<skill-name>` tags
+1. **Write a precise description** - Include triggers and important exclusions
 2. **Clear steps** - Number your steps clearly
 3. **Include examples** - Show command examples
-4. **Define guardrails** - State what the skill should NOT do
-5. **Keep it focused** - One skill = one purpose
+4. **Define guardrails** - State what the skill should not do
+5. **Keep it focused** - One skill, one purpose
+6. **Use `agents/openai.yaml` when needed** - Put UI metadata, invocation policy,
+   and declared tool dependencies there
 
 ## Testing
 
 Test your skill by:
 
-1. Copy to skills directory
-2. Restart the agent
-3. Invoke with `/sk-example`
-4. Verify behavior matches expectations
+1. Add the skill source to `skills-manifest.yaml`
+2. Run `scripts/validate-skills.sh`
+3. Run `scripts/install-codex.sh`
+4. Invoke with `$sk-example` or select it through `/skills`
+5. Verify explicit and implicit behavior

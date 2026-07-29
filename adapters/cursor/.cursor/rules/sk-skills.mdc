@@ -1,7 +1,13 @@
-# SK-* Skills for Cursor (Legacy .cursorrules Compatibility)
-# Auto-generated from skills-manifest.yaml
-#
-# Prefer native Agent Skills plus .cursor/rules/sk-skills.mdc for new projects.
+---
+description: SK-* workflow and agent catalog
+globs:
+alwaysApply: true
+---
+
+# SK-* Skills for Cursor
+
+Native skills are installed under .cursor/skills; this rule keeps the
+manifest-owned catalog and internal role map visible as project context.
 
 ## Workflow Commands
 

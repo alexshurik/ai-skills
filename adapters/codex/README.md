@@ -8,9 +8,10 @@ Run the installation script:
 ./scripts/install-codex.sh
 ```
 
-By default, this installs skills to `~/.agents/skills/`. Some environments may
-still discover legacy user entries under `~/.codex/skills/`; duplicate names can
-therefore load conflicting instructions.
+By default, this installs skills to the current user-level Codex location,
+`~/.agents/skills/`. Previous versions of this repository may have left copies
+under `~/.codex/skills/`; the installation doctor reports those before an explicit
+recoverable migration.
 
 The installer validates and verifies the current target, then runs the installation
 doctor. If legacy duplicates remain, inspect the report and migrate only this
@@ -20,7 +21,9 @@ repository's entries:
 ./scripts/migrate-legacy-codex.sh
 ```
 
-The migration preserves `~/.codex/skills/.system` and unrelated skills.
+The migration preserves `~/.codex/skills/.system` and unrelated skills. Its
+backup path must not already exist and must be on the same filesystem as the
+legacy tree; failures roll completed moves back without a copy fallback.
 
 To use a different location:
 ```bash
@@ -32,25 +35,28 @@ CODEX_SKILLS_DIR=/custom/path ./scripts/install-codex.sh
 After installation, use the skills in Codex:
 
 ```
-/sk-team-help       # Show documentation
-/sk-team-feature    # Start full feature workflow
-/sk-team-quick      # Quick fix workflow
-/sk-onboard         # Project onboarding
+$sk-team-help       # Show documentation
+$sk-team-feature    # Start full feature workflow
+$sk-team-quick      # Quick fix workflow
+$sk-onboard         # Project onboarding
 ```
 
 ## Skill Format
 
-Codex uses the same SKILL.md format as Claude Code:
+Codex skills require `name` and `description` in `SKILL.md`:
 
 ```yaml
 ---
 name: sk-team-feature
-description: Full workflow for new features
-allowed-tools: Task, Read, Write
+description: Run the full workflow for new features
 ---
 
 # Instructions...
 ```
+
+Optional UI metadata, invocation policy, and tool dependencies belong in
+`agents/openai.yaml`. Claude-specific `allowed-tools` frontmatter is not a Codex
+permission boundary.
 
 ## Catalog vs. internal resources
 
@@ -91,6 +97,11 @@ Verify or diagnose:
 
 ## Compatibility Notes
 
-- Most skills work identically in Codex
-- Some tools may have different names or capabilities
-- Context management skills (`sk-pass-to-*`) are macOS-specific
+- Invoke a skill explicitly with `$skill-name` or choose it through `/skills`
+- Codex may also select a skill implicitly from its `description`
+- `sk-copy-context` detects `pbcopy`, `wl-copy`, `xclip`, or PowerShell and
+  reports an error when none is available
+
+## See Also
+
+- [OpenAI Codex skill documentation](https://developers.openai.com/codex/skills/)

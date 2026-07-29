@@ -14,7 +14,7 @@ platforms:
   kimi: true
 ---
 
-# /sk-team-status - Workflow Status
+# sk-team-status - Workflow Status
 
 <sk-team-status>
 
@@ -58,10 +58,10 @@ ls openspec/changes/<name>/ 2>/dev/null
 
 ### 4. Check Test Status
 
-If implementation exists:
-```bash
-npm test 2>&1 | tail -30
-```
+If implementation exists, resolve the repository's approved/pinned test command
+from `AGENTS.md`, project guidance, CI, and package/tooling configuration. Run only
+that safe command. If no authoritative command can be established, report test
+status as `UNVERIFIED` instead of assuming `npm test`.
 
 ### 5. Generate Report
 
@@ -72,7 +72,8 @@ npm test 2>&1 | tail -30
 
 ### 1. <feature-name>
 - **Phase**: <current phase>
-- **Progress**: 4/6 phases
+- **Completed phases**: Discovery, Planning
+- **Current phase**: Testing
 - **Artifacts**:
   - [x] proposal.md - Requirements defined
   - [x] design.md - Architecture complete
@@ -83,7 +84,7 @@ npm test 2>&1 | tail -30
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
 - **Next Action**: Invoke sk-tester for TDD red phase
-- **Resume**: `/sk-team-feature` to continue
+- **Resume**: invoke `sk-team-feature` using the current host's skill syntax
 
 ### 2. <another-feature>
 ...
@@ -96,14 +97,15 @@ npm test 2>&1 | tail -30
 | In Testing | 0 |
 | In Implementation | 1 |
 | In Review | 0 |
+| In Acceptance | 0 |
 | In Retrospective | 0 |
 | Ready to Archive | 0 |
 | Complete | 2 |
 | **Total Active** | **4** |
 
 ## Quick Actions
-- `/sk-team-feature <description>` - Start new feature
-- `/sk-team-quick <description>` - Quick fix
+- `sk-team-feature <description>` - Start new feature
+- `sk-team-quick <description>` - Quick fix
 - Continue workflow: describe what to do next
 ```
 
@@ -118,15 +120,15 @@ No active workflows found in `openspec/changes/`.
 
 ### Full Feature Development
 ```
-/sk-team-feature <description>
+sk-team-feature <description>
 ```
-Example: `/sk-team-feature Add user authentication with OAuth`
+Example: `sk-team-feature Add user authentication with OAuth`
 
 ### Quick Bugfix
 ```
-/sk-team-quick <description>
+sk-team-quick <description>
 ```
-Example: `/sk-team-quick Fix typo in login error message`
+Example: `sk-team-quick Fix typo in login error message`
 
 ## Team Agents Available
 | Agent | Purpose |
