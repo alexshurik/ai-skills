@@ -46,15 +46,17 @@ Record exact command, version when available, exit code, scope, and result.
 Run the canonical battery once before lens dispatch:
 
 ```text
-~/.claude/agents/static-analysis/run-static-analysis.sh <changed paths>
-or shared/static-analysis/run-static-analysis.sh <changed paths>
+shared/static-analysis/run-static-analysis.sh \
+  --artifact-dir <snapshot-dir>/static-analysis --summary-only <changed paths>
 ```
 
 Pass the complete changed/untracked scope where supported. Some dependency or
 repository scanners necessarily inspect the full repository; classify their
 findings against changed-line evidence afterward.
 
-Capture the `STATIC ANALYSIS PROVENANCE` table and `SUMMARY` verbatim.
+Persist full tool output under the artifact directory. Capture the compact `STATIC
+ANALYSIS PROVENANCE` table, `SUMMARY`, and log paths in the review provenance
+artifact. Give lenses those artifact paths, not raw scanner output.
 
 ## Relevant tools by dimension
 

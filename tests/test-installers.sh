@@ -140,6 +140,8 @@ test -f "$CURSOR_DIR/best-practices/unrelated.keep"
 test -L "$TEST_HOME/.claude/skills/sk-team-feature"
 test "$(find "$TEST_HOME/.claude/agents/review-steps" -type l | wc -l | tr -d ' ')" = "7"
 test -f "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
+test -f "$TEST_HOME/.config/agents/agents/sk-review-security.yaml"
+test -f "$TEST_HOME/.config/agents/agents/sk-review-structure.yaml"
 test ! -L "$TEST_HOME/.config/agents/skills/sk-team-feature"
 test -f "$TEST_HOME/.config/agents/skills/sk-team-feature/SKILL.md"
 grep -q "Retrospective" "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
@@ -152,6 +154,9 @@ grep -Fq \
     "$TEST_HOME/.config/agents/skills/sk-explore-codebase/SKILL.md"
 grep -q "kimi_cli.tools.agent:Agent" \
     "$TEST_HOME/.config/agents/agents/sk-developer.yaml"
+grep -q "review-security:" "$TEST_HOME/.config/agents/agents/sk-team.yaml"
+grep -q "Kimi execution override" \
+    "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
 if grep -R -q "kimi_cli.tools.multiagent:Task" \
     "$TEST_HOME/.config/agents/agents"; then
     echo "Removed Kimi Task tool identifier was rendered" >&2

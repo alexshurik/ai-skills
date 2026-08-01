@@ -25,8 +25,18 @@ Generate `.claude/rules/codebase-navigation.md` with check-before-create rules f
 
 ### 2. Explore Categories
 
-Run these explorations in parallel with the host's read-only subagent/delegation
-mechanism:
+The four categories below are logical coverage areas. Run them with **at most two
+clean explorers** through the host's read-only delegation mechanism:
+
+- Explorer A: Structure & Boundaries + Business Logic & Data Access;
+- Explorer B: Types & Shared Capabilities + Tests & Config.
+
+For Codex use `fork_turns="none"` and inherit the parent model/reasoning. Collect
+**common facts** once (root, manifests, guidance, source/test roots, current
+revision), persist them under the git-local `sk-workflow/onboarding/` directory,
+and give both explorers the artifact path/fingerprint. Each explorer writes its
+complete evidence to an artifact, returns at most 30 lines, and does not delegate.
+The numbered headings remain the required coverage checklist:
 
 **Explorer 1: Structure & Boundaries**
 - Find actual source roots, modules, packages, and domain boundaries

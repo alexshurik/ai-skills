@@ -7,6 +7,12 @@ version: 1.1.0
 
 # Instruction Quality Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 ## Applicability
 
 Run when the changed scope contains any of:

@@ -230,7 +230,7 @@ def kimi_team_yaml(manifest: dict[str, Any]) -> str:
         "  system_prompt_path: ./references/sk-team-feature.md",
         "  subagents:",
     ]
-    for item in manifest["agents"]:
+    for item in (*manifest["agents"], *manifest["review_steps"]):
         short_name = item["name"].removeprefix("sk-")
         lines += [
             f"    {short_name}:",
@@ -255,8 +255,26 @@ def kimi_team_prompt(context: RenderContext) -> str:
         read_source_text(feature_root / "references/phase-prompts.md"),
         context,
     )
+    kimi_override = """## Kimi execution override
+
+Kimi subagents already run in isolated contexts and return only their final result
+to this root. The current stable Agent tool does not permit a child to create its
+own child, so the root owns all dispatch. During a full code-review phase, do not
+send the whole review to `sk-review-orchestrator` as a child. The root performs the
+orchestrator setup/aggregation steps and launches the registered `review-security`,
+`review-architecture`, `review-abstraction`, `review-structure`, `review-imports`,
+`review-stack-rules`, and (when applicable) `review-instruction-quality` leaf
+subagents over one artifact snapshot. This preserves seven independent clean
+lenses without unsupported nesting.
+
+Launch all available lens work in background before awaiting results. Kimi sends
+completion notifications automatically; do not repeatedly poll task status. Keep
+full reports/logs in shared artifact paths and accept only compact final receipts
+in the root context. Ordinary feature roles remain leaf subagents.
+"""
     return (
         "${KIMI_AGENTS_MD}\n\n"
+        f"{kimi_override.rstrip()}\n\n"
         f"{prompt.rstrip()}\n\n"
         '<a id="embedded-phase-prompts"></a>\n\n'
         "## Embedded phase prompts\n\n"
@@ -302,6 +320,11 @@ def render_kimi(manifest: dict[str, Any], context: RenderContext) -> None:
             kimi_agent_yaml(item["name"]),
         )
     render_review_steps(manifest, references / "review-steps", context)
+    for item in manifest["review_steps"]:
+        write_generated(
+            agents / f"{item['name']}.yaml",
+            kimi_agent_yaml(item["name"]),
+        )
     for item in manifest["resources"]:
         copy_rendered(
             repo_source_path(item["source"]),

@@ -17,15 +17,23 @@ platforms:
 
 # Copy Context to Clipboard
 
-Copy a detailed summary of the current session context to clipboard.
+Copy a compact, artifact-first resume handoff to the clipboard. This is a fallback
+for sessions without a usable workflow ledger, not a transcript export.
 
 ## Steps:
 
-### 1. Generate Detailed Context Summary
+### 1. Resolve durable state first
 
 Read the canonical [context handoff template](references/context-handoff.md).
-Replace every placeholder with the current session's concrete state; keep all
-sections so the next agent can continue without reconstructing context.
+Resolve `git rev-parse --git-path sk-workflow` and look for the active change's
+`state.json`. When it exists, validate its artifact paths/fingerprints and use it as
+the primary handoff. Include only the current goal, approvals/constraints, current
+phase/status, exact artifact/ledger paths, dirty paths, blockers, and next action.
+
+Never paste conversation history, full artifacts/diffs, raw tool output, or a list
+of every file merely read. Keep the handoff under 100 lines / about 4,000 tokens.
+If a needed detail is too large, persist it to a named artifact and copy its path
+and fingerprint.
 
 ### 2. Copy to clipboard
 

@@ -10,11 +10,13 @@ authority, evidence, findings, and verdict from the repository.
 
 ## 1. Confirm scope exists
 
-Run the installed change-evidence collector:
+Resolve a git-local review runtime directory and run the installed change-evidence
+collector with an artifact output path:
 
 ```text
-~/.claude/agents/review-evidence/collect-change-evidence.sh --format json
-or shared/review-evidence/collect-change-evidence.sh --format json
+git rev-parse --git-path sk-workflow
+shared/review-evidence/collect-change-evidence.sh --format json \
+  --output <runtime-review-dir>/change-evidence.json
 ```
 
 If committed, staged, unstaged, untracked, deleted, and renamed scopes are all
@@ -59,9 +61,12 @@ Required lenses:
 6. stack rules;
 7. instruction quality when instruction artifacts changed.
 
-Pass complete tracked/untracked scope, full files/base diffs, change evidence,
-design authority, runner, profiles, and static-analysis provenance as specified by
-the orchestrator.
+Use seven independent clean lens threads. Pass artifact paths for complete
+tracked/untracked scope, evidence, design authority, runner, profiles, and
+static-analysis provenance as specified by the orchestrator; do not paste full
+files, base diffs, or raw tool output into prompts. For Codex, use
+`fork_turns="none"` and omit model/reasoning overrides so reviewers inherit the
+parent's selected profile. No lens may spawn another agent.
 
 If subagent dispatch is genuinely unavailable, execute every applicable lens as a
 separate inline section from the installed `review-steps/` resources and disclose
@@ -84,4 +89,5 @@ Use the orchestrator's verdict policy:
 - Do not auto-install tools.
 - Do not expose secret values.
 - Do not promote Observed/Legacy project evidence into review rules.
-- Show full findings, baseline section, commands, exit codes, and verdict.
+- Return a compact decision and report paths. Keep full findings, baseline section,
+  commands, exit codes, and logs in review artifacts; show them on request.

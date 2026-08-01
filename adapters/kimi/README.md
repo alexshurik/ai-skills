@@ -17,7 +17,9 @@ This will:
 
 The installer no longer embeds a second hard-coded workflow.
 Generated subagent definitions target the current `Agent` tool introduced in Kimi
-1.25. Upgrade older Kimi installations before using the team agent.
+1.25. Upgrade older Kimi installations before using the team agent. The installer
+verifies rendered files and warns when a detected local CLI is older than 1.25; it
+does not upgrade Kimi itself.
 
 ## Usage
 
@@ -41,6 +43,13 @@ The orchestrator will coordinate subagents:
 - `developer` → Implementation
 - `review-orchestrator` → Review
 - `acceptance-reviewer` → QA
+
+Kimi subagents have isolated context and return their final result to the root.
+Stable Kimi CLI does not allow a subagent to create another subagent, so the
+generated root team registers all seven review lenses directly. During full review
+the root dispatches those leaf reviewers over one shared evidence snapshot; this
+keeps independent review without nested-agent support. Large reports live in
+git-local workflow artifacts, while the Agent mailbox returns compact receipts.
 
 ### Option 2: Individual Skills
 
@@ -105,6 +114,9 @@ team plus all internal resources.
     ├── sk-tester.yaml
     ├── sk-developer.yaml
     ├── sk-review-orchestrator.yaml
+    ├── sk-review-security.yaml
+    ├── sk-review-architecture.yaml
+    ├── ...                    # Seven root-dispatchable leaf review lenses
     ├── sk-acceptance-reviewer.yaml
     └── references/           # Agent prompts and shared resources
         ├── sk-team-feature.md # Generated prompt with embedded phase prompts
@@ -118,12 +130,15 @@ team plus all internal resources.
 |---------|---------|-------|
 | Skills | ✓ Full | All 11 manifest catalog/onboarding skills work |
 | Subagents | ✓ Full | Via the current `Agent` tool |
+| Nested subagents | Root-owned | Review lenses are registered at root because stable Kimi children cannot nest |
 | Slash commands | ✓ Full | `/skill:name` syntax |
 
 ## Limitations
 
 - **AGENTS.md context** — the generated team prompt includes `${KIMI_AGENTS_MD}`
 - **Different paths** — Uses `~/.config/agents/` instead of `~/.claude/`
+- **No hard-coded Kimi plan path** — `sk-plan-mode` reuses an existing host plan
+  directory, otherwise defaults to `.agents/plans/<slug>.md`
 
 ## See Also
 

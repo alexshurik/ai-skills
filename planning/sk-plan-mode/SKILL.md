@@ -121,10 +121,19 @@ Enter Plan Mode. Analyze the database layer and create a migration plan.
 
 ## 📁 Plan File Location
 
-Create the plan file at one of these locations (in order of preference):
-1. `.kimi/plan.md` (if `.kimi/` directory exists or can be created)
-2. `PLAN.md` in the project root
-3. `.plan.md` (hidden file in project root)
+Select one path before writing:
+
+1. Use a path explicitly requested by the user.
+2. If the active host already has a repository plan directory, use a unique named
+   file there, for example `.codex/plans/<slug>.md`, `.claude/plans/<slug>.md`, or
+   `.kimi/plans/<slug>.md`. Do not create another host's directory.
+3. Otherwise use the neutral `.agents/plans/<slug>.md` and create its parent.
+4. Use root `PLAN.md` only when it does not already exist or is clearly the same
+   active plan.
+
+Never overwrite an existing plan for a different task. If the preferred path is an
+**existing plan**, choose a unique `<slug>` under `.agents/plans/` instead. Never
+create `.kimi/`, `.claude/`, or `.codex/` merely because it can be created.
 
 Use this exact template for the plan file:
 
@@ -185,7 +194,7 @@ Brief description of what this plan accomplishes.
    I will analyze your request and create a detailed plan.
    I will NOT make any changes until you explicitly approve.
    
-   Creating plan file: `.kimi/plan.md`
+   Creating plan file: `<selected-plan-path>`
    ```
 
 2. **Execute 4 Phases**
@@ -199,7 +208,7 @@ Brief description of what this plan accomplishes.
    ```
    ✅ **PLAN COMPLETE - AWAITING APPROVAL**
    
-   Plan file: `.kimi/plan.md`
+   Plan file: `<selected-plan-path>`
    
    ## Summary
    [2-3 sentences about what the plan does]
@@ -257,14 +266,14 @@ Always re-read the plan file before execution if user made edits.
 I will analyze the current database layer and create a migration plan.
 I will NOT make any changes until you explicitly approve.
 
-Creating plan file: `.kimi/plan.md`
+   Creating plan file: `.agents/plans/database-migration.md`
 ```
 
 **After Phase 1-4**:
 ```
 ✅ **PLAN COMPLETE - AWAITING APPROVAL**
 
-Plan file: `.kimi/plan.md`
+Plan file: `.agents/plans/database-migration.md`
 
 ## Summary
 Migrate user and order data from PostgreSQL to MongoDB with zero downtime

@@ -10,16 +10,18 @@
 # own evidence.
 #
 # Usage:
-#   run-static-analysis.sh [PATH ...]
+#   run-static-analysis.sh [--artifact-dir DIR] [--summary-only] [PATH ...]
 #     PATH ...  files or dirs to analyze. If omitted, falls back to the changed
 #               files vs the merge-base, then to the current dir.
+#     --artifact-dir DIR  persist one complete log per tool under DIR.
+#     --summary-only      suppress raw tool output on stdout (requires artifact
+#                         logs for later inspection).
 #
 # Honors an exported $RUN (project tool runner, e.g. "uv run") if the caller set
 # one; otherwise it resolves the runner itself from lockfiles. Every tool is probed
 # via $RUN first, then as a global binary.
 #
-# Output: a human+machine-readable PROVENANCE table and a SUMMARY line. The caller
-# pastes these into the verdict's "Deep Analysis" section verbatim. Exit code is
+# Output: a human+machine-readable PROVENANCE table and a SUMMARY line. Exit code is
 # always 0 — findings/unverified are reported in the table, not via exit status
 # (the reviewer decides severity).
 
@@ -28,9 +30,45 @@
 set -o pipefail
 
 # ---------------------------------------------------------------------------
-# 0. Resolve targets
+# 0. Resolve output mode and targets
 # ---------------------------------------------------------------------------
-TARGETS=("$@")
+ARTIFACT_DIR=""
+SUMMARY_ONLY=0
+TARGETS=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --artifact-dir)
+      if [ "$#" -lt 2 ]; then
+        echo "ERROR: --artifact-dir requires a directory" >&2
+        exit 2
+      fi
+      ARTIFACT_DIR="$2"
+      shift 2
+      ;;
+    --summary-only)
+      SUMMARY_ONLY=1
+      shift
+      ;;
+    --)
+      shift
+      while [ "$#" -gt 0 ]; do TARGETS+=("$1"); shift; done
+      ;;
+    *)
+      TARGETS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [ "$SUMMARY_ONLY" -eq 1 ] && [ -z "$ARTIFACT_DIR" ]; then
+  echo "ERROR: --summary-only requires --artifact-dir so evidence is not discarded" >&2
+  exit 2
+fi
+if [ -n "$ARTIFACT_DIR" ]; then
+  mkdir -p "$ARTIFACT_DIR"
+  ARTIFACT_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
+fi
+
 if [ "${#TARGETS[@]}" -eq 0 ]; then
   base="$(git merge-base HEAD origin/main 2>/dev/null \
         || git merge-base HEAD main 2>/dev/null || echo HEAD~1)"
@@ -72,6 +110,7 @@ fi
 # ---------------------------------------------------------------------------
 ROWS=()           # provenance rows
 N_OK=0; N_FIND=0; N_UNVERIFIED=0
+LOG_INDEX=0
 
 # portable timeout wrapper
 _timeout() {
@@ -96,27 +135,52 @@ _probe() {
 run_tool() {
   local dim="$1" tool="$2" kind="$3"; shift 3
   [ "$1" = "--" ] && shift
-  local prefix ver out rc status
+  local prefix ver out rc status log slug
   if ! prefix="$(_probe "$tool")"; then
-    ROWS+=("$dim | $tool | (not installed) | — | — | UNVERIFIED (not installed)")
+    ROWS+=("$dim | $tool | (not installed) | — | — | UNVERIFIED (not installed) | —")
     N_UNVERIFIED=$((N_UNVERIFIED+1))
     printf '  [UNVERIFIED] %-22s %s — not installed\n' "$dim" "$tool"
     return
   fi
   ver="$( ($prefix "$tool" --version) 2>/dev/null | head -1 | tr -d '\n' )"
-  echo "::: $dim :: $prefix $tool $* :::"
-  out="$(_timeout 150 $prefix "$tool" "$@" 2>&1)"; rc=$?
-  echo "$out"
+  log="—"
+  if [ -n "$ARTIFACT_DIR" ]; then
+    LOG_INDEX=$((LOG_INDEX+1))
+    slug="$(printf '%s-%s' "$dim" "$tool" | tr -cs '[:alnum:]._- ' '-' | tr ' ' '-')"
+    log="$ARTIFACT_DIR/$(printf '%02d' "$LOG_INDEX")-$slug.log"
+    {
+      echo "dimension: $dim"
+      echo "tool: $tool"
+      echo "version: ${ver:-?}"
+      echo "command: $prefix $tool $*"
+      echo ""
+      _timeout 150 $prefix "$tool" "$@"
+    } >"$log" 2>&1
+    rc=$?
+    if [ "$SUMMARY_ONLY" -eq 0 ]; then
+      echo "::: $dim :: $prefix $tool $* :::"
+      sed -n '6,$p' "$log"
+    fi
+    out=""
+  else
+    echo "::: $dim :: $prefix $tool $* :::"
+    out="$(_timeout 150 $prefix "$tool" "$@" 2>&1)"; rc=$?
+    echo "$out"
+  fi
   if [ "$rc" -eq 124 ]; then
     status="UNVERIFIED (timed out >150s)"; N_UNVERIFIED=$((N_UNVERIFIED+1))
-  elif echo "$out" | grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown'; then
+  elif { [ -n "$ARTIFACT_DIR" ] && grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown' "$log"; } \
+    || { [ -z "$ARTIFACT_DIR" ] && echo "$out" | grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown'; }; then
     status="UNVERIFIED (failed to execute)"; N_UNVERIFIED=$((N_UNVERIFIED+1))
   elif [ "$rc" -eq 0 ]; then
     status="OK"; N_OK=$((N_OK+1))
   else
     status="FINDINGS (exit $rc)"; N_FIND=$((N_FIND+1))
   fi
-  ROWS+=("$dim | $tool | ${ver:-?} | $prefix $tool $* | $rc | $status")
+  ROWS+=("$dim | $tool | ${ver:-?} | $prefix $tool $* | $rc | $status | $log")
+  if [ "$SUMMARY_ONLY" -eq 1 ]; then
+    printf '  [%s] %-22s %s — log: %s\n' "${status%% *}" "$dim" "$tool" "$log"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -126,6 +190,7 @@ echo "=============================================="
 echo " STATIC ANALYSIS BATTERY"
 echo " runner: ${RUN:-<global PATH>}"
 echo " targets: ${TARGETS[*]}"
+[ -n "$ARTIFACT_DIR" ] && echo " artifacts: $ARTIFACT_DIR"
 echo "=============================================="
 
 # Multi-language dimensions (always attempt)
@@ -165,8 +230,8 @@ fi
 # ---------------------------------------------------------------------------
 echo ""
 echo "===== STATIC ANALYSIS PROVENANCE ====="
-echo "Dimension | Tool | Version | Command | Exit | Status"
-echo "----------|------|---------|---------|------|-------"
+echo "Dimension | Tool | Version | Command | Exit | Status | Full log"
+echo "----------|------|---------|---------|------|--------|---------"
 for r in "${ROWS[@]}"; do echo "$r"; done
 echo "===== END PROVENANCE ====="
 echo ""

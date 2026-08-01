@@ -7,6 +7,12 @@ version: 1.0.0
 
 # Abstraction and Navigation Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 Review whether changed abstractions reduce real complexity or merely move it behind
 more names and files. Do not review formatting, security, layer ownership, or
 language idioms handled by other lenses.
@@ -14,8 +20,8 @@ language idioms handled by other lenses.
 ## Inputs
 
 - complete change scope, including untracked files;
-- full current content and relevant base diff;
-- change-evidence output;
+- repository paths for full current content and relevant base evidence;
+- change-evidence artifact path and fingerprint;
 - approved design/profile when present.
 
 ## Process

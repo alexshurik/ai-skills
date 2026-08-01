@@ -42,6 +42,9 @@ def main() -> None:
     kimi_readme = read("adapters/kimi/README.md")
     kimi_renderer = read("scripts/skills_render.py")
     assert "Via the current `Agent` tool" in kimi_readme
+    assert "root dispatches those leaf reviewers" in kimi_readme
+    assert "No hard-coded Kimi plan path" in kimi_readme
+    assert "older than 1.25" in kimi_readme
     assert "kimi_cli.tools.agent:Agent" in kimi_renderer
     assert "kimi_cli.tools.multiagent:Task" not in kimi_renderer
 

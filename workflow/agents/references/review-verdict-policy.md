@@ -19,6 +19,10 @@ A lens is valid when it ran as a parallel subagent or disclosed inline section a
 returned parseable findings/N/A. Error, timeout, empty output, or silent omission is
 UNVERIFIED.
 
+For a full review, lenses run as independent clean threads over one immutable
+snapshot. No lens may spawn. A targeted rerun can diagnose remediation, but final
+approval requires a new full snapshot reviewed by every applicable lens.
+
 ## Finding classification
 
 - **Change-caused:** introduced, modified, or materially worsened by the diff.
@@ -63,7 +67,7 @@ and a real compensating control.
 3. Keep highest severity and concatenate distinct evidence/recommendations.
 4. Preserve source lenses and change/baseline classification.
 5. Sort BLOCKER → MAJOR → MINOR → NITPICK, then by concern and path.
-6. Keep tool provenance verbatim.
+6. Keep tool provenance and log paths in the durable review artifact.
 
 Do not deduplicate different concerns merely because they point at the same line.
 For example, wrong layer ownership and one-use navigation cost remain independent.
@@ -113,12 +117,12 @@ than a code defect, say `CHANGES REQUESTED — review incomplete`.
 [Visible but excluded from feature verdict]
 
 ### Deep analysis provenance
-[Verbatim table and summary]
+[Compact table, summary, and full-log artifact paths]
 
 ### Decision rationale
 [Why the invariant passes/fails]
 ```
 
-End with:
-**"Caller: surface the full findings, baseline section, provenance, and verdict to
-the user verbatim — do not summarize."**
+Return a compact handoff with verdict, fingerprint, report paths, lens statuses,
+required finding IDs/titles, missing verification, and next step. Keep the full
+findings, baseline section, and provenance in artifacts and show them on request.

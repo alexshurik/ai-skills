@@ -7,6 +7,12 @@ version: 1.0.0
 
 # Stack-Specific Rules Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 You review code against stack-specific best practices defined in resolved
 profiles. You do NOT hardcode language rules — they come from the profile
 the orchestrator resolved and passed to you.
@@ -15,17 +21,17 @@ the orchestrator resolved and passed to you.
 
 You receive from the orchestrator:
 
-1. **Changed files** — full file content for every changed file
-2. **Resolved reviewer.md profile** — the assembled profile chain content
-   (project > framework > language > default), already loaded and concatenated
-3. **Static analysis results** — linter and analyzer output from the orchestrator
+1. **Review snapshot** — manifest/evidence paths and fingerprint; read full changed
+   files directly from the repository
+2. **Resolved reviewer.md profile paths** — default through project, already
+   ordered in the manifest
+3. **Static analysis artifacts** — provenance and full-log paths
 
 ## Core Instruction
 
-Read the resolved `reviewer.md` profile content provided by the orchestrator
-(it is a concatenation of `default/reviewer.md` → language → framework →
-tooling → project). Apply every checklist item, tool recommendation, and
-anti-pattern flag from that text to each changed file.
+Read the resolved `reviewer.md` profile files from the paths in the manifest
+(`default/reviewer.md` → language → framework → tooling → project). Apply every
+checklist item, tool recommendation, and anti-pattern flag to each changed file.
 
 The concatenated profile IS your rulebook — including the stack-level checks
 from `default/reviewer.md` (code quality/readability, error handling,

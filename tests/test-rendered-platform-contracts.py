@@ -120,6 +120,17 @@ def main() -> None:
             )
             for path in rendered_prompts(manifest, platform, output):
                 assert_host_neutral(path, platform)
+            if platform == "kimi":
+                team_yaml = (output / "agents" / "sk-team.yaml").read_text(
+                    encoding="utf-8"
+                )
+                team_prompt = (
+                    output / "agents" / "references" / "sk-team-feature.md"
+                ).read_text(encoding="utf-8")
+                assert "review-security:" in team_yaml
+                assert "review-instruction-quality:" in team_yaml
+                assert "Kimi execution override" in team_prompt
+                assert (output / "agents" / "sk-review-security.yaml").is_file()
 
 
 if __name__ == "__main__":

@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import stat
 import subprocess
 import sys
+import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -66,6 +68,7 @@ class BaseEntry:
     size: int | None
     line_count: int | None
     read_status: str
+    blob_oid: str | None
 
 
 @dataclass(frozen=True)
@@ -299,6 +302,7 @@ def current_line_count(repo: Path, relative_path: str) -> int | None:
 
 def base_entry(repo: Path, base: str, relative_path: str) -> BaseEntry:
     object_name = f"{base}:{relative_path}"
+    blob_oid = git_text(repo, "rev-parse", object_name, check=False) or None
     size_result = subprocess.run(
         ["git", "cat-file", "-s", object_name],
         cwd=repo,
@@ -306,13 +310,13 @@ def base_entry(repo: Path, base: str, relative_path: str) -> BaseEntry:
         capture_output=True,
     )
     if size_result.returncode:
-        return BaseEntry(False, None, None, "missing")
+        return BaseEntry(False, None, None, "missing", None)
     try:
         size = int(size_result.stdout.strip())
     except ValueError:
-        return BaseEntry(True, None, None, "unavailable")
+        return BaseEntry(True, None, None, "unavailable", blob_oid)
     if size > MAX_EVIDENCE_FILE_BYTES:
-        return BaseEntry(True, size, None, "size-limit")
+        return BaseEntry(True, size, None, "size-limit", blob_oid)
     result = subprocess.run(
         ["git", "show", object_name],
         cwd=repo,
@@ -320,8 +324,8 @@ def base_entry(repo: Path, base: str, relative_path: str) -> BaseEntry:
         capture_output=True,
     )
     if result.returncode or len(result.stdout) > MAX_EVIDENCE_FILE_BYTES:
-        return BaseEntry(True, size, None, "unavailable")
-    return BaseEntry(True, size, count_lines_bytes(result.stdout), "ok")
+        return BaseEntry(True, size, None, "unavailable", blob_oid)
+    return BaseEntry(True, size, count_lines_bytes(result.stdout), "ok", blob_oid)
 
 
 def base_line_count(repo: Path, base: str, relative_path: str) -> int | None:
@@ -497,6 +501,16 @@ def structural_flags(
     }
 
 
+def current_digest(current: CurrentEntry) -> str | None:
+    if current.kind == "regular" and current.content is not None:
+        return hashlib.sha256(current.content).hexdigest()
+    if current.kind == "symlink" and current.symlink_target is not None:
+        return hashlib.sha256(
+            current.symlink_target.encode(errors="surrogateescape")
+        ).hexdigest()
+    return None
+
+
 def file_evidence(
     context: EvidenceContext,
     relative_path: str,
@@ -519,11 +533,13 @@ def file_evidence(
         "base_lines": base.line_count,
         "base_size": base.size,
         "base_read_status": base.read_status,
+        "base_blob_oid": base.blob_oid,
         "current_kind": current.kind,
         "current_symlink_target": current.symlink_target,
         "current_read_status": current.read_status,
         "current_size": current.size,
         "current_lines": current_lines,
+        "current_sha256": current_digest(current),
         **structural_flags(current, current_lines, base),
         "changed_intervals": intervals,
         "interval_status": interval_status,
@@ -545,7 +561,7 @@ def collect(repo: Path, explicit_base: str | None) -> dict[str, object]:
     )
     files = [file_evidence(context, relative_path) for relative_path in paths]
 
-    return {
+    evidence = {
         "repository": str(root),
         "base": base,
         "head": git_text(root, "rev-parse", "HEAD"),
@@ -553,6 +569,14 @@ def collect(repo: Path, explicit_base: str | None) -> dict[str, object]:
         "files": files,
         "note": "Evidence only: structural and import candidates require human review.",
     }
+    canonical = json.dumps(
+        evidence,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode()
+    evidence["fingerprint"] = hashlib.sha256(canonical).hexdigest()
+    return evidence
 
 
 def markdown_base_value(entry: dict[str, object]) -> object:
@@ -602,6 +626,7 @@ def markdown(data: dict[str, object]) -> str:
         f"- Repository: `{data['repository']}`",
         f"- Base: `{data['base']}`",
         f"- Head: `{data['head']}`",
+        f"- Fingerprint: `{data['fingerprint']}`",
         "",
         "## Scope",
         "",
@@ -639,7 +664,40 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--base")
     parser.add_argument("--format", choices=("json", "markdown"), default="markdown")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Atomically write full evidence to this artifact and print only a receipt",
+    )
     return parser
+
+
+def render(data: dict[str, object], output_format: str) -> str:
+    if output_format == "json":
+        return json.dumps(data, indent=2, sort_keys=True) + "\n"
+    return markdown(data)
+
+
+def write_atomic(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            delete=False,
+        ) as temporary:
+            temporary.write(content)
+            temporary_name = temporary.name
+        os.replace(temporary_name, path)
+    finally:
+        if temporary_name is not None:
+            try:
+                os.unlink(temporary_name)
+            except FileNotFoundError:
+                pass
 
 
 def main() -> int:
@@ -649,10 +707,18 @@ def main() -> int:
     except RuntimeError as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
-    if args.format == "json":
-        print(json.dumps(data, indent=2, sort_keys=True))
+    rendered = render(data, args.format)
+    if args.output:
+        artifact = args.output.expanduser().resolve()
+        write_atomic(artifact, rendered)
+        print(
+            json.dumps(
+                {"artifact": str(artifact), "fingerprint": data["fingerprint"]},
+                sort_keys=True,
+            )
+        )
     else:
-        print(markdown(data))
+        print(rendered, end="" if rendered.endswith("\n") else "\n")
     return 0
 
 

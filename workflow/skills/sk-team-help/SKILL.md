@@ -189,9 +189,20 @@ Each agent runs in isolated context with specific tools.
   separately from change-caused findings.
 
 - **Clarification (handoff protocol).** Subagents cannot reach the user directly. When one
-  hits a genuine blocker it returns a `## NEEDS USER INPUT` block; the orchestrator surfaces
-  the questions verbatim, collects answers, and re-dispatches — it never answers on your
-  behalf or auto-proceeds.
+  hits a genuine blocker it returns a compact `## NEEDS USER INPUT` block; the
+  orchestrator surfaces it and never answers on your behalf. Complete reports and
+  logs stay in shared artifacts; mailbox messages contain decisions, paths, and
+  fingerprints. New phases/remediation use clean children, while one short
+  clarification may reuse the same bounded thread.
+
+- **Context and nesting.** Codex children use `fork_turns="none"` and inherit the
+  parent's model/reasoning. Nesting is capped at depth 2 and only an orchestrator
+  with an explicit child budget may delegate. Kimi stable children cannot nest, so
+  its generated root team dispatches the seven review leaves directly.
+
+- **Efficient waiting.** Work launches in concurrency-aware waves. The orchestrator
+  uses the host's longest permitted wait, consumes all ready results before waiting
+  again, and avoids routine status polling and child progress chatter.
 
 ## Best Practices
 

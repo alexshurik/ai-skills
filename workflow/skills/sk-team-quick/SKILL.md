@@ -1,6 +1,6 @@
 ---
 name: sk-team-quick
-version: 1.2.0
+version: 1.3.0
 description: Quick workflow for bugfixes, typos, and small changes
 license: MIT
 
@@ -18,251 +18,171 @@ platforms:
 
 <sk-team-quick>
 
-You are the **Orchestrator** for a multi-agent development team. A user has requested a quick fix using the streamlined workflow.
+You orchestrate a small, well-defined change using **two bounded threads**. Keep
+the TDD and independent-review guarantees of the full workflow without carrying a
+long conversation through four role invocations.
 
-## Hard Constraints
+## Required policy
 
-- **Agents are SUBAGENTS and cannot reach the user directly** — their `AskUserQuestion`
-  does not surface. Quick-mode agents work autonomously, but if one returns a
-  `## NEEDS USER INPUT` block (a genuine blocker), surface the questions verbatim,
-  collect answers, and re-invoke the SAME agent with the answers appended.
-- **NEVER answer agent questions on behalf of the user.** Relay them; never guess.
-- **NEVER auto-proceed to the next phase.** After showing results, STOP and wait for explicit user approval ("go", "next", "approved", etc.).
-- **NEVER paraphrase a returned handoff block** — show the agent's result verbatim,
-  never collapse it to "<agent> done".
+Read before starting:
 
-## When to Use Quick Workflow
-
-This workflow is for:
-- Bug fixes
-- Typos
-- Small code changes
-- Single-file modifications
-- Clear, well-defined tasks
-- No design decisions needed
-
-**NOT for:**
-- New features (use `sk-team-feature`)
-- Complex changes affecting multiple components
-- Changes requiring design decisions
-
-## Quick Workflow Phases
-
-```
-Setup → Mini-Architect → Developer → Code Review → Mini-Acceptance → Done
+```text
+workflow/agents/shared/orchestration-policy.md
+workflow/agents/shared/handoff-protocol.md
 ```
 
-Skipped phases:
-- Product Analyst (no requirements gathering)
-- Separate Tester (Developer handles tests)
-- Doc Reviewer (lightweight design note is sufficient)
+Installed adapters may expose the same files under their agent reference roots.
+The shared policy controls context inheritance, artifacts, nesting, waiting, and
+compact returns.
 
-## Available Agents
+For Codex, every new thread uses `fork_turns="none"`. Omit model and reasoning
+overrides so both threads inherit the parent's selected model and effort. Give each
+thread a task envelope with one deliverable, inputs, output path, constraints,
+verification, and final-return contract. A thread returns only `FINAL` or `BLOCKED`.
 
-| Agent | subagent_type | Purpose |
-|-------|---------------|---------|
-| Architect | `sk-architect` | Brief design note |
-| Developer | `sk-developer` | Fix + tests |
-| Review Orchestrator | `sk-review-orchestrator` | Complete multi-lens review using available tools (no install prompt) |
-| Acceptance Reviewer | `sk-acceptance-reviewer` | Verify fix + write docs |
+## Scope gate
 
-## Workflow Execution
+Use quick mode only for a bug fix, typo, small code change, or other change with a
+clear intended behavior and no unresolved high-cost design decision.
 
-### Phase 0: Setup
-**Goal**: Prepare documentation structure
+Escalate to `sk-team-feature` before editing if discovery reveals any of:
 
-1. Generate a fix name in kebab-case from the user's description (e.g. `fix-null-pointer-in-parser`)
-2. Create directory: `openspec/changes/<fix-name>/`
+- a new public contract, trust boundary, data model, or deployment path;
+- multiple components with non-obvious ownership;
+- requirements that need product decisions;
+- architecture alternatives with materially different cost or risk.
+
+## Durable and runtime state
+
+Choose `<fix-name>` in kebab-case and create:
+
+```text
+openspec/changes/<fix-name>/
+  design.md
+  implementation.md
+  REVIEW.md
+  VERIFICATION.md
+  SUMMARY.md
+```
+
+Resolve the git-local runtime directory with:
 
 ```bash
-mkdir -p openspec/changes/<fix-name>
+git rev-parse --git-path sk-workflow
 ```
 
-### Phase 1: Mini-Architect
-**Goal**: Brief design note — what to change and why
+Store `<runtime-dir>/<fix-name>/state.json`, evidence snapshots, fingerprints, and
+large logs there. Durable user-facing decisions remain under `openspec/changes/`.
+The ledger records phase, artifact paths/fingerprints, approval checkpoints,
+attempt counts, and the next action so `/new` can resume without transcript copy.
 
-```
-Agent tool:
-  subagent_type: "sk-architect"
-  prompt: |
-    ## QUICK FIX MODE
+## Thread 1 — diagnose, confirm, implement
 
-    This is a quick fix workflow — lightweight design only.
+Spawn one clean `sk-developer` thread with this bounded deliverable:
 
-    **Fix request:** <description>
-    **Docs directory:** openspec/changes/<fix-name>/
+```text
+Objective: diagnose and implement <fix request> with a regression test when the
+change fixes a bug.
 
-    ### What to do:
-    1. Explore the codebase to understand the problem
-    2. Write a brief `openspec/changes/<fix-name>/design.md` with:
-       - **Problem**: What is broken / what needs to change
-       - **Root cause**: Why it happens (if bug)
-       - **Fix approach**: What to change and in which files
-       - **Risks**: Anything that could go wrong (if any)
-    3. Return a summary of your findings
+Inputs:
+- repository guidance and project convention profiles;
+- the user's original request;
+- openspec/changes/<fix-name>/ as the durable artifact directory.
 
-    ### Quick fix rules — MUST FOLLOW:
-    - Work autonomously — do NOT ask routine clarifying questions. ONLY if you hit a
-      genuine blocker that makes the fix ambiguous, return a `## NEEDS USER INPUT`
-      block (I relay it) instead of guessing — or suggest escalating to
-      `sk-team-feature`
-    - Do NOT create tasks.md — this is a quick fix
-    - Do NOT write component diagrams, API design, data model sections
-    - Keep design.md SHORT — aim for 20-40 lines max
-    - Focus only on: problem, root cause, fix approach, risks
-```
+Stage A — read-only diagnosis:
+1. Reproduce or otherwise prove the problem.
+2. Run the compact pre-write ownership/structure gate.
+3. Write design.md: problem, root cause, intended behavior, exact file ownership,
+   fix approach, risks, and verification plan. Keep it concise.
+4. Return BLOCKED with a compact approval checkpoint and the design.md path.
 
-**After agent completes:**
-1. Show the Problem, Root cause, Fix approach, and Risks from `design.md` verbatim
-2. **ASK FOR APPROVAL** to proceed
+Stage B — only after the caller sends the user's approval as one short follow-up:
+1. For a bug, write a regression test first and prove RED for the right reason.
+2. Implement the smallest approved fix.
+3. Prove GREEN and run applicable existing checks.
+4. Write implementation.md with changed paths, design deviations, exact commands
+   and statuses, skipped checks, and log artifact paths.
+5. Return FINAL with at most 50 lines / 2500 tokens; do not paste diffs or logs.
 
-### Phase 2: Developer
-**Goal**: Fix the issue with proper testing
-
-```
-Agent tool:
-  subagent_type: "sk-developer"
-  prompt: |
-    Quick fix request: <description>
-
-    **Design note:** Read `openspec/changes/<fix-name>/design.md` for the architect's analysis of the problem and recommended approach.
-
-    1. Read the design note
-    2. Understand the issue
-    3. If this is a BUG FIX: FIRST write a regression test that reproduces the bug
-       and confirm it FAILS for the right reason (before touching the fix). This
-       test is mandatory — it proves the bug exists and that your fix resolves it.
-    4. Implement the fix following the architect's approach
-    5. Ensure all tests pass — the regression test must now go GREEN, and no
-       existing test may break
+No delegation unless the task envelope explicitly grants a bounded depth-2 helper.
 ```
 
-**After agent completes:**
-1. Show files changed, test results, and implementation summary
-2. **ASK FOR APPROVAL** to proceed
+Surface the compact design checkpoint and wait for explicit user approval before
+sending the one follow-up. If the user changes scope or rejects the approach, end
+this thread and start a clean successor from the request, design path, and a short
+feedback artifact; do not accumulate redesign history.
 
-### Phase 3: Code Review
-**Goal**: Quality check on the fix
+## Thread 2 — independent review and acceptance
 
-```
-Agent tool:
-  subagent_type: "sk-review-orchestrator"
-  prompt: |
-    Quick fix (QUICK MODE): <description>
-    Design note at: openspec/changes/<fix-name>/design.md
+After implementation is green, capture one review snapshot and fingerprint. Spawn
+a fresh clean reviewer/acceptance thread. It must not delegate. Its bounded
+deliverable is:
 
-    Review the implementation with complete tracked/untracked scope and every
-    applicable contract/security, architecture, abstraction, structure, imports,
-    stack, and instruction-quality lens. This is a quick fix — do NOT run the
-    tool-install prompt; use only analysis tools already present and note missing
-    required dimensions as UNVERIFIED.
-```
+```text
+Objective: independently decide whether the approved quick fix is safe and meets
+its intended behavior at review snapshot <fingerprint>.
 
-**After agent completes:**
-1. Show the full findings list and verdict verbatim
-2. If "CHANGES REQUESTED" -- go back to Phase 2 (max 2 iterations)
-3. **ASK FOR APPROVAL** to proceed
+Inputs:
+- request and approved design.md;
+- implementation.md;
+- review evidence artifact path and fingerprint;
+- relevant repository guidance and project profiles.
 
-### Phase 4: Mini-Acceptance
-**Goal**: Verify fix and produce documentation
+Review all seven logical dimensions and mark each PASS, FINDINGS, or NOT APPLICABLE:
+1. contract and security;
+2. architecture and boundary ownership;
+3. abstraction quality;
+4. file/module structure and placement;
+5. imports and dependency direction;
+6. stack-specific correctness;
+7. repository-instruction and change-quality compliance.
 
-```
-Agent tool:
-  subagent_type: "sk-acceptance-reviewer"
-  prompt: |
-    ## QUICK FIX MODE
+Then verify intended behavior, regression coverage, applicable tests, documented
+edge cases, and TODO/FIXME/HACK/XXX in changed files.
 
-    This is a quick fix workflow — lightweight acceptance only.
+Write:
+- REVIEW.md with dimension-by-dimension evidence and findings;
+- VERIFICATION.md with ACCEPTED or NEEDS WORK and behavior evidence;
+- SUMMARY.md only when accepted.
 
-    **Fix request:** <description>
-    **Design note:** openspec/changes/<fix-name>/design.md
-    **Docs directory:** openspec/changes/<fix-name>/
-
-    ### What to do:
-    1. Read the design note to understand what was supposed to be fixed
-    2. Review the implemented code changes
-    3. Run all tests and verify they pass
-    4. Scan for TODO/FIXME/HACK/XXX in changed files
-    5. Write `openspec/changes/<fix-name>/VERIFICATION.md`:
-       - Verdict: ACCEPTED or NEEDS WORK
-       - What was verified and evidence
-       - Test results summary
-       - Issues found (if any)
-    6. Write `openspec/changes/<fix-name>/SUMMARY.md`:
-       - Problem: what was broken
-       - Fix: what was changed
-       - Files modified: list
-       - Tests: what was added/verified
-
-    ### Quick fix rules — MUST FOLLOW:
-    - Do NOT build traceability chains (no proposal.md exists)
-    - Do NOT write API_CHANGELOG.md or OPERATIONAL_TASKS.md
-    - Keep both documents SHORT — aim for 15-30 lines each
-    - Focus on: was the fix correct? do tests pass? any regressions?
+Return FINAL with verdict, artifact paths, blocking findings, exact verification
+statuses, skipped/UNVERIFIED checks, and snapshot fingerprint. Keep the return to
+50 lines / 2500 tokens; full evidence stays in artifacts.
 ```
 
-**After agent completes:**
-1. Show the verdict and issues (if any) from `VERIFICATION.md` verbatim
-2. Show the fix summary from `SUMMARY.md`
-3. If "NEEDS WORK" -- go back to Phase 2 (max 1 iteration)
-4. **ASK FOR APPROVAL** to finalize
+This combines execution, not judgment: every dimension remains explicit. If any
+dimension requires specialist parallel analysis, the change is no longer quick;
+escalate to the full workflow and its seven independent clean reviewers.
 
-## Execution Flow
+## Remediation and finality
 
-```
-START
-  │
-  ├─► [0] Setup: generate fix name, create openspec/changes/<fix-name>/
-  │
-  ├─► [1] sk-architect (quick mode)
-  │       └─► Brief design.md written
-  │
-  ├─► [2] sk-developer
-  │       └─► Fix implemented with tests
-  │
-  ├─► [3] sk-review-orchestrator
-  │       ├─► Approved → continue
-  │       └─► Changes Requested → Loop to [2] (max 2 iterations)
-  │
-  ├─► [4] sk-acceptance-reviewer (quick mode)
-  │       ├─► ACCEPTED → archive and DONE
-  │       └─► NEEDS WORK → Loop to [2] (max 1 iteration)
-  │
-  └─► COMPLETE: Archive docs, report to user
-```
+An initial `NEEDS WORK` verdict may start one clean remediation thread from the
+approved design, findings artifact, and review fingerprint. After remediation,
+start a fresh Thread 2 against a new snapshot. Targeted diagnostics may help locate
+a problem, but cannot issue final approval.
 
-## Your Process
+Quick mode permits at most one remediation cycle. If the fresh final review still
+finds material issues, stop and offer escalation to `sk-team-feature`; do not retry
+agents indefinitely.
 
-1. **Receive fix request** -- confirm it's a quick fix (not a feature)
-2. **Setup** -- generate fix name, create `openspec/changes/<fix-name>/`
-3. **Phase 1** -- invoke sk-architect (quick mode), show design, get approval
-4. **Phase 2** -- invoke sk-developer, show results, get approval
-5. **Phase 3** -- invoke sk-review-orchestrator, show findings, get approval
-6. **Phase 4** -- invoke sk-acceptance-reviewer (quick mode), show verdict, get approval
-7. **Archive** -- `mv openspec/changes/<fix-name> openspec/completed/<fix-name>`
-8. **Report completion** to user
+Only `ACCEPTED` from a fresh independent review of the current snapshot can finish
+the workflow. Surface its compact decision, ask for explicit final approval, then
+archive with a recoverable move to `openspec/completed/<fix-name>/` when requested
+by the workflow/user. Never replace the user's current request or existing unrelated
+artifact.
 
-## Escalation
+## Communication and waiting
 
-If during the fix it becomes clear this is actually a feature requiring:
-- Design decisions
-- Multiple components
-- New data models
-- Complex logic
+- Launch all independent work available in the current wave before waiting.
+- Use the longest wait timeout allowed by the active host and communication policy.
+- Do not poll `list_agents` after every wait; use it only for reconciliation.
+- Drain all available completion messages before waiting again.
+- Do not emit child progress chatter or repeat spawn attempts while slots are full.
+- The mailbox carries compact status and decisions; the filesystem carries full
+  reports, evidence, diffs, and logs.
 
-Then inform the user and suggest using `sk-team-feature` instead.
+## Start
 
-```markdown
-## Escalation Notice
-
-This change is more complex than a quick fix because:
-- [Reason]
-
-Recommend invoking `sk-team-feature` with the description for the proper workflow.
-```
-
-## Start Now
-
-The user has described a quick fix. Follow "Your Process" above.
+Validate the scope gate, initialize artifacts and state, then run Thread 1.
 
 </sk-team-quick>

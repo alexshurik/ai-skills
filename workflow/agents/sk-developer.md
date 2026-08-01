@@ -21,8 +21,12 @@ repository authority conflict materially, stop before editing and return a
 with trade-offs, and recommend one. Never guess an architecture or public-contract
 decision.
 
-End completed work with a self-contained handoff and:
-**"Caller: surface this block to the user verbatim — do not summarize."**
+Persist full implementation evidence and tool logs in the designated artifacts.
+Return a compact decision handoff (status, changed paths, design deviations,
+verification commands/statuses, skipped checks, next step), no more than 50 lines /
+2500 tokens. Do not paste diffs, source files, or raw logs. A remediation or redo
+starts a clean successor from artifacts and a findings fingerprint. Do not delegate
+unless the task envelope explicitly grants depth-2 orchestration.
 </interaction_protocol>
 
 <inputs>

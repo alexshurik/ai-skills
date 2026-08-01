@@ -8,7 +8,9 @@ FIRST_COMMIT_DIR="$(mktemp -d /tmp/sk-evidence-first.XXXXXX)"
 ESCAPE_DIR="$(mktemp -d /tmp/sk-evidence-escape.XXXXXX)"
 OUTPUT="$(mktemp /tmp/sk-evidence-output.XXXXXX)"
 FIRST_OUTPUT="$(mktemp /tmp/sk-evidence-first-output.XXXXXX)"
-trap 'rm -rf "$FIXTURE_DIR" "$FIRST_COMMIT_DIR" "$ESCAPE_DIR"; rm -f "$OUTPUT" "$FIRST_OUTPUT"' EXIT
+ARTIFACT_OUTPUT="$(mktemp /tmp/sk-evidence-artifact.XXXXXX)"
+RECEIPT_OUTPUT="$(mktemp /tmp/sk-evidence-receipt.XXXXXX)"
+trap 'rm -rf "$FIXTURE_DIR" "$FIRST_COMMIT_DIR" "$ESCAPE_DIR"; rm -f "$OUTPUT" "$FIRST_OUTPUT" "$ARTIFACT_OUTPUT" "$RECEIPT_OUTPUT"' EXIT
 
 git -C "$FIXTURE_DIR" init -q
 git -C "$FIXTURE_DIR" config user.email "skills-test@example.invalid"
@@ -76,6 +78,7 @@ assert any(item["path"] == "src/stable.py" for item in data["scope"]["staged"])
 assert any(item["path"] == "src/stable.py" for item in data["scope"]["unstaged"])
 assert any(item["status"].startswith("R") for item in data["scope"]["staged"])
 assert any(item["status"] == "D" for item in data["scope"]["staged"])
+assert len(data["fingerprint"]) == 64
 
 files = {item["path"]: item for item in data["files"]}
 assert files["src/large module.py"]["over_300"]
@@ -98,6 +101,40 @@ for relative in ("src/tracked_link.py", "src/untracked_link.py"):
     assert files[relative]["local_imports"] == []
     assert not files[relative]["over_300"]
 PY
+
+# Artifact mode keeps the full payload out of the caller context and returns a
+# compact, content-addressed receipt.
+"$REPO_DIR/shared/review-evidence/collect-change-evidence.sh" \
+    --repo "$FIXTURE_DIR" \
+    --format json \
+    --output "$ARTIFACT_OUTPUT" > "$RECEIPT_OUTPUT"
+
+python3 - "$ARTIFACT_OUTPUT" "$RECEIPT_OUTPUT" "$OUTPUT" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+with open(sys.argv[1], encoding="utf-8") as artifact_file:
+    artifact = json.load(artifact_file)
+with open(sys.argv[2], encoding="utf-8") as receipt_file:
+    receipt = json.load(receipt_file)
+with open(sys.argv[3], encoding="utf-8") as original_file:
+    original = json.load(original_file)
+
+assert Path(receipt["artifact"]).resolve() == Path(sys.argv[1]).resolve()
+assert receipt["fingerprint"] == artifact["fingerprint"]
+assert artifact["fingerprint"] == original["fingerprint"]
+assert len(receipt) == 2
+PY
+
+FIRST_FINGERPRINT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
+printf 'content-sensitive change\n' >> "$FIXTURE_DIR/src/lazy.ts"
+"$REPO_DIR/shared/review-evidence/collect-change-evidence.sh" \
+    --repo "$FIXTURE_DIR" \
+    --format json \
+    --output "$ARTIFACT_OUTPUT" > "$RECEIPT_OUTPUT"
+SECOND_FINGERPRINT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
+test "$FIRST_FINGERPRINT" != "$SECOND_FINGERPRINT"
 
 # A repository with only its first commit has no parent/upstream and must still work.
 git -C "$FIRST_COMMIT_DIR" init -q

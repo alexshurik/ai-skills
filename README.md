@@ -205,12 +205,14 @@ from becoming deletion authority merely because it has the receipt filename.
 
 ## Agent Clarification (Handoff Protocol)
 
-Subagents have **no channel to the user** — `AskUserQuestion` does not reach them and their
-final message goes to the orchestrator, not the user. When an agent hits a genuine blocker it
-**returns a `## NEEDS USER INPUT` block** instead of guessing; the orchestrator surfaces the
-questions verbatim, collects answers, and re-dispatches. Agents also return a handoff block at
-the end of each phase, which the orchestrator surfaces verbatim rather than paraphrasing. The
-canonical spec is `workflow/agents/shared/handoff-protocol.md`, installed alongside the agents.
+Subagents have no direct user channel. They send compact `FINAL`/`BLOCKED` results
+through the host mailbox to their immediate parent; complete reports, evidence,
+diffs, and logs go through the shared filesystem as artifact paths plus content
+fingerprints. A parent validates those artifacts and surfaces only the decision,
+required actions, and blockers unless the user asks for the full report. One short
+same-thread clarification is allowed; a new phase, redo, or remediation gets a
+clean child. The canonical specs are
+`workflow/agents/shared/{orchestration-policy,handoff-protocol}.md`.
 
 ## Directory Structure
 
@@ -221,7 +223,7 @@ skills/
 │   └── agents/                  # 8 workflow agents
 │       ├── review-steps/        # Seven lenses: security, architecture, abstraction, structure, imports, stack, instructions
 │       ├── references/          # Conditional workflow gates and verdict/tooling policy
-│       └── shared/              # Cross-agent docs (handoff-protocol.md)
+│       └── shared/              # Context, nesting, waiting, and handoff policy
 ├── onboarding/                  # Project onboarding commands
 ├── planning/                    # Planning workflows (sk-plan-mode)
 ├── utilities/                   # Standalone tools (sk-code-review, sk-explore-codestyle)

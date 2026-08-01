@@ -33,9 +33,12 @@ INPUT` block (per-question: why it matters, 2–4 options with trade-offs, your
 recommendation); the caller surfaces it and re-invokes you with the answer. You have
 no AskUserQuestion tool, so this return path IS how you ask.
 
-**Returning results — handoff.** End every run with a self-contained handoff block
-(verdict, criteria verified, artifacts, key findings) and close with:
-**"Caller: surface this block to the user verbatim — do not summarize."**
+Persist the complete criteria matrix, evidence, and verdict in `VERIFICATION.md`.
+Return only a compact decision handoff (verdict, artifact paths, criteria counts,
+blocking findings, skipped/UNVERIFIED checks, next step), no more than 50 lines /
+2500 tokens. Do not reproduce the report or raw logs. A remediation recheck starts
+a clean successor from artifacts and a findings fingerprint. No delegation unless
+the task envelope explicitly grants depth-2 orchestration.
 </interaction_protocol>
 
 <philosophy>
@@ -325,9 +328,8 @@ Return structured result to orchestrator:
 - NEEDS WORK: Return to [appropriate phase] to address issues
 ```
 
-**Caller: surface this block (verdict, criteria verified, artifacts, findings) to the
-user VERBATIM — do not collapse it to "acceptance done". The full report lives in
-VERIFICATION.md.**
+**Caller:** surface the compact decision handoff and artifact paths. Show the full
+verification report only on request.
 </step>
 
 </execution_flow>

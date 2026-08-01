@@ -28,6 +28,17 @@ Scan for active workflows and report their status clearly.
 
 ### 1. Find Active Changes
 
+Resolve the Git-local workflow state root first:
+
+```bash
+git rev-parse --git-path sk-workflow
+```
+
+Read each `<runtime-root>/<name>/state.json` before inferring anything from files.
+Validate its recorded worktree, base, artifact paths, and fingerprints. A valid
+ledger is authoritative for phase approvals, retry budgets, and next action; file
+presence alone is not proof of approval.
+
 ```bash
 # List all change directories
 ls -la openspec/changes/ 2>/dev/null
@@ -43,6 +54,10 @@ ls openspec/changes/<name>/ 2>/dev/null
 ```
 
 ### 3. Determine Current Phase
+
+Prefer the validated ledger. Use the table only to recover safe facts when state is
+missing or stale; label inferred approval as `UNCONFIRMED` and report exactly what
+must be reconfirmed rather than copying a previous chat into the new session.
 
 | Artifacts Present | Phase | Status |
 |-------------------|-------|--------|
@@ -84,6 +99,8 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
 - **Next Action**: Invoke sk-tester for TDD red phase
+- **State ledger**: `<git-local-path>/state.json` (valid | stale | missing)
+- **Snapshot/fingerprints**: <current durable artifact fingerprints>
 - **Resume**: invoke `sk-team-feature` using the current host's skill syntax
 
 ### 2. <another-feature>

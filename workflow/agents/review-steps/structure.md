@@ -7,13 +7,19 @@ version: 1.0.0
 
 # File and Module Structure Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 Review structural shape independently from function-level complexity and style.
 
 ## Inputs
 
 - complete scope including untracked/deleted/renamed files;
-- full current files and relevant base versions;
-- change-evidence file-size and changed-line output;
+- repository paths for full current files and relevant base evidence;
+- change-evidence artifact path/fingerprint with file sizes and changed lines;
 - approved design/file map when present.
 
 ## Checks

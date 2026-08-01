@@ -7,14 +7,20 @@ version: 1.0.0
 
 # Import Evidence Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 Review import placement and dependency-cycle claims independently from style and
 general architecture.
 
 ## Inputs
 
 - complete changed/untracked file scope;
-- full files and diff;
-- change-evidence local/dynamic import candidates;
+- repository paths for full files and base evidence;
+- change-evidence artifact path/fingerprint with local/dynamic import candidates;
 - project import rules and approved design.
 
 ## Process

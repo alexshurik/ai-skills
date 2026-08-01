@@ -18,6 +18,14 @@ allowed-tools:
 
 Run both discovery skills to generate complete project documentation for AI agents and developers.
 
+Before running, compute a reusable **project fingerprint** from repository revision,
+dirty-file metadata/content hashes, relevant manifests, and repository guidance.
+Record it with output artifact hashes in the git-local `sk-workflow/onboarding/`
+ledger. If the fingerprint and required output hashes match a prior successful run,
+reuse its discovery artifacts and skip duplicate exploration. Re-run only the
+invalidated discovery half when its input subset changed; never reuse merely
+because files exist.
+
 ## Process
 
 ### 1. Run discover-project
@@ -45,6 +53,7 @@ Display combined results:
 - Number of domains, endpoints, services discovered
 - Paths to all generated artifacts
 - Reminder about auto-loading rules
+- Input fingerprint and whether each discovery artifact was reused or regenerated
 
 ## Modes
 

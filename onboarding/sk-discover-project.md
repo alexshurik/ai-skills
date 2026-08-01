@@ -31,8 +31,24 @@ Generate `.claude/docs/project-map.md` with comprehensive project overview for q
 
 ### 2. Run Parallel Explorers
 
-Launch these seven explorers in parallel through the host's read-only
-subagent/delegation mechanism:
+The seven sections below are coverage areas, not seven agent threads. Launch **at
+most three clean explorers** through the host's read-only delegation mechanism:
+
+- Explorer A: Purpose & Mission + User Roles & Stories + Domain Deep Dive;
+- Explorer B: Enhanced Tech Stack + Directory Structure;
+- Explorer C: External Integrations + Operations & Monitoring.
+
+For Codex use `fork_turns="none"` and inherit the parent model/reasoning. Give each
+explorer repository paths plus its bounded coverage list. Each writes a full result
+under the git-local `sk-workflow/onboarding/` runtime directory and returns at most
+30 lines with artifact path, counts, gaps, and key facts. No explorer delegates.
+
+Before dispatch, collect **common facts** once (repository root, manifests,
+top-level guidance, source/test roots, current revision) into
+`common-facts.json`; every explorer receives its path and fingerprint instead of
+rediscovering or receiving the same file contents in three prompts.
+
+The numbered headings remain the required logical coverage checklist:
 
 ---
 

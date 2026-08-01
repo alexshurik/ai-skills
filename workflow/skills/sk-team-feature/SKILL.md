@@ -27,20 +27,32 @@ explicit user approval before the next phase.
 ## Hard constraints
 
 - Agents are subagents and ask the user only by returning
-  `## NEEDS USER INPUT`. Surface questions verbatim, collect answers, and re-invoke
-  the same agent with an `## ANSWERS` block.
+  `## NEEDS USER INPUT`. Surface the compact questions, collect answers, and follow
+  the clarification policy below.
 - Never answer agent questions for the user.
 - Never auto-proceed between phases.
-- Surface structured handoff blocks verbatim.
+- Surface compact decisions and artifact paths; show full artifacts only on request.
 - Never create a worktree before the user confirms the feature name/path.
 - Never archive without approved code review, acceptance, and retrospective.
 - Never let a feature retrospective edit installed/global skills automatically.
+- Read and apply the shared orchestration policy before any delegation. On Codex,
+  every independent phase, redo, remediation, and review child uses
+  `fork_turns="none"`; omit model/reasoning overrides so it inherits the parent.
+- Children return only FINAL or BLOCKED and do not send routine progress chatter.
 
 ## Required resources
 
 Read the relevant phase section before dispatch:
 
 - [phase prompts](references/phase-prompts.md)
+
+Read the shared orchestration and handoff contracts completely:
+
+```text
+~/.claude/agents/shared/orchestration-policy.md
+~/.claude/agents/shared/handoff-protocol.md
+or workflow/agents/shared/ from the skills repo
+```
 
 For Retrospective read:
 
@@ -57,7 +69,9 @@ or shared/templates/retrospective.md from the skills repo
 3. Wait for explicit approval/change/cancel.
 4. Inspect current git status and preserve unrelated work.
 5. Create the worktree and `openspec/changes/<name>/`.
-6. Record worktree, branch, base commit, and current phase.
+6. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
+   directory, and record worktree, branch, base commit, current phase, artifact
+   fingerprints, approval state, and retry counters in `state.json`.
 
 Do not infer permission for a different branch/path or destructive cleanup.
 
@@ -65,11 +79,13 @@ Do not infer permission for a different branch/path or destructive cleanup.
 
 When an agent returns `## NEEDS USER INPUT`:
 
-1. show the block verbatim;
+1. show the compact block without adding raw child logs;
 2. stop for the user's answers;
-3. re-invoke the same agent with original prompt plus verbatim answers;
-4. repeat if another material ambiguity appears;
-5. continue only when the agent returns an artifact and handoff.
+3. use **one short follow-up** in the same child only when this is still the same
+   bounded deliverable and the child has not accumulated large tool output;
+4. otherwise start a clean successor with `fork_turns="none"`, the checkpoint path,
+   answers, authority paths, and remaining acceptance criteria;
+5. continue only when the agent returns a valid artifact and compact FINAL result.
 
 ## Phase execution
 
@@ -112,8 +128,12 @@ verification; request approval.
 
 ### 5. Code Review
 
-Execute the canonical review-orchestrator flow at top level when possible so lenses
-can run in parallel waves. If invoked nested, run every lens inline and disclose it.
+Execute the canonical review-orchestrator flow with a depth-2 lens budget when the
+host permits nested delegation. Codex uses a clean review-orchestrator child whose
+seven clean lens children are leaves. Stable Kimi children cannot nest, so its
+generated root-team override performs setup/aggregation and dispatches all lens
+leaves directly. If the active host has neither mechanism, run each lens as a
+separately labelled inline section and disclose that limitation.
 
 Persist the full latest verdict as:
 
@@ -121,15 +141,23 @@ Persist the full latest verdict as:
 openspec/changes/<name>/CODE_REVIEW.md
 ```
 
-If CHANGES REQUESTED, send the complete required findings back to Developer, then
-run a fresh review. Do not proceed on a stale approval. When approved, surface
-scope/pass/provenance/baseline/verdict and request approval for Acceptance.
+Run an **initial full review** through every applicable independent lens. If CHANGES
+REQUESTED, send the Developer the finding artifact path, fingerprint, required
+actions, and acceptance criteria; start a clean remediation child. Then run a
+**final full review** through **all applicable lenses** against a fresh snapshot.
+Targeted lenses may give diagnostic feedback during remediation but cannot approve.
+
+The automatic budget is **two review/remediation cycles** total. After it is
+exhausted, surface remaining findings and ask the user whether to authorize one more
+bounded cycle. Do not proceed on a stale approval. When approved, surface the compact
+scope/provenance/baseline/verdict and request approval for Acceptance.
 
 ### 6. Acceptance
 
 Dispatch `sk-acceptance-reviewer`. Require an approved `CODE_REVIEW.md`. Show
-criterion evidence and verdict. Route NEEDS WORK to the owning prior phase. Request
-approval before Retrospective.
+criterion evidence and verdict. Route NEEDS WORK to the owning prior phase with a
+budget of **one acceptance repair**. A second repair requires an explicit user
+decision. Request approval before Retrospective.
 
 ### 7. Retrospective
 
@@ -157,8 +185,8 @@ After every phase show:
 ```markdown
 ## Phase Complete: <name>
 
-### Handoff
-<verbatim agent/orchestrator block>
+### Decision
+<compact status/verdict, required actions, critical evidence, blockers>
 
 ### Artifacts
 - `<path>` — purpose
@@ -173,15 +201,19 @@ After every phase show:
 
 Treat vague acknowledgement as non-approval.
 
+After explicit approval, update `state.json` with the phase, exact artifact
+fingerprints, approval record, retry counters, and next action before dispatching the
+next clean child.
+
 ## Redo
 
-Re-invoke the same phase with:
+Start a new clean phase agent with:
 
-- original prompt/artifacts;
-- the user's feedback verbatim;
+- current artifact and checkpoint paths;
+- a compact feedback digest preserving every required point;
 - requirement to address every point;
 - permission to ask through NEEDS USER INPUT;
-- summary of what changed.
+- remaining acceptance criteria and required output path.
 
 Ask for approval again. Never silently patch an unapproved artifact and continue.
 
@@ -198,8 +230,10 @@ Ask for approval again. Never silently patch an unapproved artifact and continue
 | `VERIFICATION.md` ACCEPTED | Retrospective next |
 | `RETROSPECTIVE.md` approved | Archive ready |
 
-File presence alone does not prove user approval; recover approval state from the
-conversation/handoff when resuming.
+Read Git-local workflow `state.json` first and validate recorded artifact fingerprints.
+File presence alone does not prove user approval. If Git-local state is missing or a
+fingerprint differs, recover safe facts from artifacts and ask the user to reconfirm
+only the approval that cannot be proven.
 
 ## Archive
 

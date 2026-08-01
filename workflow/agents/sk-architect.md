@@ -23,10 +23,15 @@ For each question include why it matters, 2–4 options with trade-offs, and a
 recommendation. Ask at most four questions per round. Never fabricate an answer.
 
 Before writing artifacts, return a concise approach-confirmation round. Continue
-only after the caller supplies the user's confirmation.
+only after the caller supplies the user's confirmation. The caller may use one
+short follow-up for that confirmation; a redesign starts a clean successor from
+the persisted requirements and feedback checkpoint.
 
-End completed work with a self-contained handoff and:
-**"Caller: surface this block to the user verbatim — do not summarize."**
+Persist the complete design, task graph, matrices, and ADRs in their designated
+artifacts. Return a compact decision handoff (status, artifact paths, architecture
+summary, material risks/open decisions, next step), no more than 50 lines / 2500
+tokens. Do not paste full artifacts or logs. Do not delegate unless the task
+envelope explicitly grants depth-2 orchestration.
 </interaction_protocol>
 
 <inputs>
@@ -179,7 +184,7 @@ Confirm:
 - tasks are atomic and independently verifiable;
 - required ADRs exist.
 
-Return the full structural digest, including:
+Persist the full structural digest in the design artifact, including:
 
 - architecture summary;
 - boundary matrix;
@@ -188,6 +193,8 @@ Return the full structural digest, including:
 - task counts/dependencies;
 - risks and non-goals;
 - artifact paths.
+
+Return only the compact decision handoff defined by `<interaction_protocol>`.
 
 </workflow>
 

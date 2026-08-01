@@ -4,11 +4,34 @@ Read only the section for the phase being dispatched. Agents ask the user throug
 the caller by returning `## NEEDS USER INPUT`; they do not use a hidden direct
 question channel.
 
+## Standard task envelope
+
+Every phase dispatch uses one bounded prompt and, on Codex, `fork_turns="none"`
+without model or reasoning overrides:
+
+```text
+Deliverable: <one bounded phase result>
+Worktree: <absolute path>
+Authority: <approved artifact/guidance paths>
+Scope: <paths and explicit non-goals>
+User constraints: <material choices not already persisted>
+Acceptance: <observable completion criteria>
+Output: <artifact path>
+Return: FINAL or BLOCKED; status, required actions, critical evidence, artifact
+        paths and fingerprints; no raw logs; max 50 lines
+Delegation budget: none | depth-2 <named helpers and maximum count>
+```
+
+Do not append the caller's conversation, full files, logs, prior handoffs, or static
+output when paths are available. A new phase, redo, or remediation is a clean child.
+
 ## Discovery — `sk-product-analyst`
 
 ```text
-Feature request: <verbatim request>
+Deliverable: approved product proposal for <name>
 Worktree: <path>
+User request digest: <complete material requirements, concise>
+Authority: <repository guidance/specification paths>
 Output: openspec/changes/<name>/proposal.md
 
 Read the repository and existing specifications first. Ask only unresolved,
@@ -21,6 +44,7 @@ non-goals. End with the standard handoff block.
 ## Research — `sk-researcher` (optional)
 
 ```text
+Deliverable: bounded research decision for <approved topics>
 Feature: <name>
 Worktree: <path>
 Proposal: openspec/changes/<name>/proposal.md
@@ -35,6 +59,7 @@ recommendation, and open decisions. End with the standard handoff block.
 ## Planning — `sk-architect`
 
 ```text
+Deliverable: approved design, tasks, and required ADRs
 Feature: <name>
 Worktree: <path>
 Proposal: openspec/changes/<name>/proposal.md
@@ -51,6 +76,7 @@ authority, and non-goals. End with the standard handoff block.
 ## Documentation Review — `sk-doc-reviewer` (optional)
 
 ```text
+Deliverable: documentation traceability verdict
 Feature: <name>
 Worktree: <path>
 Artifacts: proposal.md, optional RESEARCH.md, design.md, tasks.md, ADRs
@@ -64,6 +90,7 @@ questions through NEEDS USER INPUT before finalizing the verdict.
 ## Testing — `sk-tester`
 
 ```text
+Deliverable: approved categorized tests demonstrating Red
 Feature: <name>
 Worktree: <path>
 Artifacts: proposal.md, design.md, tasks.md, ADRs
@@ -78,6 +105,7 @@ user approves or modifies the plan. Confirm Red for the intended reason.
 ## Implementation — `sk-developer`
 
 ```text
+Deliverable: approved implementation with Green verification
 Feature: <name>
 Worktree: <path>
 Artifacts: proposal.md, design.md, tasks.md, ADRs
@@ -92,24 +120,28 @@ handoff evidence.
 ## Code Review — top-level orchestrator flow
 
 ```text
+Deliverable: complete baseline-aware code-review verdict
 Feature: <name>
 Worktree: <path>
 Design: openspec/changes/<name>/design.md
 Base: <feature merge-base>
 
-Execute the canonical sk-review-orchestrator flow. Include committed, staged,
+Execute the canonical sk-review-orchestrator flow from a shared review snapshot.
+Include committed, staged,
 unstaged, untracked, deleted, and renamed scope. Run contract/security,
 architecture, abstraction, structure, imports, stack rules, and applicable
 instruction quality. Separate change-caused findings from baseline. Persist the
 final full verdict to openspec/changes/<name>/CODE_REVIEW.md.
 ```
 
-If review returns CHANGES REQUESTED, return to Implementation with the full
-required-findings block. Re-run review after fixes; never reuse the old approval.
+If review returns CHANGES REQUESTED, return to a clean remediation agent with the
+findings artifact path, fingerprint, required actions, and acceptance criteria. Final
+approval requires a fresh full run of all lenses applicable to the final snapshot.
 
 ## Acceptance — `sk-acceptance-reviewer`
 
 ```text
+Deliverable: acceptance verdict with criterion evidence
 Feature: <name>
 Worktree: <path>
 Proposal: openspec/changes/<name>/proposal.md

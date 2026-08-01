@@ -7,16 +7,23 @@ version: 1.1.0
 
 # Architecture and Boundary Review
 
+Run as one clean, non-delegating lens. Read changed content, base evidence,
+profiles, and tool output from the repository and assigned snapshot artifact paths;
+do not require their contents to be copied into the prompt. Write the complete
+result to the assigned lens artifact. Return only status, artifact path, and at
+most five top findings (max 30 lines).
+
 Review whether the implementation expresses the approved design through clear
 owners and dependency direction. Abstraction count, file structure, imports,
 security, and stack idioms belong to separate lenses.
 
 ## Inputs
 
-- complete changed/untracked files with full content and base diff;
+- snapshot manifest plus repository paths for complete changed/untracked content
+  and base evidence;
 - proposal/design/tasks/ADRs when present;
 - boundary matrix, non-goals, and reuse decisions when present;
-- change-evidence output.
+- change-evidence artifact path and fingerprint.
 
 ## Required coverage inventory
 

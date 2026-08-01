@@ -59,6 +59,25 @@ Review complete tracked and untracked changes through independent contract/secur
 ### sk-tester
 Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.
 
+## Multi-Agent Orchestration
+
+- Give each child one bounded deliverable. New phases, redo, remediation, and
+  independent review use clean contexts; on Codex use `fork_turns="none"` and omit
+  model/reasoning overrides so children inherit the parent profile.
+- Keep nesting at depth 2. Only a named orchestrator with an explicit child budget
+  may spawn; review lenses are leaves. Stable Kimi children cannot nest, so its
+  generated root team dispatches review lenses directly.
+- Agents return compact `FINAL` or `BLOCKED` messages to their immediate parent.
+  Full reports, evidence, diffs, and logs live in shared artifacts; messages carry
+  paths and fingerprints.
+- Durable change artifacts live under `openspec/changes/<name>/`; heavy runtime
+  state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`.
+- Launch a full wave before waiting, use the longest permitted timeout, drain ready
+  completions before waiting again, and avoid routine status polling/progress chat.
+
+Canonical policy: `workflow/agents/shared/orchestration-policy.md` and
+`workflow/agents/shared/handoff-protocol.md`.
+
 ## Best Practices Profiles
 
 Stack-specific coding and review rules live in `shared/best-practices/`, organized by

@@ -14,15 +14,15 @@ Use this template when passing context between AI agents or sessions.
 [Main goal - what the user asked for originally]
 [Sub-tasks if any]
 
-## Progress & Completed Work
-- [What was done step by step]
-- [Key decisions made]
-- [Problems solved]
+## Durable State
+- Ledger: [git-local state.json path or none]
+- Phase/status: [current bounded phase and status]
+- Approved artifact fingerprints: [paths + fingerprints]
 
-## Key Files
-- [Files created] - [brief description]
-- [Files modified] - [what changed]
-- [Files read/analyzed] - [why important]
+## Changed and Authority Files
+- [Durable artifacts] - [brief purpose + fingerprint]
+- [Dirty source paths only] - [brief state]
+- [Authoritative guidance/design paths]
 
 ## Current State
 [Where we stopped - what's the current situation]
@@ -32,10 +32,9 @@ Use this template when passing context between AI agents or sessions.
 1. [Immediate next action]
 2. [Following actions]
 
-## Technical Context
-- [Important technical details]
-- [Dependencies, versions, configs]
-- [Commands that were run]
+## Verification
+- [Exact important command] → [status/log artifact]
+- [Skipped or UNVERIFIED gates]
 
 ## Decisions & Constraints
 - [Design decisions made and why]
@@ -52,4 +51,8 @@ Use this template when passing context between AI agents or sessions.
 1. Include exact paths, line numbers, values, and commands where they matter.
 2. Record why decisions were made, not only what changed.
 3. List unresolved blockers and user preferences explicitly.
-4. Keep the handoff current as the work progresses.
+4. Prefer a validated workflow ledger over reconstructing a long narrative.
+5. Do not include conversation history, full artifacts/diffs/logs, routine tool
+   output, or files that were only read.
+6. Keep the handoff below 100 lines / about 4,000 tokens; use artifact paths and
+   fingerprints for larger data.
