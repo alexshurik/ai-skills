@@ -14,6 +14,7 @@ Estimated Phases: X
 ## Phase 1: Foundation
 
 ### Task 1.1: <Task Title>
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: New file | Modification | Configuration
 - **Files**:
   - `path/to/file.ts` - <description>
@@ -23,6 +24,7 @@ Estimated Phases: X
 - **Dependencies**: None
 
 ### Task 1.2: <Task Title>
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: <type>
 - **Files**:
   - `path/to/file.ts`
@@ -33,6 +35,7 @@ Estimated Phases: X
 ## Phase 2: Core Implementation
 
 ### Task 2.1: <Task Title>
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: <type>
 - **Files**:
   - `path/to/file.ts`
@@ -46,6 +49,7 @@ Estimated Phases: X
 ## Phase 3: Integration
 
 ### Task 3.1: <Task Title>
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: <type>
 - **Files**:
   - `path/to/file.ts`
@@ -56,6 +60,7 @@ Estimated Phases: X
 ## Phase 4: Testing & Polish
 
 ### Task 4.1: Write Integration Tests
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: New files
 - **Files**:
   - `tests/integration/<feature>.test.ts`
@@ -64,6 +69,7 @@ Estimated Phases: X
 - **Dependencies**: Phase 3
 
 ### Task 4.2: Documentation
+- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
 - **Type**: Modification
 - **Files**:
   - `README.md`

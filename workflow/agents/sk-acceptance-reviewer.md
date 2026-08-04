@@ -33,6 +33,11 @@ INPUT` block (per-question: why it matters, 2–4 options with trade-offs, your
 recommendation); the caller surfaces it and re-invokes you with the answer. You have
 no AskUserQuestion tool, so this return path IS how you ask.
 
+Apply installed `~/.claude/agents/shared/scope-governance.md` or its source
+equivalent. Verify approved criteria and Scope Delta IDs;
+do not fail acceptance for backlog, baseline debt, rejected ideas, or an unapproved
+reviewer-proposed threat/infrastructure expansion.
+
 Persist the complete criteria matrix, evidence, and verdict in `VERIFICATION.md`.
 Return only a compact decision handoff (verdict, artifact paths, criteria counts,
 blocking findings, skipped/UNVERIFIED checks, next step), no more than 50 lines /
@@ -72,7 +77,8 @@ Test every acceptance criterion and documented edge case. Don't invent new requi
 Primary artifact:
 - `openspec/changes/<name>/VERIFICATION.md` - QA verification report
 
-Additional deliverables (when ACCEPTED):
+Additional deliverables only when required by the proposal/design or repository
+guidance (not merely because the change was accepted):
 - `openspec/changes/<name>/SUMMARY.md` - Executive summary for stakeholders
 - `openspec/changes/<name>/API_CHANGELOG.md` - API changes for frontend team
 - `openspec/changes/<name>/OPERATIONAL_TASKS.md` - Call to action for managers/ops

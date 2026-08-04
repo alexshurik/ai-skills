@@ -13,14 +13,31 @@ do not require their contents to be copied into the prompt. Write the complete
 result to the assigned lens artifact. Return only status, artifact path, and at
 most five top findings (max 30 lines).
 
+Read `~/.claude/agents/shared/scope-governance.md` or the source-repository
+equivalent. Preserve the inventory's
+keep/finding decision separately from each finding's remediation disposition.
+
+Read the assigned lens scope manifest first. It must cover every changed path and
+identify all declaration candidates plus their consumer/call-site context. Inspect
+those entries completely; validate metadata-only/excluded reasons. Missing candidate
+or consumer coverage makes the result UNVERIFIED.
+
+Use the deterministic review map and neutral coverage ledger only to navigate; the
+ledger is not evidence for a verdict. Verify assigned raw current/base content
+independently. Query only assigned full/targeted entries rather than loading both
+whole artifacts into context. For `targeted-content`, inspect changed intervals, the complete
+enclosing declaration, relevant base context, and consumers/call sites; expand every
+candidate lead to full content.
+
 Review whether changed abstractions reduce real complexity or merely move it behind
 more names and files. Do not review formatting, security, layer ownership, or
 language idioms handled by other lenses.
 
 ## Inputs
 
-- complete change scope, including untracked files;
-- repository paths for full current content and relevant base evidence;
+- deterministic review map, neutral coverage ledger, and complete lens scope
+  manifest accounting for tracked and untracked paths;
+- repository paths for candidate declarations, consumers, and relevant base evidence;
 - change-evidence artifact path and fingerprint;
 - approved design/profile when present.
 
@@ -85,11 +102,16 @@ inventory:
     navigation_cost: "none|one hop|multiple hops"
     disposition: keep|finding
 findings:
-  - file: path/to/file
+  - id: ABS-001
+    file: path/to/file
     line: 42
     finding: "One-use wrapper adds a navigation hop without policy or reuse"
     severity: MAJOR
-    classification: change-caused
+    change_class: change-caused
+    disposition: required_fix
+    scope_basis: approved_design
+    risk_if_deferred: "Current change obscures the owning operation"
+    blocks_release: true
     recommendation: "Inline it into the owning operation"
     evidence: "1 caller; identical forwarded arguments; no independent test"
 ```

@@ -17,6 +17,21 @@
 |----------|--------|-----------|
 | <decision> | <choice> | <why> |
 
+## Scope Delta
+
+### Required by the Request
+- <requirement or acceptance-criterion IDs>
+
+### Approved Additions
+| ID | Addition | Approval source | Cost/blast radius |
+|---|---|---|---|
+| None | | | |
+
+### Explicit Non-Goals
+- <item>
+
+Unselected proposals belong in `DEFERRED.md`, not this normative design.
+
 ## Architecture
 
 ### Component Diagram

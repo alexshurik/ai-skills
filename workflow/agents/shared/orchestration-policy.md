@@ -4,6 +4,9 @@ This is the shared orchestration contract for `sk-*` workflows. It separates
 conversation context from repository authority: agents receive a bounded task and
 paths to durable evidence, not a copy of the caller's transcript.
 
+Use `scope-governance.md` for Scope Delta approval, finding/remediation authority,
+OpenSpec documents, and deferred-item lifecycle.
+
 ## Core invariants
 
 1. One agent thread owns **one bounded deliverable** with explicit acceptance
@@ -91,6 +94,9 @@ root
   outside the reviewed Git diff.
 - Every runtime artifact has a content fingerprint. Parent summaries name the exact
   artifact path and fingerprint they used.
+- `state.json` stores resumable phase/approval fingerprints, review/remediation/acceptance
+  counts, spawned/running/completed IDs, wait counters, blockers, and
+  next action. It is not a raw transcript or a duplicate host tool-call log.
 
 ## Wave and wait policy
 
@@ -99,17 +105,34 @@ root
 3. Maintain explicit `pending`, `running`, `done`, and `blocked` sets.
 4. Call `wait_agent` with the **longest timeout** allowed by the active host and
    communication policy. Never hard-code a 30-second polling loop.
-5. After a wake-up, process every available mailbox update before waiting again, then
-   fill newly freed slots.
-6. Do not call `list_agents` after routine timeouts. Use it only for inconsistent
+5. Use **bounded autonomous waiting** by default. Before dispatch, persist a wait
+   budget in workflow state: at most 15 minutes and 15 empty wake-ups for one wave,
+   with at most 30 total idle wake-ups for the complete workflow. A host-supported
+   single long wait is preferred over multiple short waits. A stricter host/user
+   limit wins.
+6. An empty wake-up increments both counters. Continue waiting automatically only
+   while both budgets remain. Do not emit empty-wait commentary or use another tool
+   merely to announce that children are still running.
+7. After a wake-up with updates, process every available mailbox result, fill newly
+   freed slots, and continue the wave within the remaining persisted budget.
+8. Do not call `list_agents` after routine timeouts. Use it only for inconsistent
    state, cancellation, or a suspected missing completion.
-7. On a concurrency-limit error, remember the effective capacity and wait for a slot;
+9. On a concurrency-limit error, remember the effective capacity and wait for a slot;
    do not retry the same spawn repeatedly.
-8. Completed agents are never polled again.
+10. Completed agents are never polled again. Periodic “still running” progress
+    chatter and unsolicited `send_message` nudges are forbidden.
 
-Skills can reduce polling but cannot create a free event-driven barrier when the host
-does not expose one. Every model-visible timeout or completion can still cause a
-caller model step.
+`Autonomous`, `continue without approvals`, or `finish the workflow` authorizes this
+finite wait budget; it never authorizes **unbounded polling**. Do not reset counters
+after a timeout, completion, compaction, or new assistant turn. A user may explicitly
+raise a budget after being told that every empty timeout causes another model step.
+Prefer a host's automatic background-completion notification when it exists.
+
+Skills cannot create a free event-driven barrier when the host does not expose one.
+When either budget is exhausted, persist the running IDs, wave, snapshot fingerprint,
+counter values, and next action, then return a compact `BACKGROUND WORK ACTIVE`
+handoff. Children continue in background; the UI's Done state plus `continue` resumes
+mailbox aggregation. This is a fallback for unusually long work, not the normal path.
 
 ## Result contract
 

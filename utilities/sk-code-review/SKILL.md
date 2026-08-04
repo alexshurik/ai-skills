@@ -8,6 +8,11 @@ description: Review committed, staged, unstaged, and untracked changes through t
 Treat this as a fresh, read-only review. Ignore prior conclusions and derive scope,
 authority, evidence, findings, and verdict from the repository.
 
+Read `~/.claude/agents/shared/scope-governance.md` or
+`workflow/agents/shared/scope-governance.md` from the skills repository.
+Report concerns strictly, but keep severity separate from remediation authority.
+This skill never modifies source or feature artifacts.
+
 ## 1. Confirm scope exists
 
 Resolve a git-local review runtime directory and run the installed change-evidence
@@ -61,12 +66,31 @@ Required lenses:
 6. stack rules;
 7. instruction quality when instruction artifacts changed.
 
-Use seven independent clean lens threads. Pass artifact paths for complete
-tracked/untracked scope, evidence, design authority, runner, profiles, and
-static-analysis provenance as specified by the orchestrator; do not paste full
-files, base diffs, or raw tool output into prompts. For Codex, use
+Every finding includes `change_class`, `disposition`, `scope_basis`,
+`risk_if_deferred`, and `blocks_release`. Preserve strict stack/security detection;
+unapproved infrastructure or threat-model expansion is `user_decision`, and
+unchanged debt is `baseline`, not an automatic required fix.
+
+Use seven clean lens threads with independent verdicts. Build `review-map.json`
+deterministically. Run structure/coverage first: it reads every human-authored text
+path in full, writes a neutral `coverage-ledger.json`, and reviews placement. Validate
+that ledger against the review map before launching the other six targeted lenses.
+They may use the ledger only for navigation and must verify assigned raw current/base
+content independently. Specialists query only their assigned full/targeted rows and
+do not load the complete review map plus ledger into every context.
+
+Pass artifact paths for complete tracked/untracked scope, evidence, design authority,
+runner, profiles, and static-analysis provenance as specified by the orchestrator; do
+not paste full files, base diffs, or raw tool output into prompts. For Codex, use
 `fork_turns="none"` and omit model/reasoning overrides so reviewers inherit the
-parent's selected profile. No lens may spawn another agent.
+parent's selected profile. Give every reviewer a complete lens scope manifest with
+full/targeted/metadata depth and reasons. No lens may spawn another agent.
+
+Use bounded autonomous waiting: prefer one long supported wait; otherwise allow at
+most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups for the workflow.
+Never list, nudge, or emit progress chatter between empty returns. If the persisted
+budget is exhausted, return `BACKGROUND WORK ACTIVE`; `continue` is only the fallback
+for unusually long work, not the normal path.
 
 If subagent dispatch is genuinely unavailable, execute every applicable lens as a
 separate inline section from the installed `review-steps/` resources and disclose
@@ -81,6 +105,8 @@ Use the orchestrator's verdict policy:
 - APPROVED requires every applicable lens, complete untracked scope, complete
   provenance, and zero required UNVERIFIED dimensions;
 - tests and security scans alone cannot approve architectural shape.
+- only `required_fix` findings block the change; unresolved `user_decision` items
+  produce `TRIAGE REQUIRED`, while backlog/baseline remain visible and non-blocking.
 
 ## Guardrails
 
@@ -91,3 +117,6 @@ Use the orchestrator's verdict policy:
 - Do not promote Observed/Legacy project evidence into review rules.
 - Return a compact decision and report paths. Keep full findings, baseline section,
   commands, exit codes, and logs in review artifacts; show them on request.
+- Keep the full report in the Git-local review snapshot. Because this standalone
+  skill is read-only, do not create `DEFERRED.md`, update OpenSpec, or promote items
+  to an external backlog.

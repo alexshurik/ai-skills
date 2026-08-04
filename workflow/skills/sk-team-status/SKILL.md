@@ -39,6 +39,14 @@ Validate its recorded worktree, base, artifact paths, and fingerprints. A valid
 ledger is authoritative for phase approvals, retry budgets, and next action; file
 presence alone is not proof of approval.
 
+Report review/remediation/acceptance counts, spawned/running/completed IDs, and
+empty-wait counters from the ledger. These are resumable orchestration state, not a
+second transcript or a quality verdict.
+
+If state is `BACKGROUND WORK ACTIVE`, report the running IDs, wave, snapshot, and
+artifact paths. Do not wait or poll from a status request; tell the user whether the
+UI shows Active/Done and that `continue` resumes mailbox aggregation.
+
 ```bash
 # List all change directories
 ls -la openspec/changes/ 2>/dev/null
@@ -68,6 +76,7 @@ must be reconfirmed rather than copying a previous chat into the new session.
 | Above + test files (failing) | Testing | Complete - Implementation next |
 | Above + implementation (tests pass) | Implementation | Complete - Review next |
 | Above + `CODE_REVIEW.md` APPROVED | Review | Complete - Acceptance next |
+| Above + `CODE_REVIEW.md` TRIAGE REQUIRED | Review | User scope decision next |
 | Above + `VERIFICATION.md` ACCEPTED | Acceptance | Complete - Retrospective next |
 | Above + `RETROSPECTIVE.md` | Retrospective | Complete - Archive approval next |
 
@@ -96,10 +105,13 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] Tests - Pending
   - [ ] Implementation - Pending
   - [ ] CODE_REVIEW.md - Pending
+  - [ ] DEFERRED.md - Optional; candidate/deferred/rejected/promoted scope proposals
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
 - **Next Action**: Invoke sk-tester for TDD red phase
 - **State ledger**: `<git-local-path>/state.json` (valid | stale | missing)
+- **Workflow counters**: review/remediation/acceptance; agents and empty waits
+- **Deferred candidates**: none | <IDs requiring triage>
 - **Snapshot/fingerprints**: <current durable artifact fingerprints>
 - **Resume**: invoke `sk-team-feature` using the current host's skill syntax
 
@@ -166,6 +178,7 @@ If artifacts exist but workflow seems stuck:
 - proposal.md exists but no design.md
 - Tests exist but no implementation
 - Implementation exists but no approved CODE_REVIEW.md
+- CODE_REVIEW.md has unresolved `user_decision` items or DEFERRED.md has candidates
 - VERIFICATION.md exists but no RETROSPECTIVE.md
 
 Report these as potentially stale and suggest resuming.

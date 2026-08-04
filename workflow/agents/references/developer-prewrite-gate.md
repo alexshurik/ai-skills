@@ -3,6 +3,10 @@
 Run this gate before the first source edit. It verifies that tests and nearby code
 will not pull implementation away from the approved architecture.
 
+Apply `~/.claude/agents/shared/scope-governance.md` or its installed/source
+equivalent. For remediation, require a finding-ID
+allowlist and never treat the complete review report as implementation authority.
+
 ## Authority order
 
 ```text
@@ -28,6 +32,8 @@ scope, or a public contract.
 5. Inventory each new alias, helper, constant, wrapper, interface, or file.
 6. Record current file sizes and responsibilities for materially touched files.
 7. Inventory local/dynamic imports and their claimed reason.
+8. Map every planned edit to an acceptance criterion, approved Scope Delta ID, or
+   allowlisted `required_fix` finding.
 
 If the approved design lacks an owner for a material concern, return
 `## NEEDS USER INPUT` or request Planning rework. Do not invent the owner while

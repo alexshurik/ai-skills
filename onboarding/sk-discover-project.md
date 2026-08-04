@@ -50,6 +50,11 @@ rediscovering or receiving the same file contents in three prompts.
 
 The numbered headings remain the required logical coverage checklist:
 
+After dispatch, use the shared bounded autonomous wait budget and the longest
+host-permitted timeout. Do not list, nudge, or emit “still running” chatter between
+empty returns. Persist `BACKGROUND WORK ACTIVE` only on finite budget exhaustion;
+manual `continue` is a fallback for unusually long exploration.
+
 ---
 
 **Explorer 1: Purpose & Mission**

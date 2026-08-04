@@ -119,22 +119,59 @@ Invoke sk-team-quick with: Fix null pointer in calculateTotal function
 
 ## Artifacts
 
-Active artifacts use the OpenSpec change structure:
+Durable, version-controlled decisions use OpenSpec:
 
 ```
 openspec/changes/<feature-name>/
-├── proposal.md      # Vision, requirements, acceptance criteria
-├── RESEARCH.md      # Technology findings (optional)
-├── design.md        # System design, architecture decisions
-├── tasks.md         # Implementation task breakdown
-├── DOC_REVIEW.md    # Alignment verification (optional)
-├── CODE_REVIEW.md   # Full latest review verdict + provenance
-├── VERIFICATION.md  # Final acceptance verification
-└── RETROSPECTIVE.md # Escaped signals + lesson disposition
+├── proposal.md       # Request, acceptance criteria, scope, non-goals
+├── RESEARCH.md       # Optional research
+├── design.md         # Approved design + Scope Delta decisions
+├── tasks.md          # Required/explicitly approved work only
+├── adr/              # Optional significant decisions
+├── DOC_REVIEW.md     # Optional alignment review
+├── CODE_REVIEW.md    # Compact feature verdict + Review Triage
+├── REVIEW.md         # Quick-mode equivalent (quick workflow only)
+├── VERIFICATION.md   # Acceptance evidence
+├── DEFERRED.md       # Optional change-local proposal staging
+└── RETROSPECTIVE.md  # Lessons + scope-control outcome
 ```
 
 After final approval, the complete directory moves from `openspec/changes/` to
 `openspec/completed/`.
+
+Heavy runtime data is not committed:
+
+```text
+$(git rev-parse --git-path sk-workflow)/<feature-name>/
+├── state.json                    # phase, approvals, cycles, agent/wait counters
+├── checkpoints/ and logs/
+└── review/<snapshot>/            # evidence, map, ledger, scopes, lenses, full report
+```
+
+`DEFERRED.md` stages `candidate | deferred | rejected | promoted` proposals; it is
+not automatically the backlog. At archive, user-selected items go to the repository's
+tracker or the `openspec/backlog/<slug>.md` fallback. Scope is not duplicated in
+`SCOPE.md`, triage is not duplicated in another summary, and exact subagent call logs
+remain host session data rather than project artifacts.
+
+## Scope Control
+
+Planning shows required work, explicit non-goals, and every material proposed
+addition as a separately approved `SD-*` item. New queues/storage/workers, telemetry
+or rollout systems, broader threat models, extra public contracts, cross-system
+finality, and broad refactors cannot enter tasks through a generic approval.
+
+All seven review lenses remain strict. Each finding receives a risk severity plus a
+separate disposition: `required_fix`, `user_decision`, `backlog`, or `baseline`.
+Only required fixes and explicitly selected decision IDs enter remediation. Stack
+review still reports long/complex touched functions; unchanged debt is classified
+rather than silently forcing a broad refactor. Final review keeps catching
+regressions and proven critical defects, while new non-critical ideas are deferred
+instead of starting an unbounded loop.
+
+`CHANGES REQUESTED` means required work remains; `TRIAGE REQUIRED` means only a
+scope decision remains; backlog/baseline observations may stay visible under an
+`APPROVED` current-scope verdict.
 
 ## TDD Approach
 
@@ -188,6 +225,12 @@ Each agent runs in isolated context with specific tools.
   imports, stack rules, and applicable instruction quality. Baseline debt is shown
   separately from change-caused findings.
 
+- **Scope governance.** Planning uses a Scope Delta Gate. Review uses one compact
+  mandatory/user-decision/backlog triage and remediation receives only approved
+  finding IDs. The canonical installed policy is
+  `~/.claude/agents/shared/scope-governance.md` (or the source-repository
+  equivalent).
+
 - **Clarification (handoff protocol).** Subagents cannot reach the user directly. When one
   hits a genuine blocker it returns a compact `## NEEDS USER INPUT` block; the
   orchestrator surfaces it and never answers on your behalf. Complete reports and
@@ -201,8 +244,11 @@ Each agent runs in isolated context with specific tools.
   its generated root team dispatches the seven review leaves directly.
 
 - **Efficient waiting.** Work launches in concurrency-aware waves. The orchestrator
-  uses the host's longest permitted wait, consumes all ready results before waiting
-  again, and avoids routine status polling and child progress chatter.
+  prefers one long host-supported wait and otherwise uses a persisted finite budget:
+  at most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups per workflow.
+  It never lists, nudges, or chatters between empty returns. `BACKGROUND WORK ACTIVE`
+  plus manual `continue` is used only after budget exhaustion. Ready results are
+  drained before new work starts; unbounded polling is never enabled.
 
 ## Best Practices
 

@@ -107,6 +107,8 @@ def copy_validated(
     destination: Path,
     context: RenderContext,
 ) -> None:
+    if source.name == "__pycache__" or source.suffix.lower() in {".pyc", ".pyo"}:
+        return
     metadata = checked_source_stat(source)
     if stat.S_ISDIR(metadata.st_mode):
         if destination.exists() and (
@@ -264,13 +266,22 @@ send the whole review to `sk-review-orchestrator` as a child. The root performs 
 orchestrator setup/aggregation steps and launches the registered `review-security`,
 `review-architecture`, `review-abstraction`, `review-structure`, `review-imports`,
 `review-stack-rules`, and (when applicable) `review-instruction-quality` leaf
-subagents over one artifact snapshot. This preserves seven independent clean
-lenses without unsupported nesting.
+subagents over one artifact snapshot. First run `review-structure` as the
+full-coverage reader, validate its neutral coverage ledger against the deterministic
+review map, then launch the other six as targeted independent lenses. This preserves
+seven independent clean verdicts without unsupported nesting or seven redundant
+full-scope reads.
 
-Launch all available lens work in background before awaiting results. Kimi sends
-completion notifications automatically; do not repeatedly poll task status. Keep
-full reports/logs in shared artifact paths and accept only compact final receipts
-in the root context. Ordinary feature roles remain leaf subagents.
+Apply the installed shared `scope-governance.md` during aggregation. Preserve every
+lens finding, but separate severity from `required_fix`, `user_decision`, `backlog`,
+and `baseline`; show Review Triage and pass remediation only an approved finding-ID
+allowlist. New non-critical final-review ideas go to `DEFERRED.md` rather than a new
+automatic remediation cycle.
+
+Within each stage, launch all available lens work in background before awaiting
+results. Kimi sends completion notifications automatically; do not repeatedly poll
+task status. Keep full reports/logs in shared artifact paths and accept only compact
+final receipts in the root context. Ordinary feature roles remain leaf subagents.
 """
     return (
         "${KIMI_AGENTS_MD}\n\n"

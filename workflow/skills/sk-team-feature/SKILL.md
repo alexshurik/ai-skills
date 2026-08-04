@@ -54,6 +54,10 @@ Read the shared orchestration and handoff contracts completely:
 or workflow/agents/shared/ from the skills repo
 ```
 
+From that shared directory also read `scope-governance.md` before Discovery,
+Planning, Code Review, remediation, or Archive. It defines Scope Delta approval,
+finding dispositions, artifact ownership, and deferred-item lifecycle.
+
 For Retrospective read:
 
 ```text
@@ -71,7 +75,8 @@ or shared/templates/retrospective.md from the skills repo
 5. Create the worktree and `openspec/changes/<name>/`.
 6. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
    directory, and record worktree, branch, base commit, current phase, artifact
-   fingerprints, approval state, and retry counters in `state.json`.
+   fingerprints, approval state, review/remediation/acceptance counters, spawned/
+   running/completed IDs, wait counters, blockers, and next action in `state.json`.
 
 Do not infer permission for a different branch/path or destructive cleanup.
 
@@ -93,7 +98,7 @@ When an agent returns `## NEEDS USER INPUT`:
 
 Dispatch `sk-product-analyst` using the Discovery prompt. Require scope
 confirmation before `proposal.md`. Show user stories, acceptance criteria,
-non-goals, and open questions; request approval.
+required scope, non-goals, deferred proposals, and open questions; request approval.
 
 ### 1.5 Research — optional
 
@@ -104,9 +109,11 @@ recommendation/open decisions, and request approval.
 ### 2. Planning
 
 Dispatch `sk-architect` using the full decision-completeness prompt. Require user
-approach confirmation before artifacts. Show boundary/architecture summary, file
-map, model/interface changes, growth forecast, risks, and non-goals; request
-approval.
+approach confirmation before artifacts. Require the Scope Delta Gate with required
+items, separately identified `SD-*` additions (or `None`), cost/blast radius, and
+non-goals. General approach approval does not approve an unlisted addition. Show
+boundary/architecture summary, file map, model/interface changes, growth forecast,
+risks, and non-goals; request approval.
 
 ### 2.5 Documentation Review — optional
 
@@ -135,17 +142,45 @@ generated root-team override performs setup/aggregation and dispatches all lens
 leaves directly. If the active host has neither mechanism, run each lens as a
 separately labelled inline section and disclose that limitation.
 
-Persist the full latest verdict as:
+Persist the compact durable verdict/triage as:
 
 ```text
 openspec/changes/<name>/CODE_REVIEW.md
 ```
 
-Run an **initial full review** through every applicable independent lens. If CHANGES
-REQUESTED, send the Developer the finding artifact path, fingerprint, required
-actions, and acceptance criteria; start a clean remediation child. Then run a
-**final full review** through **all applicable lenses** against a fresh snapshot.
-Targeted lenses may give diagnostic feedback during remediation but cannot approve.
+Persist the full technical report and seven lens artifacts in the Git-local review
+snapshot. Do not create a second `review-summary.md`.
+
+Run an **initial full review** through every applicable independent lens. Before any
+remediation, show the Review Triage Gate: mandatory `required_fix` IDs, scope
+additions requiring a decision, and deferred/backlog candidates. Record decisions
+in `CODE_REVIEW.md` and `DEFERRED.md` when needed; resolve every `user_decision`
+before dispatching remediation. Send the Developer only the
+allowlisted required IDs plus explicitly approved addition IDs, acceptance criteria,
+approved Scope Delta IDs, and non-goals; never send “fix all findings”. Start a clean
+remediation child. Then run a **final full review** through **all applicable lenses**
+against a fresh snapshot. Targeted lenses may give diagnostic feedback during
+remediation but cannot approve. Each reviewer receives a complete lens scope
+manifest with explicit reading depth and exclusions; unexplained omitted paths
+invalidate the review.
+
+After initial triage, newly discovered non-critical hardening, refactoring,
+observability, or threat-model expansion is deferred and cannot open another
+remediation cycle. Remediation regressions, unresolved allowlisted fixes, newly
+proven critical defects, acceptance violations, and mandatory gate failures still
+block. Disposition-only triage changes do not require another full review; source or
+normative-artifact changes do.
+
+The structure/coverage reviewer runs first, reads every human-authored changed text
+path in full, and writes a neutral coverage ledger validated against the deterministic
+review map. The other six lenses remain independent, use that ledger only for
+navigation, query only assigned rows, and verify targeted raw source themselves.
+
+Apply bounded autonomous waiting: prefer one long supported wait; otherwise allow at
+most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups across the workflow.
+Do not list, nudge, or emit progress chatter between empty returns. Persist
+`BACKGROUND WORK ACTIVE` only when that finite budget is exhausted; manual
+`continue` is a fallback for unusually long work.
 
 The automatic budget is **two review/remediation cycles** total. After it is
 exhausted, surface remaining findings and ask the user whether to authorize one more
@@ -154,7 +189,8 @@ scope/provenance/baseline/verdict and request approval for Acceptance.
 
 ### 6. Acceptance
 
-Dispatch `sk-acceptance-reviewer`. Require an approved `CODE_REVIEW.md`. Show
+Dispatch `sk-acceptance-reviewer`. Require an approved compact `CODE_REVIEW.md` for
+the current snapshot. Show
 criterion evidence and verdict. Route NEEDS WORK to the owning prior phase with a
 budget of **one acceptance repair**. A second repair requires an explicit user
 decision. Request approval before Retrospective.
@@ -172,6 +208,10 @@ For each durable lesson choose exactly one disposition:
 - repository guide;
 - named existing skill proposal;
 - no promotion.
+
+Also reconcile `DEFERRED.md`: resolve every `candidate`, promote only user-selected
+items to the repository's tracker or `openspec/backlog/<slug>.md` fallback, and keep
+deferred/rejected decisions in the archived change. Do not implement them.
 
 Keep project-specific architecture, deployment, runtime, vocabulary, and safe
 commands in repository guidance. Require portable value plus reproducible/repeated
@@ -200,6 +240,15 @@ After every phase show:
 ```
 
 Treat vague acknowledgement as non-approval.
+
+At Review Triage, also accept explicit choices:
+
+- `Fix mandatory only`;
+- `Also include: <finding IDs>`;
+- `Defer: <finding IDs>`;
+- `Reject: <finding IDs> — <reason>`.
+
+Only the first two groups may enter the remediation allowlist.
 
 After explicit approval, update `state.json` with the phase, exact artifact
 fingerprints, approval record, retry counters, and next action before dispatching the
@@ -239,7 +288,8 @@ only the approval that cannot be proven.
 
 After final retrospective approval:
 
-1. move `openspec/changes/<name>` to `openspec/completed/<name>`;
+1. verify that `DEFERRED.md` has no unresolved `candidate`, then move
+   `openspec/changes/<name>` to `openspec/completed/<name>`;
 2. report worktree, branch, base, final verification, and all artifact paths;
 3. show user-owned next steps for push/PR/integration;
 4. do not push, merge, or delete the worktree unless explicitly requested.

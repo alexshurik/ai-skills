@@ -115,24 +115,112 @@ embedded in shell source.
 
 ## Artifacts
 
-Active feature artifacts are stored in `openspec/changes/<feature-name>/`. After
-approved retrospective and archive, they move to `openspec/completed/<feature-name>/`.
+Artifacts are split by lifetime and audience. OpenSpec stores durable human decisions;
+Git-local workflow state stores resumable counters and heavy evidence. Agent mailbox
+messages contain only compact receipts with paths and fingerprints.
+
+### Durable OpenSpec artifacts
+
+Active feature artifacts are version-controlled under
+`openspec/changes/<feature-name>/`. After approved retrospective and archive, the
+complete directory moves to `openspec/completed/<feature-name>/`.
 
 | Artifact | Created by | Purpose |
 |----------|-----------|---------|
-| `proposal.md` | Product Analyst | Requirements and acceptance criteria |
+| `proposal.md` | Product Analyst | Request, acceptance criteria, required scope, and non-goals |
 | `RESEARCH.md` | Researcher | Technology findings (optional) |
-| `design.md` | Architect | Technical design |
-| `tasks.md` | Architect | Implementation task breakdown |
+| `design.md` | Architect | Approved design and Scope Delta decisions |
+| `tasks.md` | Architect | Only required or explicitly approved implementation work |
+| `adr/` | Architect | Significant approved architecture decisions (optional) |
 | `DOC_REVIEW.md` | Doc Reviewer | Alignment verification (optional) |
 | `VERIFICATION.md` | Acceptance Reviewer | QA verification report |
-| `CODE_REVIEW.md` | Review Orchestrator | Full latest verdict, baseline section, and tool provenance |
+| `CODE_REVIEW.md` | Review Orchestrator | Compact full-workflow verdict, triage, fingerprint, and evidence links |
+| `REVIEW.md` | Quick reviewer | Compact quick-workflow review and triage |
+| `DEFERRED.md` | Orchestrator | Change-local staging register for optional/rejected/promoted proposals |
 | `RETROSPECTIVE.md` | Orchestrator | Root causes, prevention, and lesson disposition |
-| `SUMMARY.md` | Acceptance Reviewer | Executive summary |
-| `API_CHANGELOG.md` | Acceptance Reviewer | API changes for frontend |
-| `OPERATIONAL_TASKS.md` | Acceptance Reviewer | Deployment checklist |
+| `SUMMARY.md` | Acceptance Reviewer | Executive summary when actually required |
+| `API_CHANGELOG.md` | Acceptance Reviewer | API changes when applicable |
+| `OPERATIONAL_TASKS.md` | Acceptance Reviewer | Operational actions when applicable |
 
-Structure inspired by [OpenSpec](https://openspec.dev/). No additional tools needed — directories are created automatically.
+`DEFERRED.md` is not automatically the project backlog. It records
+`candidate | deferred | rejected | promoted` decisions. At archive, only
+user-selected items are promoted to the repository's existing tracker; when no
+tracker exists, `openspec/backlog/<slug>.md` is the portable fallback. Rejected and
+deferred decisions remain with the archived change to prevent reviewers from
+reopening them repeatedly.
+
+### Git-local runtime and review evidence
+
+The workflow resolves `git rev-parse --git-path sk-workflow` and stores non-versioned
+runtime data under `<runtime-root>/<feature-name>/`:
+
+```text
+<runtime-root>/<feature-name>/
+├── state.json                    # phase, approvals, cycles, agent/wait counters, next action
+├── checkpoints/                  # compact resumable phase state
+├── logs/                         # large test/tool output
+└── review/<snapshot>/
+    ├── change-evidence.json      # complete Git scope and fingerprint
+    ├── review-map.json           # lossless path inventory
+    ├── coverage-ledger.json      # neutral full-scope reading record
+    ├── lens-scopes/              # per-lens reading depth and reasons
+    ├── lenses/                   # seven complete lens reports
+    ├── static-analysis/          # full analyzer logs/provenance
+    └── CODE_REVIEW.md            # full technical review report
+```
+
+`state.json` contains counters needed to enforce orchestration limits—review,
+remediation, and acceptance attempts; spawned/running/completed agents; and empty waits—
+not a duplicate transcript. Exact host tool calls already live in Codex/Claude/Kimi
+session logs. Do not create parallel `SCOPE.md`, `TRIAGE.md`, `AGENT_CALLS.md`, or
+`review-summary.md`: scope belongs in proposal/design, triage in the durable review,
+and counters in runtime state.
+
+Structure is inspired by [OpenSpec](https://openspec.dev/). No additional tools are
+required; directories are created automatically.
+
+## Scope Governance
+
+The canonical contract is `workflow/agents/shared/scope-governance.md`.
+
+Before planning writes normative design/tasks, it shows a Scope Delta Gate with:
+
+- work required by the request/acceptance criteria;
+- separately identified `SD-*` additions with cost and blast radius;
+- explicit non-goals.
+
+Queues/outboxes, workers, new storage, telemetry/SQL rollout gates, expanded threat
+models, additional finality/reorg systems, public contracts, and broad neighboring
+refactors require an explicit item decision. A general approval or autonomous-mode
+request does not silently approve them.
+
+Review remains strict across all seven lenses. Every finding has both severity and
+scope disposition:
+
+| Disposition | Meaning | Automatic remediation |
+|---|---|---|
+| `required_fix` | Approved behavior/design/gate or realistic change-caused defect | Yes, after the review gate |
+| `user_decision` | Material scope/threat/infrastructure expansion | Only when its ID is approved |
+| `backlog` | Useful non-critical hardening/cleanup | No |
+| `baseline` | Pre-existing and not materially worsened | No |
+
+For example, the stack lens still reports a 70+ line method. A newly introduced or
+materially worsened violation can be `required_fix`; an unchanged method touched by
+one line is baseline/backlog. Security still blocks proven auth bypass, secret
+exposure, arbitrary transaction substitution, repeat spend, and corruption, while a
+hypothetical requiring an unapproved “trusted provider is fully compromised” threat
+model becomes `user_decision` rather than automatic architecture work.
+
+Initial review always produces one Review Triage: mandatory fixes, scope additions
+requiring a decision, and deferred candidates. Remediation receives an explicit
+finding-ID allowlist, never “fix all findings”. Final review blocks remediation
+regressions and newly proven critical defects, but new non-critical hardening goes to
+`DEFERRED.md` instead of opening an endless remediation cycle.
+
+Verdicts are therefore unambiguous: `CHANGES REQUESTED` means a required fix or
+mandatory verification is missing; `TRIAGE REQUIRED` means only a material scope
+decision is unresolved; `APPROVED` means current approved scope passes even when
+non-blocking backlog/baseline observations remain visible.
 
 ## Best-Practice Profiles & Project Conventions
 
@@ -212,7 +300,19 @@ fingerprints. A parent validates those artifacts and surfaces only the decision,
 required actions, and blockers unless the user asks for the full report. One short
 same-thread clarification is allowed; a new phase, redo, or remediation gets a
 clean child. The canonical specs are
-`workflow/agents/shared/{orchestration-policy,handoff-protocol}.md`.
+`workflow/agents/shared/{orchestration-policy,handoff-protocol,scope-governance}.md`.
+
+Full reviews build a deterministic lossless review map. The structure/coverage
+reviewer is the one full-scope reader for every human-authored text path and emits a
+validated neutral coverage ledger. The other six independent lenses use that ledger
+only for navigation and verify their relevant raw source at targeted/full depth.
+This preserves complete path coverage without seven redundant full-scope reads.
+
+Idle waiting is automatic but finite: prefer one long host-supported wait; otherwise
+allow at most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups per workflow.
+No status listing, nudges, or progress chatter occurs between empty returns. Only
+budget exhaustion produces `BACKGROUND WORK ACTIVE`; after the UI shows Done,
+`continue` resumes aggregation. Unbounded polling is never implicit.
 
 ## Directory Structure
 
@@ -223,7 +323,7 @@ skills/
 │   └── agents/                  # 8 workflow agents
 │       ├── review-steps/        # Seven lenses: security, architecture, abstraction, structure, imports, stack, instructions
 │       ├── references/          # Conditional workflow gates and verdict/tooling policy
-│       └── shared/              # Context, nesting, waiting, and handoff policy
+│       └── shared/              # Context, waiting, handoff, and scope-governance policies
 ├── onboarding/                  # Project onboarding commands
 ├── planning/                    # Planning workflows (sk-plan-mode)
 ├── utilities/                   # Standalone tools (sk-code-review, sk-explore-codestyle)
@@ -231,7 +331,7 @@ skills/
 ├── shared/
 │   ├── templates/               # Artifact templates
 │   ├── static-analysis/         # Deep-analysis battery used by review step 4
-│   ├── review-evidence/         # Complete diff/untracked/size/import evidence collector
+│   ├── review-evidence/         # Evidence collector plus lossless review-map/coverage validator
 │   └── best-practices/          # Coder + reviewer profiles
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go

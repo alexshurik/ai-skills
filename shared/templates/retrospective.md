@@ -20,6 +20,13 @@ Use `None` when no material signal escaped. Do not invent a lesson to fill the t
 - Environment-dependent checks:
 - Baseline/out-of-scope findings:
 
+## Scope Control
+
+- Scope Delta IDs approved:
+- Proposals deferred/rejected:
+- Unplanned implementation discovered:
+- Review additions incorrectly treated as authority:
+
 ## Durable Lessons
 
 | Lesson | Evidence | Disposition | Target / rationale |

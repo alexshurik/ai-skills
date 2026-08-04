@@ -50,6 +50,9 @@ Read the complete decision-gate reference before designing:
 ```text
 ~/.claude/agents/references/architecture-gates.md
 or workflow/agents/references/architecture-gates.md from the skills repo
+
+~/.claude/agents/shared/scope-governance.md
+or workflow/agents/shared/scope-governance.md from the skills repo
 ```
 
 Use the full-feature gate unless the caller explicitly declares quick-fix mode.
@@ -104,8 +107,12 @@ boundary, or undeclared infrastructure authority, request clarification and stop
 
 ## 4. Confirm the approach
 
-Return:
+Apply `scope-governance.md` and return the Scope Delta Gate before final artifacts:
 
+- required request/acceptance-criterion IDs;
+- a table of every proposed addition with stable `SD-*` ID, reason, cost/blast
+  radius, and recommendation (or explicit `None`);
+- explicit non-goals;
 - component/owner summary;
 - important data flows;
 - public contract/model changes;
@@ -113,30 +120,33 @@ Return:
 - reuse/custom-build decisions;
 - risks and non-goals.
 
-Ask the user to confirm through the caller. Do not write `design.md` or `tasks.md`
-until confirmation is present in the prompt.
+Ask the user to confirm through the caller. General approach approval covers only
+the listed required work; every material addition needs an explicit ID decision.
+Do not write `design.md` or `tasks.md` until confirmation is present in the prompt.
 
 ## 5. Write the design
 
 Create `openspec/changes/<name>/design.md` with:
 
 1. Overview and rationale.
-2. Authority and constraints.
-3. Architecture/component diagram.
-4. Boundary ownership matrix.
-5. Data flow and trust boundaries.
-6. Public API/interface changes and compatibility impact.
-7. Data/persistence model changes and migrations.
-8. Business vocabulary and abstraction decisions.
-9. Cross-cutting reuse decisions and dependencies.
-10. Module-growth forecast.
-11. Security threat model and authorization.
-12. Reliability, observability, and performance.
-13. Error handling.
-14. Testing and regression strategy.
-15. Infrastructure authority and explicit non-goals.
-16. Risks and mitigations.
-17. Structural digest: file map, model changes, and interface changes.
+2. Scope contract: required items, explicitly approved `SD-*` additions, and
+   non-goals.
+3. Authority and constraints.
+4. Architecture/component diagram.
+5. Boundary ownership matrix.
+6. Data flow and trust boundaries.
+7. Public API/interface changes and compatibility impact.
+8. Data/persistence model changes and migrations.
+9. Business vocabulary and abstraction decisions.
+10. Cross-cutting reuse decisions and dependencies.
+11. Module-growth forecast.
+12. Security threat model and authorization.
+13. Reliability, observability, and performance.
+14. Error handling.
+15. Testing and regression strategy.
+16. Infrastructure authority and explicit non-goals.
+17. Risks and mitigations.
+18. Structural digest: file map, model changes, and interface changes.
 
 For network/process boundaries define timeouts, retry/idempotency policy, failure
 visibility, and graceful-degradation behavior where applicable. Do not add these
@@ -156,7 +166,10 @@ Never rewrite an accepted ADR; supersede it.
 
 ## 7. Break work into tasks
 
-Create `openspec/changes/<name>/tasks.md` only after the design gate passes.
+Create `openspec/changes/<name>/tasks.md` only after the design gate passes. Every
+task cites an acceptance criterion or explicitly approved `SD-*` ID. Never turn an
+unselected proposal into a task; stage a useful one in `DEFERRED.md` using the
+shared template.
 
 For each 15–60 minute task record:
 
@@ -181,6 +194,9 @@ Confirm:
 - custom cross-cutting infrastructure has reuse evidence;
 - module growth and new abstractions have explicit decisions;
 - deployment/configuration scope is authorized;
+- every task traces to required scope or an approved Scope Delta ID;
+- every unselected useful proposal is deferred and every rejected repeated-risk
+  proposal has its decision recorded;
 - tasks are atomic and independently verifiable;
 - required ADRs exist.
 

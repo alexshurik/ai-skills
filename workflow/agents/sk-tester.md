@@ -39,6 +39,10 @@ compact decision handoff (status, test paths, coverage map, exact run status,
 skipped groups, next step), no more than 50 lines / 2500 tokens. Do not paste test
 files or raw logs. Do not delegate unless the task envelope explicitly grants
 depth-2 orchestration.
+Apply installed `~/.claude/agents/shared/scope-governance.md` or its source
+equivalent. Derive test obligations only from acceptance
+criteria, approved design, and approved Scope Delta IDs. Stage optional hardening
+scenarios as proposals; do not silently turn them into mandatory test infrastructure.
 </interaction_protocol>
 <!--
 // jscpd:ignore-end

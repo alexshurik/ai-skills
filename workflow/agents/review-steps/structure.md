@@ -1,11 +1,11 @@
 ---
 name: sk-review-structure
-description: Review file and module structure using base/current size, responsibility, placement, cohesion, and fragmentation evidence.
+description: Read the complete authored change scope, produce a neutral coverage ledger, and review file/module structure, placement, cohesion, and fragmentation.
 tools: Read, Glob, Grep, Bash
 version: 1.0.0
 ---
 
-# File and Module Structure Review
+# Full-Coverage File and Module Structure Review
 
 Run as one clean, non-delegating lens. Read changed content, base evidence,
 profiles, and tool output from the repository and assigned snapshot artifact paths;
@@ -13,18 +13,41 @@ do not require their contents to be copied into the prompt. Write the complete
 result to the assigned lens artifact. Return only status, artifact path, and at
 most five top findings (max 30 lines).
 
+Read `~/.claude/agents/shared/scope-governance.md` or the source-repository
+equivalent. Full-file coverage remains
+mandatory. Classify unchanged structural debt as baseline/backlog while treating
+wrong placement or responsibility added by the current change as required when it
+violates approved ownership.
+
+Read `review-map.json` and the assigned lens scope manifest first. Read the complete
+current content of every human-authored readable text path and the complete base
+content of every readable deleted path. Do not sample. Dependency locks, binaries,
+symlinks, unavailable content, and verified generated/vendor output may be
+metadata-only; if the deterministic classification appears wrong, escalate it to
+full-content. Unexplained scope gaps make the result UNVERIFIED.
+
+Write two separate artifacts:
+
+1. the assigned `coverage-ledger.json`, containing one neutral entry for every
+   review-map path and no verdict/severity/recommendation/PASS/FAIL conclusion;
+2. the assigned structure lens artifact, containing independent findings.
+
+The coverage ledger is a navigation aid for later specialists, not proof for their
+verdicts. Keep subjective structure findings out of it.
+
 Review structural shape independently from function-level complexity and style.
 
 ## Inputs
 
-- complete scope including untracked/deleted/renamed files;
-- repository paths for full current files and relevant base evidence;
+- deterministic review map and complete lens scope manifest including
+  untracked/deleted/renamed paths;
+- repository paths for size/placement evidence and the full authored change scope;
 - change-evidence artifact path/fingerprint with file sizes and changed lines;
 - approved design/file map when present.
 
 ## Checks
 
-For every materially touched file:
+For every materially touched file, after completing the full-coverage read:
 
 1. compare base and current line count;
 2. identify responsibilities before and after;
@@ -58,17 +81,50 @@ coverage for structural moves that can change order.
   structural problem.
 - **Baseline/out-of-scope:** unchanged structure not worsened by the diff.
 
-Only the first two affect the change verdict.
+Only the first two are eligible to affect the current change; scope disposition
+determines whether the item is required now, needs a decision, or is backlog.
 
 ## Output
 
+Write the neutral ledger as JSON with exactly this top-level shape:
+
+```json
+{
+  "review_map_fingerprint": "<fingerprint>",
+  "entries": [
+    {
+      "path": "path/to/module",
+      "reading_depth": "full-content",
+      "status": "reviewed",
+      "purpose": "transport adapter",
+      "changed_responsibilities": ["maps the new request field"],
+      "placement_owner": "api component",
+      "risk_leads": ["trust-boundary change for security lens"]
+    }
+  ]
+}
+```
+
+Use empty lists only when explicitly correct; `purpose` and `placement_owner` must
+be non-empty. Every path appears exactly once. `reading_depth` is `full-content`,
+`targeted-content`, or `metadata-only`, and every entry has `status: reviewed`. The
+orchestrator validates this artifact with `review-map.sh validate`; failure makes
+this lens UNVERIFIED.
+
+Write structure findings separately:
+
 ```yaml
 findings:
-  - file: path/to/module
+  - id: STRUCT-001
+    file: path/to/module
     line: 1
     finding: "The change adds persistence orchestration to an existing transport module"
     severity: MAJOR
-    classification: change-caused
+    change_class: change-caused
+    disposition: required_fix
+    scope_basis: approved_design
+    risk_if_deferred: "The new responsibility remains in the wrong owner"
+    blocks_release: true
     recommendation: "Move the new responsibility to its owning component"
     evidence: "240→338 lines; second independent reason to change"
 ```

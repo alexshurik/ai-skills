@@ -47,9 +47,17 @@ The orchestrator will coordinate subagents:
 Kimi subagents have isolated context and return their final result to the root.
 Stable Kimi CLI does not allow a subagent to create another subagent, so the
 generated root team registers all seven review lenses directly. During full review
-the root dispatches those leaf reviewers over one shared evidence snapshot; this
-keeps independent review without nested-agent support. Large reports live in
-git-local workflow artifacts, while the Agent mailbox returns compact receipts.
+the root dispatches those leaf reviewers in two stages: structure first as the
+full-coverage reader, then the other six as targeted independent leaves after the
+neutral ledger validates against the deterministic review map. All use the same
+snapshot. This keeps independent review without nested-agent support or seven
+redundant full-scope reads. Large reports live in git-local workflow artifacts,
+while the Agent mailbox returns compact receipts.
+
+Kimi uses the same scope/artifact contract as Codex and Claude: required work and
+approved Scope Delta IDs enter design/tasks; optional additions go through Review
+Triage and `DEFERRED.md`. Durable decisions remain in OpenSpec, while counters and
+full lens evidence remain Git-local under `sk-workflow`.
 
 ### Option 2: Individual Skills
 

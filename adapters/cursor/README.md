@@ -36,6 +36,11 @@ cp -R adapters/cursor/.cursor /path/to/project/
 The rule lists every manifest-owned public skill and internal role. Edit the copy
 in the target project if it needs project-specific context.
 
+All hosts use the same workflow contract: durable decisions live under
+`openspec/changes/<name>/`; counters and full review evidence live under the
+Git-local `sk-workflow` path; material additions require Scope Delta approval and
+optional findings stage in `DEFERRED.md`. See the root README for the full model.
+
 ## Legacy Compatibility
 
 `.cursorrules` is still generated for older Cursor versions, but Cursor classifies

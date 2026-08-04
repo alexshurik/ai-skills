@@ -1,7 +1,16 @@
 # Architecture Decision-Completeness Gates
 
 Read this reference before writing a full feature design. Apply the compact
-variant to quick fixes.
+variant to quick fixes. Apply `~/.claude/agents/shared/scope-governance.md` or its
+installed/source equivalent before making any proposal normative.
+
+## Scope Delta
+
+Separate request/acceptance work from proposed architecture additions. Assign every
+material addition an `SD-*` ID with cost/blast radius and obtain an explicit decision
+before adding it to design/tasks. `None` is a valid result. Unselected useful ideas
+belong in `DEFERRED.md`; a general approach approval does not authorize hidden
+infrastructure, threat-model expansion, or broad refactoring.
 
 ## Authority inventory
 
@@ -106,6 +115,7 @@ or secret-delivery path.
 
 Before task breakdown, confirm the design contains:
 
+- required scope, approved Scope Delta IDs, and explicit non-goals;
 - authority inventory;
 - boundary matrix;
 - business-vocabulary decisions;
@@ -126,5 +136,6 @@ For a genuinely small fix, keep the design brief but still answer:
 - whether a new boundary, abstraction, local import, or infrastructure path appears;
 - whether the touched file gains a second responsibility;
 - what is explicitly out of scope.
+- whether `Scope Delta` is `None`; otherwise stop and escalate before editing.
 
 Escalate to the full workflow if any answer requires a new high-cost design choice.

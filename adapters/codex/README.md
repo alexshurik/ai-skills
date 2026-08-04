@@ -25,6 +25,11 @@ The migration preserves `~/.codex/skills/.system` and unrelated skills. Its
 backup path must not already exist and must be on the same filesystem as the
 legacy tree; failures roll completed moves back without a copy fallback.
 
+All platforms use the same artifact/scope contract: durable decisions live in
+`openspec/changes/<name>/`, runtime counters and full review evidence live under
+`$(git rev-parse --git-path sk-workflow)/<name>/`, and optional scope is triaged in
+`DEFERRED.md`. See the root README's **Artifacts** and **Scope Governance** sections.
+
 To use a different location:
 ```bash
 CODEX_SKILLS_DIR=/custom/path ./scripts/install-codex.sh

@@ -38,6 +38,11 @@ and give both explorers the artifact path/fingerprint. Each explorer writes its
 complete evidence to an artifact, returns at most 30 lines, and does not delegate.
 The numbered headings remain the required coverage checklist:
 
+After dispatch, use the shared bounded autonomous wait budget and the longest
+host-permitted timeout. Do not list, nudge, or emit “still running” chatter between
+empty returns. Persist `BACKGROUND WORK ACTIVE` only on finite budget exhaustion;
+manual `continue` is a fallback for unusually long exploration.
+
 **Explorer 1: Structure & Boundaries**
 - Find actual source roots, modules, packages, and domain boundaries
 - Find API clients and adapters

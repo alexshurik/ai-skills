@@ -53,11 +53,24 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   paths and fingerprints.
 - Durable change artifacts live under `openspec/changes/<name>/`; heavy runtime
   state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`.
-- Launch a full wave before waiting, use the longest permitted timeout, drain ready
-  completions before waiting again, and avoid routine status polling/progress chat.
+- Planning separates required work, explicit non-goals, and individually approved
+  Scope Delta IDs. Review keeps severity separate from `required_fix`,
+  `user_decision`, `backlog`, and `baseline`; remediation receives only an approved
+  finding-ID allowlist.
+- Optional/rejected proposals stage in change-local `DEFERRED.md`. Promote only
+  user-selected items to the repository tracker or `openspec/backlog/` fallback.
+- Full review uses a deterministic lossless review map. Structure/coverage reads all
+  human-authored changed text in full and emits a validated neutral ledger; the
+  other six independent lenses use it only to navigate and verify targeted raw code.
+- Launch a full wave before waiting and prefer one long permitted timeout. Otherwise
+  use bounded autonomous waiting: at most 15 minutes/15 empty wake-ups per wave and
+  30 idle wake-ups per workflow. Never list, nudge, or chatter between empty returns.
+  Checkpoint `BACKGROUND WORK ACTIVE` only on budget exhaustion; unbounded polling
+  is never authorized. Drain ready completions before launching new work.
 
-Canonical policy: `workflow/agents/shared/orchestration-policy.md` and
-`workflow/agents/shared/handoff-protocol.md`.
+Canonical policies: `workflow/agents/shared/orchestration-policy.md`,
+`workflow/agents/shared/handoff-protocol.md`, and
+`workflow/agents/shared/scope-governance.md`.
 
 ORCHESTRATION
 

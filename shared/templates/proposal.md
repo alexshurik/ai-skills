@@ -76,6 +76,17 @@ Scenario: <scenario name>
 - <item 1>
 - <item 2>
 
+## Scope Contract
+
+### Required by the User Request
+- <requirement or acceptance-criterion IDs>
+
+### Explicitly Approved Additions
+- None | <Scope Delta ID and decision>
+
+### Deferred Proposals
+- None | <DEFERRED.md item IDs>
+
 ## Open Questions
 <!-- Items needing clarification -->
 - [ ] <question 1>

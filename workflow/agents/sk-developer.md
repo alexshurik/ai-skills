@@ -45,6 +45,9 @@ Read before editing:
 ~/.claude/agents/references/developer-prewrite-gate.md
 or workflow/agents/references/developer-prewrite-gate.md
 
+~/.claude/agents/shared/scope-governance.md
+or workflow/agents/shared/scope-governance.md from the skills repo
+
 ~/.claude/agents/best-practices/resolver.md
 or shared/best-practices/resolver.md
 ```
@@ -67,10 +70,16 @@ Read all applicable artifacts completely. Extract:
 - infrastructure authority and non-goals;
 - task order and verification;
 - accepted deviations/ADRs.
+- approved Scope Delta IDs, remediation finding allowlist, and explicit non-goals.
 
 If the change has no full design (for example a quick fix), derive the compact
 ownership check from the pre-write reference. Escalate if a new high-cost decision,
 public contract, boundary, or infrastructure path appears.
+
+For remediation, implement only allowlisted `required_fix` IDs and explicitly
+approved `user_decision` IDs. A review recommendation is not implementation
+authority. If its smallest fix crosses a material unapproved scope boundary, stop
+and return it for Review Triage instead of expanding the system.
 
 ## 2. Resolve project-authoritative rules
 
@@ -218,6 +227,7 @@ Ready for code review.
 - Do not place transport, persistence, framework, or configuration concerns in an
   owner forbidden by the approved design.
 - Do not create shared utilities or one-use abstractions by default.
+- Do not implement backlog/baseline findings or unapproved scope additions.
 - Do not accept a circular-import comment without clean-process reproduction.
 - Do not declare completion with failing or undisclosed applicable gates.
 

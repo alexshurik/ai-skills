@@ -37,6 +37,9 @@ Persist the full matrix and evidence in `DOC_REVIEW.md`. Return only a compact
 decision handoff (verdict, artifact path, blocking gaps, clarifications, next step),
 no more than 50 lines / 2500 tokens. Do not reproduce the matrix or raw logs.
 Do not delegate unless the task envelope explicitly grants depth-2 orchestration.
+Apply installed `~/.claude/agents/shared/scope-governance.md` or its source
+equivalent: an orphan design/task is a scope-delta signal,
+not authority to invent a missing product requirement or implementation task.
 </interaction_protocol>
 <!--
 // jscpd:ignore-end
@@ -50,6 +53,8 @@ Every requirement must trace to a design decision and at least one task:
 - Requirements without design coverage = gap
 - Tasks without requirements = scope creep risk
 - Design decisions without requirements = over-engineering
+- Approved Scope Delta IDs may also authorize design/tasks; unapproved additions
+  must be removed or staged in `DEFERRED.md`
 - Build the full traceability chain before anything else
 
 ## Surface Hidden Assumptions

@@ -27,8 +27,13 @@ long conversation through four role invocations.
 Read before starting:
 
 ```text
+~/.claude/agents/shared/orchestration-policy.md
+~/.claude/agents/shared/handoff-protocol.md
+~/.claude/agents/shared/scope-governance.md
+or, from the skills repository:
 workflow/agents/shared/orchestration-policy.md
 workflow/agents/shared/handoff-protocol.md
+workflow/agents/shared/scope-governance.md
 ```
 
 Installed adapters may expose the same files under their agent reference roots.
@@ -52,6 +57,10 @@ Escalate to `sk-team-feature` before editing if discovery reveals any of:
 - requirements that need product decisions;
 - architecture alternatives with materially different cost or risk.
 
+Also escalate when the proposed fix needs a material Scope Delta from the shared
+policy. Do not hide a queue, storage system, expanded threat model, or broad refactor
+inside quick-mode approval.
+
 ## Durable and runtime state
 
 Choose `<fix-name>` in kebab-case and create:
@@ -63,6 +72,7 @@ openspec/changes/<fix-name>/
   REVIEW.md
   VERIFICATION.md
   SUMMARY.md
+  DEFERRED.md      # only when proposals are staged/deferred/rejected/promoted
 ```
 
 Resolve the git-local runtime directory with:
@@ -93,7 +103,9 @@ Stage A — read-only diagnosis:
 1. Reproduce or otherwise prove the problem.
 2. Run the compact pre-write ownership/structure gate.
 3. Write design.md: problem, root cause, intended behavior, exact file ownership,
-   fix approach, risks, and verification plan. Keep it concise.
+   fix approach, risks, verification plan, required scope, and explicit non-goals.
+   State `Scope Delta: None`; if not none, return the item for user decision and
+   escalation instead of editing.
 4. Return BLOCKED with a compact approval checkpoint and the design.md path.
 
 Stage B — only after the caller sends the user's approval as one short follow-up:
@@ -140,6 +152,10 @@ Review all seven logical dimensions and mark each PASS, FINDINGS, or NOT APPLICA
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.
 
+Classify every finding with severity plus `required_fix | user_decision | backlog |
+baseline`. Keep stack detection strict: report whole-function/profile concerns, but
+unchanged debt does not become mandatory remediation.
+
 Write:
 - REVIEW.md with dimension-by-dimension evidence and findings;
 - VERIFICATION.md with ACCEPTED or NEEDS WORK and behavior evidence;
@@ -156,10 +172,17 @@ escalate to the full workflow and its seven independent clean reviewers.
 
 ## Remediation and finality
 
-An initial `NEEDS WORK` verdict may start one clean remediation thread from the
-approved design, findings artifact, and review fingerprint. After remediation,
-start a fresh Thread 2 against a new snapshot. Targeted diagnostics may help locate
-a problem, but cannot issue final approval.
+Before remediation, show mandatory fixes, scope additions requiring a decision, and
+deferred/backlog candidates. An initial `NEEDS WORK` verdict may start one clean
+remediation thread only after every `user_decision` is included, deferred, or
+rejected. Pass the approved design, review fingerprint, and an explicit
+allowlist containing only `required_fix` plus user-approved IDs. Never pass “fix all
+findings”. After remediation, start a fresh Thread 2 against a new snapshot. Targeted
+diagnostics may help locate a problem, but cannot issue final approval.
+
+New non-critical findings in the final review go to `DEFERRED.md`; they cannot open
+another quick remediation loop. Remediation regressions, proven critical defects,
+and approved-behavior failures still block.
 
 Quick mode permits at most one remediation cycle. If the fresh final review still
 finds material issues, stop and offer escalation to `sk-team-feature`; do not retry
@@ -171,13 +194,22 @@ archive with a recoverable move to `openspec/completed/<fix-name>/` when request
 by the workflow/user. Never replace the user's current request or existing unrelated
 artifact.
 
+Before archive, resolve every `DEFERRED.md` candidate. Promote only user-selected
+items to the repository's tracker or `openspec/backlog/<slug>.md`; preserve rejected/
+deferred decisions in the archived change and do not implement them automatically.
+
 ## Communication and waiting
 
 - Launch all independent work available in the current wave before waiting.
 - Use the longest wait timeout allowed by the active host and communication policy.
-- Do not poll `list_agents` after every wait; use it only for reconciliation.
-- Drain all available completion messages before waiting again.
+- Use **bounded autonomous waiting** with the shared persisted budget. Continue
+  automatically while the finite 15-minute/15-empty-wakeup wave budget and
+  30-idle-wakeup workflow budget remain.
+- Do not call `list_agents` after an empty wait; use it only for reconciliation.
+- Drain all available completion messages before launching or waiting again.
 - Do not emit child progress chatter or repeat spawn attempts while slots are full.
+- Autonomous approval authorizes the finite budget, never unbounded polling. On
+  exhaustion, persist `BACKGROUND WORK ACTIVE`; `continue` resumes aggregation.
 - The mailbox carries compact status and decisions; the filesystem carries full
   reports, evidence, diffs, and logs.
 

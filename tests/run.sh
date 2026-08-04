@@ -2,6 +2,8 @@
 
 set -e
 
+export PYTHONDONTWRITEBYTECODE=1
+
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 "$REPO_DIR/scripts/validate-skills.sh"
@@ -11,8 +13,10 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 python3 "$REPO_DIR/tests/test-doc-contracts.py"
 python3 "$REPO_DIR/tests/test-rendered-platform-contracts.py"
 python3 "$REPO_DIR/tests/test-context-cost-contracts.py"
+python3 "$REPO_DIR/tests/test-scope-governance-contracts.py"
 "$REPO_DIR/tests/test-copy-context.sh"
 "$REPO_DIR/tests/test-collect-change-evidence.sh"
+python3 "$REPO_DIR/tests/test-review-map.py"
 bash "$REPO_DIR/tests/test-static-analysis-artifacts.sh"
 python3 "$REPO_DIR/tests/test-evidence-path-safety.py"
 python3 "$REPO_DIR/tests/test-evidence-git-bounds.py"

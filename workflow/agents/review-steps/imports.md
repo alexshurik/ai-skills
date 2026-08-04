@@ -13,13 +13,30 @@ do not require their contents to be copied into the prompt. Write the complete
 result to the assigned lens artifact. Return only status, artifact path, and at
 most five top findings (max 30 lines).
 
+Read `~/.claude/agents/shared/scope-governance.md` or the source-repository
+equivalent. Report import evidence strictly;
+classify pre-existing or optional cleanup separately from change-required fixes.
+
+Read the assigned lens scope manifest first. It must enumerate every local/dynamic
+import candidate, dependency manifest/graph, and modules needed for reproduction.
+Inspect those entries completely and validate metadata-only/excluded reasons;
+unexplained candidate or graph gaps make the result UNVERIFIED.
+
+Use the deterministic review map and neutral coverage ledger only for navigation;
+the ledger is not evidence for a verdict. Verify assigned raw current/base content
+independently. Query only assigned full/targeted entries rather than loading both
+whole artifacts into context. For `targeted-content`, inspect changed intervals, the complete
+enclosing declaration, relevant base context, and import graph neighbors; expand an
+import/cycle lead to full content.
+
 Review import placement and dependency-cycle claims independently from style and
 general architecture.
 
 ## Inputs
 
-- complete changed/untracked file scope;
-- repository paths for full files and base evidence;
+- deterministic review map, neutral coverage ledger, and complete lens scope
+  manifest accounting for changed/untracked paths;
+- repository paths for import candidates, graph/reproduction context, and base evidence;
 - change-evidence artifact path/fingerprint with local/dynamic import candidates;
 - project import rules and approved design.
 
@@ -54,11 +71,16 @@ explicit and tested where failure would be material.
 
 ```yaml
 findings:
-  - file: path/to/file
+  - id: IMP-001
+    file: path/to/file
     line: 55
     finding: "Local import is justified by an unreproduced cycle claim"
     severity: MAJOR
-    classification: change-caused
+    change_class: change-caused
+    disposition: required_fix
+    scope_basis: approved_design
+    risk_if_deferred: "The change retains an unverified runtime import workaround"
+    blocks_release: true
     recommendation: "Move it to module scope or provide clean-process reproduction and an import regression test"
     evidence: "Both relevant import orders completed successfully"
 ```

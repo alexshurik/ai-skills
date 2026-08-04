@@ -67,3 +67,5 @@ The caller:
 4. records explicit approval and artifact fingerprints in workflow state;
 5. never auto-proceeds through an approval gate;
 6. starts a clean child for a new phase, redo, remediation, or review cycle.
+7. passes remediation an allowlist of approved finding IDs, never a generic
+   instruction to fix every reviewer suggestion.

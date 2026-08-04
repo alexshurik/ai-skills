@@ -13,14 +13,31 @@ do not require their contents to be copied into the prompt. Write the complete
 result to the assigned lens artifact. Return only status, artifact path, and at
 most five top findings (max 30 lines).
 
+Read `~/.claude/agents/shared/scope-governance.md` or the source-repository
+equivalent. Review every architecture issue
+strictly, but do not treat a preferred new system, broader threat model, or optional
+operational mechanism as approved remediation scope.
+
+Read the assigned lens scope manifest first. Inspect every architecture-relevant
+`full-content`/`targeted-content` path and verify every metadata-only/excluded reason.
+An unexplained omission makes the result UNVERIFIED; generated/vendor/static files
+do not require full reading unless they own runtime behavior or boundary evidence.
+
+Use the deterministic review map and neutral coverage ledger only for navigation;
+the ledger is not evidence for a verdict. Verify assigned raw current/base content
+independently. Query only assigned full/targeted entries rather than loading both
+whole artifacts into context. For `targeted-content`, inspect changed intervals, the complete
+enclosing declaration, relevant base context, and required callers/owners; expand a
+boundary or ownership lead to full content.
+
 Review whether the implementation expresses the approved design through clear
 owners and dependency direction. Abstraction count, file structure, imports,
 security, and stack idioms belong to separate lenses.
 
 ## Inputs
 
-- snapshot manifest plus repository paths for complete changed/untracked content
-  and base evidence;
+- snapshot/review map, neutral coverage ledger, lens scope manifest, and repository
+  paths for assigned ownership/boundary content and base evidence;
 - proposal/design/tasks/ADRs when present;
 - boundary matrix, non-goals, and reuse decisions when present;
 - change-evidence artifact path and fingerprint.
@@ -147,11 +164,16 @@ coverage:
   cross_cutting_reuse: []
   boundary_shapes_and_non_goals: []
 findings:
-  - file: path/to/file
+  - id: ARCH-001
+    file: path/to/file
     line: 42
     finding: "Persistence serialization is implemented by the use-case owner"
     severity: MAJOR
-    classification: change-caused
+    change_class: change-caused
+    disposition: required_fix
+    scope_basis: approved_design
+    risk_if_deferred: "Approved owner boundary remains violated"
+    blocks_release: true
     recommendation: "Move serialized-record mechanics to the approved persistence adapter"
     evidence: "Boundary matrix assigns this concern to component X"
 ```

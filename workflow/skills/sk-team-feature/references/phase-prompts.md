@@ -14,6 +14,7 @@ Deliverable: <one bounded phase result>
 Worktree: <absolute path>
 Authority: <approved artifact/guidance paths>
 Scope: <paths and explicit non-goals>
+Scope governance: <scope-governance.md path>; approved Scope Delta IDs: <IDs/none>
 User constraints: <material choices not already persisted>
 Acceptance: <observable completion criteria>
 Output: <artifact path>
@@ -38,7 +39,8 @@ Read the repository and existing specifications first. Ask only unresolved,
 material product questions through a NEEDS USER INPUT return. Then present scope
 and understanding for confirmation. Write proposal.md only after confirmation.
 Include observable acceptance criteria, edge cases, constraints, and explicit
-non-goals. End with the standard handoff block.
+non-goals. Separate user-required behavior from suggestions that need later Scope
+Delta approval. End with the standard handoff block.
 ```
 
 ## Research — `sk-researcher` (optional)
@@ -66,8 +68,11 @@ Proposal: openspec/changes/<name>/proposal.md
 Research: <path or none>
 
 Read requirements, authority, code, project profiles, and the complete architecture
-gate reference. Resolve high-cost ambiguity through NEEDS USER INPUT. Present the
-approach for confirmation. Only then create design.md, tasks.md, and required ADRs.
+gate and scope-governance references. Resolve high-cost ambiguity through NEEDS USER
+INPUT. Present the Scope Delta Gate: required items, stable `SD-*` proposed
+additions with cost/blast radius (or `None`), and non-goals. Require an explicit
+decision for every proposed addition. Only then create design.md, tasks.md, and
+required ADRs from required plus approved work.
 The design must include boundary ownership, business vocabulary, reuse decisions,
 trust-boundary models, abstraction budget, module-growth forecast, infrastructure
 authority, and non-goals. End with the standard handoff block.
@@ -115,6 +120,10 @@ with Red→Green→Refactor. Respect boundary owners, trust-boundary models,
 non-goals, authority-classified project conventions, abstraction budget, structure
 forecast, and local-import evidence. Return exact verification and structural
 handoff evidence.
+
+For remediation, also receive an explicit finding-ID allowlist. Implement only
+`required_fix` plus user-approved addition IDs; never treat the complete review
+report as implementation authority.
 ```
 
 ## Code Review — top-level orchestrator flow
@@ -127,16 +136,26 @@ Design: openspec/changes/<name>/design.md
 Base: <feature merge-base>
 
 Execute the canonical sk-review-orchestrator flow from a shared review snapshot.
-Include committed, staged,
-unstaged, untracked, deleted, and renamed scope. Run contract/security,
+Include committed, staged, unstaged, untracked, deleted, and renamed scope. Build a
+deterministic lossless review map. Run structure/coverage first so one reviewer reads
+every human-authored text path in full and emits a validated neutral coverage ledger.
+Then build complete per-lens scope manifests with explicit
+full/targeted/metadata/excluded classification so the other six independent lenses
+verify raw relevant content without six redundant full reads. Run contract/security,
 architecture, abstraction, structure, imports, stack rules, and applicable
-instruction quality. Separate change-caused findings from baseline. Persist the
-final full verdict to openspec/changes/<name>/CODE_REVIEW.md.
+instruction quality. Separate change-caused findings from baseline and classify
+every finding through scope governance. Persist the full technical report in the
+Git-local snapshot and the compact verdict/Review Triage in
+openspec/changes/<name>/CODE_REVIEW.md.
 ```
 
-If review returns CHANGES REQUESTED, return to a clean remediation agent with the
-findings artifact path, fingerprint, required actions, and acceptance criteria. Final
-approval requires a fresh full run of all lenses applicable to the final snapshot.
+Before remediation, show mandatory fixes, scope additions requiring a decision, and
+deferred/backlog candidates. Return to a clean remediation agent with the findings
+artifact/fingerprint, acceptance criteria, explicit non-goals, approved Scope Delta
+IDs, and only the allowlisted finding IDs. Final approval requires a fresh full run
+of all lenses applicable to the final snapshot after code/normative artifacts change.
+New non-critical proposals found after initial triage go to `DEFERRED.md` rather than
+opening another remediation cycle.
 
 ## Acceptance — `sk-acceptance-reviewer`
 
@@ -157,7 +176,7 @@ CHANGES REQUESTED code review.
 ## Retrospective — orchestrator
 
 Do not dispatch a new implementation agent. Read proposal, design/tasks/ADRs,
-CODE_REVIEW.md, VERIFICATION.md, git diff/history, phase handoffs, and user redo
+CODE_REVIEW.md, VERIFICATION.md, DEFERRED.md when present, git diff/history, phase handoffs, and user redo
 feedback. Use the canonical retrospective template.
 
 Write only durable evidence:
@@ -166,6 +185,7 @@ Write only durable evidence:
 - escaped/late signals;
 - symptom → root cause → why gate missed → prevention;
 - verification gaps/baseline debt;
+- scope deltas, deferred/rejected proposals, and accidental scope expansion;
 - lesson disposition: repository guide, named existing skill, or no promotion.
 
 Project-specific lessons remain project guidance. A skill proposal requires

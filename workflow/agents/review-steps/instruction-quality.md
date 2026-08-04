@@ -13,6 +13,22 @@ do not require their contents to be copied into the prompt. Write the complete
 result to the assigned lens artifact. Return only status, artifact path, and at
 most five top findings (max 30 lines).
 
+Read `~/.claude/agents/shared/scope-governance.md` or the source-repository
+equivalent. Review the quality of approved
+instructions; do not turn aspirational prose into mandatory implementation scope.
+
+Read the assigned lens scope manifest first. Inspect every changed instruction,
+specification, ADR, profile, skill/prompt/reference, and packaging/generation path;
+validate metadata-only/excluded application paths. Unexplained instruction or
+packaging gaps make the result UNVERIFIED.
+
+Use the deterministic review map and neutral coverage ledger only for navigation;
+the ledger is not evidence for a verdict. Verify every assigned raw current/base
+instruction artifact independently. Query only assigned full/targeted entries rather
+than loading both whole artifacts into context. For `targeted-content`, inspect changed
+intervals, the complete enclosing instruction section, linked authority, and
+packaging consumers; expand a conflict or portability lead to full content.
+
 ## Applicability
 
 Run when the changed scope contains any of:
@@ -44,6 +60,12 @@ changes; it does not need to define executable agents.
 - Ensure examples do not silently become universal requirements.
 - Ensure safe/default commands are explicit when alternatives can be live, paid,
   destructive, or environment-dependent.
+- When optional or vague rollout/observability text lacks implementation authority,
+  recommend the smallest of remove, mark manual/future, or formalize after explicit
+  Scope Delta approval. Do not require telemetry, SQL, sample-size, or evidence
+  infrastructure merely to make optional prose measurable.
+- An instruction defect may require correcting the instruction. It becomes a code
+  task only when approved acceptance/design already requires that behavior.
 
 ### Progressive disclosure
 
@@ -74,11 +96,16 @@ changes; it does not need to define executable agents.
 
 ```yaml
 findings:
-  - file: path/to/instruction
+  - id: IQ-001
+    file: path/to/instruction
     line: 20
     finding: "Observed sample frequency is written as a mandatory global rule"
     severity: MAJOR
-    classification: change-caused
+    change_class: change-caused
+    disposition: required_fix
+    scope_basis: enforced_gate
+    risk_if_deferred: "Generated installs receive conflicting authority"
+    blocks_release: true
     recommendation: "Move it to evidence and require an Approved/Enforced source"
 ```
 

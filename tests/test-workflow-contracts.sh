@@ -30,6 +30,7 @@ architect = (root / "workflow/agents/sk-architect.md").read_text()
 developer = (root / "workflow/agents/sk-developer.md").read_text()
 review = (root / "workflow/agents/sk-review-orchestrator.md").read_text()
 feature = (root / "workflow/skills/sk-team-feature/SKILL.md").read_text()
+scope = (root / "workflow/agents/shared/scope-governance.md").read_text()
 authority = (root / "shared/best-practices/convention-evidence-model.md").read_text()
 architecture_lens = (root / "workflow/agents/review-steps/architecture.md").read_text()
 abstraction_lens = (root / "workflow/agents/review-steps/abstraction.md").read_text()
@@ -55,6 +56,8 @@ for phrase in ("one row per candidate", "grouped rows", "disposition"):
     assert phrase.lower() in abstraction_lens_normalized, phrase
 for phrase in ("RETROSPECTIVE.md", "named existing skill", "no promotion"):
     assert phrase.lower() in feature.lower(), phrase
+for phrase in ("Scope Delta Gate", "Review Triage Gate", "required_fix", "DEFERRED.md"):
+    assert phrase.lower() in scope.lower(), phrase
 for phrase in ("Enforced", "Approved", "Observed", "Legacy/uncertain"):
     assert phrase in authority, phrase
 
