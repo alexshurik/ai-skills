@@ -73,7 +73,14 @@ Every phase requires **explicit user approval** before proceeding to the next on
 sk-team-quick "Fix null pointer in login handler"
 ```
 
-Four phases: Architect (design note) → Developer (fix + tests) → Review Orchestrator → Acceptance Reviewer.
+The quick workflow uses two bounded threads:
+
+1. A developer diagnoses the issue, writes a short design for approval, then
+   implements and tests the approved fix.
+2. A fresh reviewer checks all seven review dimensions and verifies acceptance.
+
+It keeps the design approval and independent-review gates without running the full
+feature workflow.
 
 ## All Commands
 
@@ -204,23 +211,11 @@ scope disposition:
 | `backlog` | Useful non-critical hardening/cleanup | No |
 | `baseline` | Pre-existing and not materially worsened | No |
 
-For example, the stack lens still reports a 70+ line method. A newly introduced or
-materially worsened violation can be `required_fix`; an unchanged method touched by
-one line is baseline/backlog. Security still blocks proven auth bypass, secret
-exposure, arbitrary transaction substitution, repeat spend, and corruption, while a
-hypothetical requiring an unapproved “trusted provider is fully compromised” threat
-model becomes `user_decision` rather than automatic architecture work.
-
-Initial review always produces one Review Triage: mandatory fixes, scope additions
-requiring a decision, and deferred candidates. Remediation receives an explicit
-finding-ID allowlist, never “fix all findings”. Final review blocks remediation
-regressions and newly proven critical defects, but new non-critical hardening goes to
-`DEFERRED.md` instead of opening an endless remediation cycle.
-
-Verdicts are therefore unambiguous: `CHANGES REQUESTED` means a required fix or
-mandatory verification is missing; `TRIAGE REQUIRED` means only a material scope
-decision is unresolved; `APPROVED` means current approved scope passes even when
-non-blocking backlog/baseline observations remain visible.
+Review triage separates mandatory fixes, scope decisions, deferred work, and
+pre-existing debt. Remediation receives an approved finding-ID allowlist rather
+than a broad “fix everything” instruction. `CHANGES REQUESTED` means required work
+or verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
+`APPROVED` means the approved scope passes.
 
 ## Best-Practice Profiles & Project Conventions
 
@@ -241,19 +236,12 @@ default  →  language  →  framework  →  tooling  →  project
   a rule by itself. The extraction contract is
   `shared/best-practices/project-conventions-guide.md`.
 
-This is why agents produce code in the project's own style instead of generic defaults.
-Before editing, `sk-developer` runs a boundary/typing/reuse/abstraction/structure/import
-gate. It also runs the project's pinned formatter + linter on its own output (through
-the resolved `$RUN` prefix — `uv`/`poetry`/`pdm`/`pnpm`/`yarn`/`npx`, honoring pre-commit/CI)
-and conforms before returning. The review orchestrator consumes one deterministic
-change-evidence inventory, runs independent review lenses, separates unchanged
-baseline debt, and treats a tool that fails to execute as **UNVERIFIED**.
-The collector traverses changed paths through held no-follow directory
-descriptors and never follows a leaf or ancestor symlink. Current files and base
-blobs are each capped at 4 MiB; base size is checked with `git cat-file -s`
-before the bounded `git show`. Per-file interval diffing is skipped when either
-side exceeds that limit, and otherwise uses a 20 MiB streaming output cap.
-Machine-readable and Markdown output both expose incomplete read/interval status.
+Before editing, `sk-developer` checks boundaries, types, reuse, abstractions,
+structure, and imports, then runs the project's formatter and linter. The review
+orchestrator builds one change-evidence inventory, runs seven independent review
+lenses, separates baseline debt, and marks checks that did not execute as
+`UNVERIFIED`. Detailed evidence and safety rules live under
+`workflow/agents/references/` and `shared/review-evidence/`.
 
 ## Source of Truth and Installation Verification
 
@@ -264,34 +252,16 @@ generated targets described by `skills-manifest.yaml`.
   confinement, declared inventory, rendered reference closure, and scripts.
 - `scripts/doctor-installation.sh` finds duplicate/conflicting discovered skills.
 - `scripts/verify-installation.sh` compares an install with the manifest-rendered tree.
-- installers first render a complete platform tree in staging, reject unowned
-  leaf collisions, and atomically replace each prepared manifest-owned leaf;
-- the versioned installation receipt records a stable suite identity, exact
-  platform/manifest version, owned paths, hashes, and symlink targets. A
-  symlinked, malformed, foreign, or incompatible receipt is never treated as
-  ownership authority, and receipt input is capped at 4 MiB; unrelated files
-  inside shared target directories are preserved;
-- installers include complete skill resources such as `references/`, `scripts/`,
-  and `agents/openai.yaml`.
-- `scripts/migrate-legacy-codex.sh` moves named manifest-owned legacy skills and
-  exact rendered resource leaves to a recoverable backup without touching
-  `.system` or unrelated siblings. The backup root must not already exist and
-  must be on the legacy tree's filesystem; migration uses no-follow directory
-  descriptors, refuses source/backup symlinks, and rolls earlier moves back on
-  failure instead of using a cross-filesystem copy fallback. Exact resource
-  leaves must be regular files or symlinks; named legacy skills must be real
-  directories containing a real regular `SKILL.md`.
+- Installers stage a complete platform tree, reject unowned collisions, preserve
+  unrelated files, and record manifest-owned paths in a versioned receipt.
+- Installed skills include their `references/`, `scripts/`, and
+  `agents/openai.yaml` resources.
+- `scripts/migrate-legacy-codex.sh` moves legacy manifest-owned entries to a
+  recoverable backup without touching `.system` or unrelated siblings.
 - `scripts/uninstall.sh` preflights all standard platform targets before removing
-  any receipt-owned file and safely skips platforms that are not installed.
-  Every target is paired with an explicit expected platform; platform is never
-  inferred from a filesystem path.
+  receipt-owned files and skips platforms that are not installed.
 
-Receipts created before the stable suite/schema fields existed are intentionally
-not auto-upgraded: inspect that installation and remove it with its matching
-older checkout before installing this version. This prevents an untyped file
-from becoming deletion authority merely because it has the receipt filename.
-
-## Agent Clarification (Handoff Protocol)
+## Orchestration and Handoff
 
 Subagents have no direct user channel. They send compact `FINAL`/`BLOCKED` results
 through the host mailbox to their immediate parent; complete reports, evidence,
@@ -302,17 +272,10 @@ same-thread clarification is allowed; a new phase, redo, or remediation gets a
 clean child. The canonical specs are
 `workflow/agents/shared/{orchestration-policy,handoff-protocol,scope-governance}.md`.
 
-Full reviews build a deterministic lossless review map. The structure/coverage
-reviewer is the one full-scope reader for every human-authored text path and emits a
-validated neutral coverage ledger. The other six independent lenses use that ledger
-only for navigation and verify their relevant raw source at targeted/full depth.
-This preserves complete path coverage without seven redundant full-scope reads.
-
-Idle waiting is automatic but finite: prefer one long host-supported wait; otherwise
-allow at most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups per workflow.
-No status listing, nudges, or progress chatter occurs between empty returns. Only
-budget exhaustion produces `BACKGROUND WORK ACTIVE`; after the UI shows Done,
-`continue` resumes aggregation. Unbounded polling is never implicit.
+Full reviews use one lossless review map. The structure lens covers every changed
+human-authored text file; the other six lenses use the map to inspect relevant raw
+source without repeating the same full-tree read. Background waiting is bounded
+and resumable rather than open-ended.
 
 ## Directory Structure
 

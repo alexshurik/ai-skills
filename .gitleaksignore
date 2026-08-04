@@ -1,0 +1,4 @@
+# False positive from an intentionally insecure Dockerfile example that was
+# replaced in the current tree. Keep the historical fingerprint allowlisted so
+# full-history scans remain useful without rewriting published Git history.
+e6ad19c2177e06f8e7dd107a65b2cc591034635e:shared/best-practices/tooling/docker/coder.md:generic-api-key:129

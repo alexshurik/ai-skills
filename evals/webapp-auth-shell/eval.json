@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
+  "suite": "webapp-auth-shell",
   "historical_fixture": {
-    "source_repo_env": "DELI_CHECK_BACKEND_REPO",
     "base": "ee6100b",
     "head": "5aa47ea",
     "builder": "build-historical-fixture.sh"
@@ -20,6 +20,16 @@
     "cases/codestyle-frequency-trap",
     "cases/review-scope-baseline",
     "cases/retrospective-routing"
+  ],
+  "harness_runs": [
+    {"id": "architect", "fixture": "architect", "prompt": "architect"},
+    {"id": "developer", "fixture": "developer", "prompt": "developer"},
+    {"id": "codestyle", "fixture": "codestyle", "prompt": "codestyle"},
+    {"id": "review", "fixture": "review", "prompt": "review"},
+    {"id": "retrospective", "fixture": "retrospective", "prompt": "retrospective"},
+    {"id": "local-import", "fixture": "local-import", "prompt": "review"},
+    {"id": "deployment", "fixture": "deployment", "prompt": "review"},
+    {"id": "review-scope", "fixture": "review-scope", "prompt": "review"}
   ],
   "required_assertions": [
     "custom cross-cutting limiter logic in a transport/API owner is reported",

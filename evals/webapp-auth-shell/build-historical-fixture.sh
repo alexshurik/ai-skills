@@ -1,21 +1,29 @@
 #!/bin/bash
 # Rebuild the historical auth change as an uncommitted diff in an isolated repo.
 
-set -e
+set -euo pipefail
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <source-backend-repo> <empty-output-dir>" >&2
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <source-backend-repo> <empty-output-dir> <base-commit> <head-commit>" >&2
     exit 2
 fi
 
 SOURCE_REPO="$1"
 OUTPUT_DIR="$2"
-BASE_COMMIT="ee6100b"
-HEAD_COMMIT="5aa47ea"
+BASE_COMMIT="$3"
+HEAD_COMMIT="$4"
 
+if ! git -C "$SOURCE_REPO" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Historical fixture source is not a Git repository: $SOURCE_REPO" >&2
+    exit 2
+fi
 git -C "$SOURCE_REPO" cat-file -e "$BASE_COMMIT^{commit}"
 git -C "$SOURCE_REPO" cat-file -e "$HEAD_COMMIT^{commit}"
 
+if [ -e "$OUTPUT_DIR" ] && [ ! -d "$OUTPUT_DIR" ]; then
+    echo "Output path is not a directory: $OUTPUT_DIR" >&2
+    exit 2
+fi
 if [ -e "$OUTPUT_DIR" ] && [ -n "$(find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
     echo "Output directory must be empty: $OUTPUT_DIR" >&2
     exit 2

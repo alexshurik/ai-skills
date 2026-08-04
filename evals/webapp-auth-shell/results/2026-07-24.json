@@ -1,6 +1,23 @@
 {
-  "version": 1,
+  "version": 2,
+  "suite": "webapp-auth-shell",
   "date": "2026-07-24",
+  "provenance": {
+    "semantic_evaluator": "manual",
+    "reproducible": false,
+    "model": null,
+    "codex_cli": null,
+    "skills_source": {
+      "description": "working tree before commit 4d265cd",
+      "commit": null,
+      "dirty": true
+    },
+    "limitations": [
+      "the model and Codex CLI version were not recorded",
+      "the evaluated skills source was an uncommitted working tree",
+      "assertion outcomes were assigned by manual semantic review"
+    ]
+  },
   "fixture": {
     "base": "ee6100b",
     "head": "5aa47ea"

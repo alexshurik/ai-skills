@@ -126,7 +126,7 @@ Never bake secrets into the image. Anything in a layer or `ENV` is recoverable b
 RUN echo "$NPM_TOKEN" > .npmrc && npm ci && rm .npmrc
 
 # Bad — readable via `docker inspect`
-ENV API_KEY=sk-live-abc123
+ENV API_KEY=example-value
 
 # Good — BuildKit secret mount; never written to a layer
 RUN --mount=type=secret,id=npmtoken \
