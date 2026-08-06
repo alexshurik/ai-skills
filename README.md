@@ -163,7 +163,7 @@ runtime data under `<runtime-root>/<feature-name>/`:
 
 ```text
 <runtime-root>/<feature-name>/
-├── state.json                    # phase, approvals, cycles, agent/wait counters, next action
+├── state.json                    # phase, execution/join state, approvals, cycles, next action
 ├── checkpoints/                  # compact resumable phase state
 ├── logs/                         # large test/tool output
 └── review/<snapshot>/
@@ -176,12 +176,13 @@ runtime data under `<runtime-root>/<feature-name>/`:
     └── CODE_REVIEW.md            # full technical review report
 ```
 
-`state.json` contains counters needed to enforce orchestration limits—review,
-remediation, and acceptance attempts; spawned/running/completed agents; and empty waits—
-not a duplicate transcript. Exact host tool calls already live in Codex/Claude/Kimi
-session logs. Do not create parallel `SCOPE.md`, `TRIAGE.md`, `AGENT_CALLS.md`, or
-`review-summary.md`: scope belongs in proposal/design, triage in the durable review,
-and counters in runtime state.
+`state.json` contains counters for review, remediation, and acceptance attempts plus
+spawned/running/completed agents, `execution_status` (`foreground_join` or
+`background_detached` while children run), the foreground join set, any detach
+reason, and the next action—not a duplicate transcript. Exact host tool calls already
+live in Codex/Claude/Kimi session logs. Do not create parallel `SCOPE.md`, `TRIAGE.md`,
+`AGENT_CALLS.md`, or `review-summary.md`: scope belongs in proposal/design, triage in
+the durable review, and orchestration state in runtime state.
 
 Structure is inspired by [OpenSpec](https://openspec.dev/). No additional tools are
 required; directories are created automatically.
@@ -274,8 +275,9 @@ clean child. The canonical specs are
 
 Full reviews use one lossless review map. The structure lens covers every changed
 human-authored text file; the other six lenses use the map to inspect relevant raw
-source without repeating the same full-tree read. Background waiting is bounded
-and resumable rather than open-ended.
+source without repeating the same full-tree read. Required results stay in an
+event-driven foreground join. Detached background state is resumable but is used
+only when requested or forced by host/wait limitations.
 
 ## Directory Structure
 

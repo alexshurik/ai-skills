@@ -39,13 +39,19 @@ Validate its recorded worktree, base, artifact paths, and fingerprints. A valid
 ledger is authoritative for phase approvals, retry budgets, and next action; file
 presence alone is not proof of approval.
 
-Report review/remediation/acceptance counts, spawned/running/completed IDs, and
-empty-wait counters from the ledger. These are resumable orchestration state, not a
-second transcript or a quality verdict.
+Report review/remediation/acceptance counts, spawned/running/completed IDs,
+`execution_status`, the foreground join set, and any `detach_reason` from the ledger.
+These are resumable orchestration state, not a second transcript or a quality verdict.
 
-If state is `BACKGROUND WORK ACTIVE`, report the running IDs, wave, snapshot, and
-artifact paths. Do not wait or poll from a status request; tell the user whether the
-UI shows Active/Done and that `continue` resumes mailbox aggregation.
+If `execution_status` is `background_detached`, report the running IDs, wave,
+snapshot, artifact paths, detach reason, and exact aggregation action. Do not wait or
+poll from a status request. Treat UI status and notifications as observability, not
+proof that the parent has aggregated the mailbox result.
+
+If `execution_status` is `foreground_join`, report the outstanding join IDs and real
+workflow phase without converting the status request into a detach. For a legacy
+ledger with `phase: background_work_active` or empty-wait counters, report that it
+requires normalization under the shared policy before aggregation can continue.
 
 ```bash
 # List all change directories
@@ -110,7 +116,7 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] RETROSPECTIVE.md - Pending
 - **Next Action**: Invoke sk-tester for TDD red phase
 - **State ledger**: `<git-local-path>/state.json` (valid | stale | missing)
-- **Workflow counters**: review/remediation/acceptance; agents and empty waits
+- **Workflow state**: review/remediation/acceptance counts; agents, join, detach reason
 - **Deferred candidates**: none | <IDs requiring triage>
 - **Snapshot/fingerprints**: <current durable artifact fingerprints>
 - **Resume**: invoke `sk-team-feature` using the current host's skill syntax

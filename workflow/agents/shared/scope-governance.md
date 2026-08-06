@@ -170,7 +170,8 @@ Resolve the root using `git rev-parse --git-path sk-workflow` and store under
 `<runtime-root>/<name>/`:
 
 - `state.json`: phase, approvals/fingerprints, review/remediation/acceptance counts,
-  spawned/running/completed IDs, empty-wait budgets, blockers, and next action;
+  spawned/running/completed IDs, `execution_status`, foreground join set, any
+  `detach_reason`, blockers, and next action;
 - checkpoints and large test/static-analysis logs;
 - `review/<snapshot>/change-evidence.json`, `review-map.json`,
   `coverage-ledger.json`, scope manifests, full lens reports, provenance, and the

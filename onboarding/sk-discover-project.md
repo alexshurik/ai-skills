@@ -50,10 +50,11 @@ rediscovering or receiving the same file contents in three prompts.
 
 The numbered headings remain the required logical coverage checklist:
 
-After dispatch, use the shared bounded autonomous wait budget and the longest
-host-permitted timeout. Do not list, nudge, or emit “still running” chatter between
-empty returns. Persist `BACKGROUND WORK ACTIVE` only on finite budget exhaustion;
-manual `continue` is a fallback for unusually long exploration.
+After dispatch, apply the shared foreground-join policy and use the longest
+host-permitted event-driven wait. Re-enter it after transport-only timeouts without
+creating workflow counters. Do not list, nudge, or emit “still running” chatter
+between returns. Detach only for a shared-policy reason and persist `detach_reason`;
+notifications never substitute for result aggregation.
 
 ---
 

@@ -1,17 +1,10 @@
 ---
 name: sk-team-quick
-version: 1.3.0
 description: Quick workflow for bugfixes, typos, and small changes
 license: MIT
 
 # Claude Code
 allowed-tools: Task, Read, Write, Edit, Glob, Grep, Bash
-
-# Cross-platform hints
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
 ---
 
 # sk-team-quick - Quick Fix Workflow
@@ -201,15 +194,14 @@ deferred decisions in the archived change and do not implement them automaticall
 ## Communication and waiting
 
 - Launch all independent work available in the current wave before waiting.
-- Use the longest wait timeout allowed by the active host and communication policy.
-- Use **bounded autonomous waiting** with the shared persisted budget. Continue
-  automatically while the finite 15-minute/15-empty-wakeup wave budget and
-  30-idle-wakeup workflow budget remain.
-- Do not call `list_agents` after an empty wait; use it only for reconciliation.
+- Follow the shared foreground-join policy for every required child. Use the longest
+  host-permitted event-driven wait and re-enter it after transport-only timeouts.
+- Do not convert empty wake-ups into retry, phase, or workflow-budget counters.
+- Detach only for a shared-policy reason and persist `execution_status`, the join set,
+  and `detach_reason`; never rely on a notification to resume aggregation.
+- Do not call `list_agents` after a routine timeout; use it only for reconciliation.
 - Drain all available completion messages before launching or waiting again.
 - Do not emit child progress chatter or repeat spawn attempts while slots are full.
-- Autonomous approval authorizes the finite budget, never unbounded polling. On
-  exhaustion, persist `BACKGROUND WORK ACTIVE`; `continue` resumes aggregation.
 - The mailbox carries compact status and decisions; the filesystem carries full
   reports, evidence, diffs, and logs.
 

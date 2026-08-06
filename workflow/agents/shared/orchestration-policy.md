@@ -95,44 +95,61 @@ root
 - Every runtime artifact has a content fingerprint. Parent summaries name the exact
   artifact path and fingerprint they used.
 - `state.json` stores resumable phase/approval fingerprints, review/remediation/acceptance
-  counts, spawned/running/completed IDs, wait counters, blockers, and
-  next action. It is not a raw transcript or a duplicate host tool-call log.
+  counts, spawned/running/completed IDs, `execution_status`, the current foreground
+  `join` set, any `detach_reason`, blockers, and next action. It is not a raw
+  transcript or a duplicate host tool-call log.
 
-## Wave and wait policy
+## Wave and join policy
 
 1. Resolve the available concurrency budget once.
 2. Fill every available slot from the pending wave before waiting.
 3. Maintain explicit `pending`, `running`, `done`, and `blocked` sets.
-4. Call `wait_agent` with the **longest timeout** allowed by the active host and
-   communication policy. Never hard-code a 30-second polling loop.
-5. Use **bounded autonomous waiting** by default. Before dispatch, persist a wait
-   budget in workflow state: at most 15 minutes and 15 empty wake-ups for one wave,
-   with at most 30 total idle wake-ups for the complete workflow. A host-supported
-   single long wait is preferred over multiple short waits. A stricter host/user
-   limit wins.
-6. An empty wake-up increments both counters. Continue waiting automatically only
-   while both budgets remain. Do not emit empty-wait commentary or use another tool
-   merely to announce that children are still running.
-7. After a wake-up with updates, process every available mailbox result, fill newly
-   freed slots, and continue the wave within the remaining persisted budget.
-8. Do not call `list_agents` after routine timeouts. Use it only for inconsistent
-   state, cancellation, or a suspected missing completion.
+4. When the host exposes an event-driven mailbox wait such as Codex `wait_agent`,
+   keep every required child in a **foreground join** with the active parent turn.
+   Before waiting, set `execution_status` to `foreground_join`, persist the required
+   agent IDs in `join`, and clear `detach_reason`.
+   Call the primitive with the **longest timeout** allowed by the active host,
+   higher-priority instructions, and communication policy. Never hard-code a short
+   polling loop or a universal maximum timeout.
+5. If the wait returns only because of a transport timeout, re-enter the foreground
+   join. A transport timeout is not a workflow retry, phase transition, or budget
+   event. Waiting inside one tool call adds no periodic transcript entries; only a
+   model-visible wake-up and its compact result add parent context.
+6. Do not end the parent turn while a required child is running merely because an
+   elapsed-time or empty-wakeup threshold was reached. End the join when all required
+   results arrive, the user cancels or replaces the work, or the host forces the turn
+   to end.
+7. After a wake-up with updates, process every available mailbox result and fill
+   newly freed slots before waiting again. If user input steers the active turn,
+   handle it under the host's normal steering rules and resume the join when the
+   required work remains in scope.
+8. Do not call `list_agents` after routine transport timeouts. Use it only for
+   inconsistent state, cancellation, or a suspected missing completion.
 9. On a concurrency-limit error, remember the effective capacity and wait for a slot;
    do not retry the same spawn repeatedly.
 10. Completed agents are never polled again. Periodic “still running” progress
     chatter and unsolicited `send_message` nudges are forbidden.
 
-`Autonomous`, `continue without approvals`, or `finish the workflow` authorizes this
-finite wait budget; it never authorizes **unbounded polling**. Do not reset counters
-after a timeout, completion, compaction, or new assistant turn. A user may explicitly
-raise a budget after being told that every empty timeout causes another model step.
-Prefer a host's automatic background-completion notification when it exists.
+If the host has no event-driven mailbox wait, do not invent an unbounded polling
+loop. Use a finite polling deadline only when the host, user, or higher-priority
+policy provides one. Otherwise detach with a compact checkpoint instead of spending
+repeated model steps on status checks.
 
-Skills cannot create a free event-driven barrier when the host does not expose one.
-When either budget is exhausted, persist the running IDs, wave, snapshot fingerprint,
-counter values, and next action, then return a compact `BACKGROUND WORK ACTIVE`
-handoff. Children continue in background; the UI's Done state plus `continue` resumes
-mailbox aggregation. This is a fallback for unusually long work, not the normal path.
+Detach required work only when the user explicitly requests background execution,
+the host forces the parent turn to end, a higher-priority deadline requires it, or
+the wait primitive is unavailable or repeatedly fails. Preserve the real workflow
+`phase`; set `execution_status` to `background_detached` and persist the running IDs,
+wave, snapshot fingerprint, artifact paths, `detach_reason`, and next action. Return
+a compact `BACKGROUND WORK ACTIVE` handoff that says aggregation requires a future
+turn. Product or desktop notifications are observability only: never treat them as
+a correctness mechanism or assume they will start a new parent turn.
+
+On resume, normalize legacy ledgers that used `phase: background_work_active` or
+legacy wait-budget counters. Recover the last real workflow phase from the validated
+checkpoint, preserve all agent/artifact IDs, set `execution_status` to
+`background_detached`, set `detach_reason` to `legacy_wait_budget`, and require
+mailbox aggregation before any new phase, verdict, or approval. Never treat a legacy
+UI Done state as proof of aggregation.
 
 ## Result contract
 

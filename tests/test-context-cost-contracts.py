@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep context-cost controls explicit across the workflow suite."""
+"""Keep foreground-join and context-cost controls explicit across workflows."""
 
 from __future__ import annotations
 
@@ -35,17 +35,30 @@ def main() -> None:
         "parent model",
         "final or blocked",
         "longest timeout",
-        "bounded autonomous waiting",
-        "15 empty wake-ups",
-        "30 total idle wake-ups",
+        "event-driven mailbox wait",
+        "foreground join",
+        "transport timeout is not a workflow retry",
+        "do not end the parent turn",
         "unbounded polling",
         "background work active",
+        "execution_status",
+        "foreground_join",
+        "background_detached",
+        "detach_reason",
+        "legacy_wait_budget",
+        "notifications are observability only",
         "list_agents",
         "artifact paths",
         "scope-governance.md",
         "review/remediation/acceptance counts",
     )
-    reject(policy, 'fork_turns="all" by default')
+    reject(
+        policy,
+        'fork_turns="all" by default',
+        "15 empty wake-ups",
+        "30 total idle wake-ups",
+        "automatic background-completion notification",
+    )
 
     handoff = read("workflow/agents/shared/handoff-protocol.md")
     require(handoff, "durable artifact", "compact return", "50 lines")
@@ -68,8 +81,9 @@ def main() -> None:
         "two review/remediation cycles",
         "one acceptance repair",
         "git rev-parse --git-path sk-workflow",
-        "background work active",
-        "bounded autonomous waiting",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
         "coverage ledger",
         "deterministic review map",
     )
@@ -89,7 +103,9 @@ def main() -> None:
         "coverage-ledger.json",
         "review-map.sh validate",
         "full-coverage",
-        "15 empty wake-ups",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
     )
     reject(review, "full changed files/base diffs")
 
@@ -98,9 +114,9 @@ def main() -> None:
         quick,
         "two bounded threads",
         'fork_turns="none"',
-        "bounded autonomous waiting",
-        "15-minute/15-empty-wakeup",
-        "never unbounded polling",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
     )
     reject(quick, "show the full findings list and verdict verbatim")
 
@@ -111,15 +127,17 @@ def main() -> None:
         discover,
         "at most three clean explorers",
         "common facts",
-        "bounded autonomous wait budget",
-        "background work active",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
     )
     require(
         explore,
         "at most two clean explorers",
         "common facts",
-        "bounded autonomous wait budget",
-        "background work active",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
     )
     require(onboard, "project fingerprint", "reuse")
 
@@ -129,9 +147,9 @@ def main() -> None:
         "lens scope manifest",
         "review-map.json",
         "coverage-ledger.json",
-        "bounded autonomous waiting",
-        "background work active",
-        "30 idle wake-ups",
+        "foreground-join policy",
+        "transport-only timeouts",
+        "detach_reason",
     )
 
     structure = read("workflow/agents/review-steps/structure.md")
@@ -163,10 +181,29 @@ def main() -> None:
     agents_md = read("AGENTS.md")
     require(
         agents_md,
-        "bounded autonomous waiting",
-        "15 empty wake-ups",
-        "background work active",
+        "foreground join",
+        "transport-only timeouts",
+        "notifications are observability",
     )
+
+    status = read("workflow/skills/sk-team-status/SKILL.md")
+    require(
+        status,
+        "execution_status",
+        "foreground join set",
+        "foreground_join",
+        "background_detached",
+        "phase: background_work_active",
+    )
+
+    for text in (policy, feature, review, quick, discover, explore, code_review, agents_md):
+        reject(
+            text,
+            "15 minutes/15 empty wake-ups",
+            "15-minute/15-empty-wakeup",
+            "30 idle wake-ups",
+            "empty-wait counters",
+        )
 
     evidence = read("shared/review-evidence/collect_change_evidence.py")
     require(evidence, '"--output"', "fingerprint")

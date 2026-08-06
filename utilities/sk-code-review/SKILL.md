@@ -86,11 +86,11 @@ not paste full files, base diffs, or raw tool output into prompts. For Codex, us
 parent's selected profile. Give every reviewer a complete lens scope manifest with
 full/targeted/metadata depth and reasons. No lens may spawn another agent.
 
-Use bounded autonomous waiting: prefer one long supported wait; otherwise allow at
-most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups for the workflow.
-Never list, nudge, or emit progress chatter between empty returns. If the persisted
-budget is exhausted, return `BACKGROUND WORK ACTIVE`; `continue` is only the fallback
-for unusually long work, not the normal path.
+Apply the shared foreground-join policy to every required reviewer. Prefer the
+longest host-permitted event-driven wait, re-enter it after transport-only timeouts,
+and do not turn empty wake-ups into workflow counters. Never list, nudge, or emit
+progress chatter between returns. Detach only for a shared-policy reason and persist
+the join set plus `detach_reason`; notifications do not resume aggregation.
 
 If subagent dispatch is genuinely unavailable, execute every applicable lens as a
 separate inline section from the installed `review-steps/` resources and disclose

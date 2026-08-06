@@ -76,7 +76,8 @@ or shared/templates/retrospective.md from the skills repo
 6. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
    directory, and record worktree, branch, base commit, current phase, artifact
    fingerprints, approval state, review/remediation/acceptance counters, spawned/
-   running/completed IDs, wait counters, blockers, and next action in `state.json`.
+   running/completed IDs, `execution_status`, the foreground join set, any
+   `detach_reason`, blockers, and next action in `state.json`.
 
 Do not infer permission for a different branch/path or destructive cleanup.
 
@@ -176,11 +177,11 @@ path in full, and writes a neutral coverage ledger validated against the determi
 review map. The other six lenses remain independent, use that ledger only for
 navigation, query only assigned rows, and verify targeted raw source themselves.
 
-Apply bounded autonomous waiting: prefer one long supported wait; otherwise allow at
-most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups across the workflow.
-Do not list, nudge, or emit progress chatter between empty returns. Persist
-`BACKGROUND WORK ACTIVE` only when that finite budget is exhausted; manual
-`continue` is a fallback for unusually long work.
+Apply the shared foreground-join policy to every required child. Prefer the longest
+host-permitted event-driven wait, re-enter it after transport-only timeouts, and do
+not turn empty wake-ups into workflow counters. Do not list, nudge, or emit progress
+chatter between returns. Detach only for a shared-policy reason and persist the join
+set plus `detach_reason`; notifications never substitute for mailbox aggregation.
 
 The automatic budget is **two review/remediation cycles** total. After it is
 exhausted, surface remaining findings and ask the user whether to authorize one more

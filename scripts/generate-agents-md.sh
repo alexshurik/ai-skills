@@ -62,11 +62,13 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
 - Full review uses a deterministic lossless review map. Structure/coverage reads all
   human-authored changed text in full and emits a validated neutral ledger; the
   other six independent lenses use it only to navigate and verify targeted raw code.
-- Launch a full wave before waiting and prefer one long permitted timeout. Otherwise
-  use bounded autonomous waiting: at most 15 minutes/15 empty wake-ups per wave and
-  30 idle wake-ups per workflow. Never list, nudge, or chatter between empty returns.
-  Checkpoint `BACKGROUND WORK ACTIVE` only on budget exhaustion; unbounded polling
-  is never authorized. Drain ready completions before launching new work.
+- Launch a full wave before waiting. Keep required children in a foreground join and
+  use the longest event-driven mailbox wait permitted by the host and higher-priority
+  policy. Transport-only timeouts are not workflow retries or budget events. Never
+  list, nudge, or chatter between routine returns. Detach only on explicit user
+  request, a forced host deadline, or unavailable/failing wait support; persist the
+  reason. Notifications are observability, not workflow continuation. Drain ready
+  completions before launching new work.
 
 Canonical policies: `workflow/agents/shared/orchestration-policy.md`,
 `workflow/agents/shared/handoff-protocol.md`, and

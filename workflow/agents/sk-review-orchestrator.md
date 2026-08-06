@@ -226,11 +226,12 @@ Each bounded task envelope contains only:
 - delegation budget zero: no lens may spawn.
 
 Launch all workers possible in the current wave before waiting. Apply the shared
-bounded autonomous wait budget: prefer one long host-supported wait; otherwise allow
-at most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups for the workflow.
-Do not list, nudge workers, or emit “still running” chatter between empty returns.
-Drain every completed result before filling slots. On budget exhaustion, persist
-`BACKGROUND WORK ACTIVE`; use status listing only for exceptional reconciliation.
+foreground-join policy: prefer the longest host-permitted event-driven wait and
+re-enter it after transport-only timeouts without creating workflow counters. Do not
+list, nudge workers, or emit “still running” chatter between returns. Drain every
+completed result before filling slots. Detach only for a shared-policy reason,
+persist the join set plus `detach_reason`, and use status listing only for exceptional
+reconciliation.
 
 Under a four-slot Codex tree, count the root even while it waits. A top-level
 inline orchestrator can run three lens leaves concurrently. A depth-1 orchestrator

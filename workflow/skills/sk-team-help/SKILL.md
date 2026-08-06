@@ -143,7 +143,7 @@ Heavy runtime data is not committed:
 
 ```text
 $(git rev-parse --git-path sk-workflow)/<feature-name>/
-├── state.json                    # phase, approvals, cycles, agent/wait counters
+├── state.json                    # phase, execution/join state, approvals, cycles
 ├── checkpoints/ and logs/
 └── review/<snapshot>/            # evidence, map, ledger, scopes, lenses, full report
 ```
@@ -243,12 +243,13 @@ Each agent runs in isolated context with specific tools.
   with an explicit child budget may delegate. Kimi stable children cannot nest, so
   its generated root team dispatches the seven review leaves directly.
 
-- **Efficient waiting.** Work launches in concurrency-aware waves. The orchestrator
-  prefers one long host-supported wait and otherwise uses a persisted finite budget:
-  at most 15 minutes/15 empty wake-ups per wave and 30 idle wake-ups per workflow.
-  It never lists, nudges, or chatters between empty returns. `BACKGROUND WORK ACTIVE`
-  plus manual `continue` is used only after budget exhaustion. Ready results are
-  drained before new work starts; unbounded polling is never enabled.
+- **Efficient waiting.** Work launches in concurrency-aware waves. Required children
+  stay in a foreground join using the longest host-permitted event-driven mailbox
+  wait; transport-only timeouts do not become workflow counters. The orchestrator
+  never lists, nudges, or chatters between routine returns. It detaches only when the
+  user requests background work, the host forces the turn to end, or waiting is
+  unavailable/failing, and records the reason. Notifications report activity but do
+  not resume mailbox aggregation. Ready results are drained before new work starts.
 
 ## Best Practices
 
