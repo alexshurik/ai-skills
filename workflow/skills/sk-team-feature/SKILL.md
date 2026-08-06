@@ -57,6 +57,8 @@ or workflow/agents/shared/ from the skills repo
 From that shared directory also read `scope-governance.md` before Discovery,
 Planning, Code Review, remediation, or Archive. It defines Scope Delta approval,
 finding dispositions, artifact ownership, and deferred-item lifecycle.
+Read `runtime-state-policy.md` before Setup or resume. It defines the only permitted
+writer, schema-v2 state model, semantic events, attempts, gates, and migration.
 
 For Retrospective read:
 
@@ -74,10 +76,9 @@ or shared/templates/retrospective.md from the skills repo
 4. Inspect current git status and preserve unrelated work.
 5. Create the worktree and `openspec/changes/<name>/`.
 6. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
-   directory, and record worktree, branch, base commit, current phase, artifact
-   fingerprints, approval state, review/remediation/acceptance counters, spawned/
-   running/completed IDs, `execution_status`, the foreground join set, any
-   `detach_reason`, blockers, and next action in `state.json`.
+   directory, and run the shared runtime-state helper `init` with workflow name,
+   pinned skill/policy revision, and repository worktree/branch/base identities.
+   Enter Setup as the first stage. Never hand-edit `state.json` or `events.jsonl`.
 
 Do not infer permission for a different branch/path or destructive cleanup.
 
@@ -180,8 +181,10 @@ navigation, query only assigned rows, and verify targeted raw source themselves.
 Apply the shared foreground-join policy to every required child. Prefer the longest
 host-permitted event-driven wait, re-enter it after transport-only timeouts, and do
 not turn empty wake-ups into workflow counters. Do not list, nudge, or emit progress
-chatter between returns. Detach only for a shared-policy reason and persist the join
-set plus `detach_reason`; notifications never substitute for mailbox aggregation.
+chatter between returns. Represent each child as a task attempt and record one
+foreground attempt join before waiting. Detach only for a shared-policy reason and
+record a detached attempt join plus `detach_reason`; notifications never substitute
+for mailbox aggregation.
 
 The automatic budget is **two review/remediation cycles** total. After it is
 exhausted, surface remaining findings and ask the user whether to authorize one more
@@ -251,9 +254,11 @@ At Review Triage, also accept explicit choices:
 
 Only the first two groups may enter the remediation allowlist.
 
-After explicit approval, update `state.json` with the phase, exact artifact
-fingerprints, approval record, retry counters, and next action before dispatching the
-next clean child.
+Before asking, record a stage-owned pending gate. After explicit approval, use the
+runtime-state helper to decide that gate, record exact artifact fingerprints/checks,
+complete the stage, and enter the next stage before dispatching its clean child.
+Every mutation uses the current `expected_revision` and a stable semantic
+`command_id`; never overwrite an earlier task attempt.
 
 ## Redo
 
@@ -280,10 +285,13 @@ Ask for approval again. Never silently patch an unapproved artifact and continue
 | `VERIFICATION.md` ACCEPTED | Retrospective next |
 | `RETROSPECTIVE.md` approved | Archive ready |
 
-Read Git-local workflow `state.json` first and validate recorded artifact fingerprints.
-File presence alone does not prove user approval. If Git-local state is missing or a
-fingerprint differs, recover safe facts from artifacts and ask the user to reconfirm
-only the approval that cannot be proven.
+Run the shared helper `status` and `validate` first, then validate recorded artifact
+fingerprints. `events.jsonl` is authoritative and `state.json` is its projection.
+If the projection is missing/stale, rebuild it with `repair`; if schema version 1 is
+found, run `migrate-v1` and validate before continuing. File presence alone does not
+prove user approval. If durable state is missing or a fingerprint differs, recover
+safe facts from artifacts and ask the user to reconfirm only the approval that cannot
+be proven.
 
 ## Archive
 

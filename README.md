@@ -163,7 +163,8 @@ runtime data under `<runtime-root>/<feature-name>/`:
 
 ```text
 <runtime-root>/<feature-name>/
-├── state.json                    # phase, execution/join state, approvals, cycles, next action
+├── events.jsonl                  # authoritative semantic transition history
+├── state.json                    # derived schema-v2 stage/task/attempt projection
 ├── checkpoints/                  # compact resumable phase state
 ├── logs/                         # large test/tool output
 └── review/<snapshot>/
@@ -176,13 +177,13 @@ runtime data under `<runtime-root>/<feature-name>/`:
     └── CODE_REVIEW.md            # full technical review report
 ```
 
-`state.json` contains counters for review, remediation, and acceptance attempts plus
-spawned/running/completed agents, `execution_status` (`foreground_join` or
-`background_detached` while children run), the foreground join set, any detach
-reason, and the next action—not a duplicate transcript. Exact host tool calls already
-live in Codex/Claude/Kimi session logs. Do not create parallel `SCOPE.md`, `TRIAGE.md`,
-`AGENT_CALLS.md`, or `review-summary.md`: scope belongs in proposal/design, triage in
-the durable review, and orchestration state in runtime state.
+`events.jsonl` records only semantic transitions and is authoritative. `state.json`
+is a derived projection: stages own gates/checks/tasks, tasks preserve all attempts,
+and `control` records the current foreground/detached wait, user gate, blocker, or
+terminal outcome. The shared helper is the only writer and uses revision checks,
+idempotent command IDs, durable append, and atomic projection replacement. Exact host
+tool calls already live in Codex/Claude/Kimi session logs. Do not create parallel
+`SCOPE.md`, `TRIAGE.md`, `AGENT_CALLS.md`, or `review-summary.md`.
 
 Structure is inspired by [OpenSpec](https://openspec.dev/). No additional tools are
 required; directories are created automatically.

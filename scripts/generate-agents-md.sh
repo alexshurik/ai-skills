@@ -52,7 +52,9 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   Full reports, evidence, diffs, and logs live in shared artifacts; messages carry
   paths and fingerprints.
 - Durable change artifacts live under `openspec/changes/<name>/`; heavy runtime
-  state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`.
+  state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`. The shared
+  helper is the only writer: `events.jsonl` is the semantic journal and `state.json`
+  its schema-v2 projection. Stages own gates/tasks and tasks own attempt history.
 - Planning separates required work, explicit non-goals, and individually approved
   Scope Delta IDs. Review keeps severity separate from `required_fix`,
   `user_decision`, `backlog`, and `baseline`; remediation receives only an approved
@@ -64,7 +66,8 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   other six independent lenses use it only to navigate and verify targeted raw code.
 - Launch a full wave before waiting. Keep required children in a foreground join and
   use the longest event-driven mailbox wait permitted by the host and higher-priority
-  policy. Transport-only timeouts are not workflow retries or budget events. Never
+  policy. Record one semantic foreground attempt join; transport-only timeouts are
+  not workflow retries, budget events, or runtime-state writes. Never
   list, nudge, or chatter between routine returns. Detach only on explicit user
   request, a forced host deadline, or unavailable/failing wait support; persist the
   reason. Notifications are observability, not workflow continuation. Drain ready
@@ -72,7 +75,8 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
 
 Canonical policies: `workflow/agents/shared/orchestration-policy.md`,
 `workflow/agents/shared/handoff-protocol.md`, and
-`workflow/agents/shared/scope-governance.md`.
+`workflow/agents/shared/scope-governance.md`. Runtime transitions and migration are
+defined by `workflow/agents/shared/runtime-state-policy.md`.
 
 ORCHESTRATION
 

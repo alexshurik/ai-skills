@@ -105,6 +105,24 @@ def assert_host_neutral(path: Path, label: str) -> None:
     assert match is None, f"{label}: host-specific invocation {match.group()!r} in {path}"
 
 
+def shared_runtime_root(platform: str, output: Path) -> Path:
+    if platform == "claude":
+        return output / "agents" / "shared" / "runtime-state"
+    if platform == "kimi":
+        return output / "agents" / "references" / "shared" / "runtime-state"
+    return output / "shared" / "runtime-state"
+
+
+def assert_runtime_state_resources(platform: str, output: Path) -> None:
+    runtime = shared_runtime_root(platform, output)
+    helper = runtime / "sk_state.py"
+    assert helper.is_file(), f"{platform}: missing runtime-state helper"
+    assert helper.stat().st_mode & 0o111, f"{platform}: helper is not executable"
+    for schema_name in ("state.schema.json", "event.schema.json"):
+        schema = runtime / schema_name
+        assert schema.is_file(), f"{platform}: missing {schema_name}"
+
+
 def main() -> None:
     manifest = load_manifest()
     for path in source_prompts(manifest):
@@ -120,6 +138,7 @@ def main() -> None:
             )
             for path in rendered_prompts(manifest, platform, output):
                 assert_host_neutral(path, platform)
+            assert_runtime_state_resources(platform, output)
             if platform == "kimi":
                 team_yaml = (output / "agents" / "sk-team.yaml").read_text(
                     encoding="utf-8"

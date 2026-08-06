@@ -1,14 +1,7 @@
 ---
 name: sk-team-help
-version: 1.1.0
 description: Show help and documentation for multi-agent team workflow
 license: MIT
-
-# Cross-platform hints
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
 ---
 
 # sk-team-help - Multi-Agent Team Documentation
@@ -143,10 +136,16 @@ Heavy runtime data is not committed:
 
 ```text
 $(git rev-parse --git-path sk-workflow)/<feature-name>/
-├── state.json                    # phase, execution/join state, approvals, cycles
+├── events.jsonl                  # authoritative semantic transition history
+├── state.json                    # derived schema-v2 stage/task/attempt projection
 ├── checkpoints/ and logs/
 └── review/<snapshot>/            # evidence, map, ledger, scopes, lenses, full report
 ```
+
+Only the installed shared runtime-state helper writes the journal/projection. Gates
+belong to stages, attempts belong to logical tasks, and transport-only wait timeouts
+do not produce events. `sk-team-status` validates the projection and can show every
+agent attempt without reading host transcripts.
 
 `DEFERRED.md` stages `candidate | deferred | rejected | promoted` proposals; it is
 not automatically the backlog. At archive, user-selected items go to the repository's

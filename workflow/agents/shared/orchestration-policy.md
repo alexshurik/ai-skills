@@ -5,7 +5,8 @@ conversation context from repository authority: agents receive a bounded task an
 paths to durable evidence, not a copy of the caller's transcript.
 
 Use `scope-governance.md` for Scope Delta approval, finding/remediation authority,
-OpenSpec documents, and deferred-item lifecycle.
+OpenSpec documents, and deferred-item lifecycle. Use `runtime-state-policy.md` for
+the semantic event journal, materialized state, transitions, and migration.
 
 ## Core invariants
 
@@ -14,7 +15,8 @@ OpenSpec documents, and deferred-item lifecycle.
 2. A new phase, redo, remediation, subsystem, or review cycle starts a clean thread.
 3. Full evidence lives in durable artifacts or Git-local runtime artifacts. Agent
    messages carry compact decisions and artifact paths.
-4. The root owns the global spawn, retry, and concurrency budget.
+4. The root owns the global spawn, retry, concurrency budget, and runtime-state
+   writes. Children never edit the workflow journal or projection.
 5. Nesting is limited to **depth 2**. A child may spawn helpers only when its task
    envelope grants a named subgraph and exact child count. Depth 3+ is prohibited.
 6. A leaf agent may not spawn. Review lenses are always leaves.
@@ -94,10 +96,12 @@ root
   outside the reviewed Git diff.
 - Every runtime artifact has a content fingerprint. Parent summaries name the exact
   artifact path and fingerprint they used.
-- `state.json` stores resumable phase/approval fingerprints, review/remediation/acceptance
-  counts, spawned/running/completed IDs, `execution_status`, the current foreground
-  `join` set, any `detach_reason`, blockers, and next action. It is not a raw
-  transcript or a duplicate host tool-call log.
+- `events.jsonl` is the authoritative append-only history of semantic workflow
+  transitions. `state.json` is its derived compact projection. The root mutates both
+  only through `runtime-state/sk_state.py` under `runtime-state-policy.md`.
+- Stages own their gates, checks, and tasks; tasks own immutable attempt history.
+  `control` records `ready`, `waiting_agents`, `waiting_user`, `blocked`, or
+  `complete`. Neither file is a raw transcript or duplicate host tool-call log.
 
 ## Wave and join policy
 
@@ -106,15 +110,16 @@ root
 3. Maintain explicit `pending`, `running`, `done`, and `blocked` sets.
 4. When the host exposes an event-driven mailbox wait such as Codex `wait_agent`,
    keep every required child in a **foreground join** with the active parent turn.
-   Before waiting, set `execution_status` to `foreground_join`, persist the required
-   agent IDs in `join`, and clear `detach_reason`.
+   After successful dispatch, create the logical tasks/attempts and record one
+   `wait-agents --join foreground` transition containing the required attempt IDs.
    Call the primitive with the **longest timeout** allowed by the active host,
    higher-priority instructions, and communication policy. Never hard-code a short
    polling loop or a universal maximum timeout.
 5. If the wait returns only because of a transport timeout, re-enter the foreground
-   join. A transport timeout is not a workflow retry, phase transition, or budget
-   event. Waiting inside one tool call adds no periodic transcript entries; only a
-   model-visible wake-up and its compact result add parent context.
+   join without writing runtime state. A transport timeout is not a workflow retry,
+   phase transition, budget, or semantic event. Waiting inside one tool call adds no
+   periodic transcript entries; only a model-visible wake-up and its compact result
+   add parent context.
 6. Do not end the parent turn while a required child is running merely because an
    elapsed-time or empty-wakeup threshold was reached. End the join when all required
    results arrive, the user cancels or replaces the work, or the host forces the turn
@@ -138,18 +143,18 @@ repeated model steps on status checks.
 Detach required work only when the user explicitly requests background execution,
 the host forces the parent turn to end, a higher-priority deadline requires it, or
 the wait primitive is unavailable or repeatedly fails. Preserve the real workflow
-`phase`; set `execution_status` to `background_detached` and persist the running IDs,
-wave, snapshot fingerprint, artifact paths, `detach_reason`, and next action. Return
-a compact `BACKGROUND WORK ACTIVE` handoff that says aggregation requires a future
-turn. Product or desktop notifications are observability only: never treat them as
-a correctness mechanism or assume they will start a new parent turn.
+stage; record `wait-agents --join detached` with the active attempt IDs and an
+allowed `detach_reason`. Return a compact `BACKGROUND WORK ACTIVE` handoff that says
+aggregation requires a future turn. Product or desktop notifications are
+observability only: never treat them as a correctness mechanism or assume they will
+start a new parent turn.
 
-On resume, normalize legacy ledgers that used `phase: background_work_active` or
-legacy wait-budget counters. Recover the last real workflow phase from the validated
-checkpoint, preserve all agent/artifact IDs, set `execution_status` to
-`background_detached`, set `detach_reason` to `legacy_wait_budget`, and require
-mailbox aggregation before any new phase, verdict, or approval. Never treat a legacy
-UI Done state as proof of aggregation.
+On resume, validate the semantic journal and projection before interpreting host
+status. Reconcile running attempt IDs with the mailbox and record observed results
+before new dispatch. Migrate schema-v1 ledgers using `migrate-v1`; it preserves the
+old file, normalizes `phase: background_work_active` and legacy wait-budget state to
+a detached attempt join, and requires mailbox aggregation before any new stage,
+verdict, or approval. Never treat a legacy UI Done state as proof of aggregation.
 
 ## Result contract
 

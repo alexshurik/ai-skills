@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sk-skills.local/runtime-state/event.schema.json",
+  "title": "SK workflow semantic event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_schema_version",
+    "seq",
+    "id",
+    "type",
+    "recorded_at",
+    "actor",
+    "command_id",
+    "data"
+  ],
+  "properties": {
+    "event_schema_version": { "const": 1 },
+    "seq": { "type": "integer", "minimum": 1 },
+    "id": { "$ref": "#/$defs/identifier" },
+    "type": {
+      "enum": [
+        "workflow.started",
+        "workflow.migrated_from_v1",
+        "stage.entered",
+        "stage.completed",
+        "gate.requested",
+        "gate.decided",
+        "task.created",
+        "agent.attempt.started",
+        "agent.result.recorded",
+        "agent.late_result.recorded",
+        "check.recorded",
+        "artifact.recorded",
+        "workflow.waiting_for_agents",
+        "workflow.waiting_for_user",
+        "workflow.blocked",
+        "workflow.blocker_resolved",
+        "workflow.completed"
+      ]
+    },
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/identifier" },
+        "id": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "command_id": { "type": "string", "minLength": 1 },
+    "causation_id": { "$ref": "#/$defs/identifier" },
+    "data": { "type": "object" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@+\\-]*$"
+    }
+  }
+}

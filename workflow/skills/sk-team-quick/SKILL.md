@@ -27,6 +27,7 @@ or, from the skills repository:
 workflow/agents/shared/orchestration-policy.md
 workflow/agents/shared/handoff-protocol.md
 workflow/agents/shared/scope-governance.md
+workflow/agents/shared/runtime-state-policy.md
 ```
 
 Installed adapters may expose the same files under their agent reference roots.
@@ -74,10 +75,11 @@ Resolve the git-local runtime directory with:
 git rev-parse --git-path sk-workflow
 ```
 
-Store `<runtime-dir>/<fix-name>/state.json`, evidence snapshots, fingerprints, and
-large logs there. Durable user-facing decisions remain under `openspec/changes/`.
-The ledger records phase, artifact paths/fingerprints, approval checkpoints,
-attempt counts, and the next action so `/new` can resume without transcript copy.
+Initialize `<runtime-dir>/<fix-name>/events.jsonl` plus its derived `state.json`
+through the shared runtime-state helper. Pin the policy revision and repository
+identity. Durable user-facing decisions remain under `openspec/changes/`. Stages own
+their gates/checks/tasks and tasks preserve every attempt so `/new` can resume and
+show who ran without transcript copy. Never hand-edit either runtime file.
 
 ## Thread 1 — diagnose, confirm, implement
 
@@ -197,8 +199,10 @@ deferred decisions in the archived change and do not implement them automaticall
 - Follow the shared foreground-join policy for every required child. Use the longest
   host-permitted event-driven wait and re-enter it after transport-only timeouts.
 - Do not convert empty wake-ups into retry, phase, or workflow-budget counters.
-- Detach only for a shared-policy reason and persist `execution_status`, the join set,
-  and `detach_reason`; never rely on a notification to resume aggregation.
+- Create a logical task/attempt for each successful dispatch and record one
+  foreground attempt join. Transport-only timeouts never write semantic events.
+- Detach only for a shared-policy reason and record a detached attempt join with
+  `detach_reason`; never rely on a notification to resume aggregation.
 - Do not call `list_agents` after a routine timeout; use it only for reconciliation.
 - Drain all available completion messages before launching or waiting again.
 - Do not emit child progress chatter or repeat spawn attempts while slots are full.
@@ -207,6 +211,7 @@ deferred decisions in the archived change and do not implement them automaticall
 
 ## Start
 
-Validate the scope gate, initialize artifacts and state, then run Thread 1.
+Validate the scope gate, initialize artifacts and runtime state v2, enter the first
+stage, then run Thread 1. Use stage gates for user approvals and checks for evidence.
 
 </sk-team-quick>

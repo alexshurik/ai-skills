@@ -169,17 +169,20 @@ artifact, and orchestration counters in runtime state.
 Resolve the root using `git rev-parse --git-path sk-workflow` and store under
 `<runtime-root>/<name>/`:
 
-- `state.json`: phase, approvals/fingerprints, review/remediation/acceptance counts,
-  spawned/running/completed IDs, `execution_status`, foreground join set, any
-  `detach_reason`, blockers, and next action;
+- `events.jsonl`: authoritative semantic workflow transitions written only through
+  the shared runtime-state helper;
+- `state.json`: derived schema-v2 projection whose stages own gates/checks/tasks and
+  whose tasks preserve agent attempts; `control` records current wait/block/terminal
+  state;
 - checkpoints and large test/static-analysis logs;
 - `review/<snapshot>/change-evidence.json`, `review-map.json`,
   `coverage-ledger.json`, scope manifests, full lens reports, provenance, and the
   full technical `CODE_REVIEW.md`.
 
-`state.json` contains only counters and resumable decisions, not raw conversation or
-tool transcripts. Host session logs already record exact calls and are not workflow
-artifacts. Mailbox messages carry compact status, paths, and fingerprints only.
+Runtime state contains only semantic transitions and resumable decisions, not raw
+conversation or tool transcripts. Host session logs already record exact calls and
+are not workflow artifacts. Mailbox messages carry compact status, paths, and
+fingerprints only. Apply `runtime-state-policy.md` for the event/projection contract.
 
 ## 6. Deferred lifecycle
 

@@ -41,16 +41,18 @@ def main() -> None:
         "do not end the parent turn",
         "unbounded polling",
         "background work active",
-        "execution_status",
-        "foreground_join",
-        "background_detached",
+        "events.jsonl",
+        "authoritative append-only history",
+        "derived compact projection",
+        "runtime-state/sk_state.py",
+        "waiting_agents",
         "detach_reason",
-        "legacy_wait_budget",
+        "migrate-v1",
         "notifications are observability only",
         "list_agents",
         "artifact paths",
         "scope-governance.md",
-        "review/remediation/acceptance counts",
+        "stages own their gates, checks, and tasks",
     )
     reject(
         policy,
@@ -189,11 +191,14 @@ def main() -> None:
     status = read("workflow/skills/sk-team-status/SKILL.md")
     require(
         status,
-        "execution_status",
-        "foreground join set",
-        "foreground_join",
-        "background_detached",
-        "phase: background_work_active",
+        "runtime-state-policy.md",
+        "events.jsonl",
+        "derived projection",
+        "snapshot_status",
+        "waiting_agents",
+        "attempt ids",
+        "migrate-v1",
+        "read-only status request",
     )
 
     for text in (policy, feature, review, quick, discover, explore, code_review, agents_md):

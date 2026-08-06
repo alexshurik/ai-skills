@@ -56,6 +56,8 @@ def main() -> None:
     root_readme = read("README.md")
     assert "register the source" in root_readme
     assert "skills-manifest.yaml" in root_readme
+    assert "events.jsonl" in root_readme
+    assert "derived" in root_readme.lower()
 
     status = read("workflow/skills/sk-team-status/SKILL.md")
     assert "npm test 2>&1" not in status
@@ -65,6 +67,8 @@ def main() -> None:
     help_text = read("workflow/skills/sk-team-help/SKILL.md")
     assert "Task tool" not in help_text
     assert "openspec/completed/" in help_text
+    assert "events.jsonl" in help_text
+    assert "runtime-state" in help_text
 
     inlined_protocols = (
         "workflow/agents/sk-doc-reviewer.md",

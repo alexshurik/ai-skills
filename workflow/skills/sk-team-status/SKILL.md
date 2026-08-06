@@ -1,17 +1,11 @@
 ---
 name: sk-team-status
-version: 1.0.0
 description: Show status of current team workflow
 license: MIT
 
 # Claude Code
 allowed-tools: Read, Glob, Grep, Bash
 
-# Cross-platform hints
-platforms:
-  codex: true
-  cursor: true
-  kimi: true
 ---
 
 # sk-team-status - Workflow Status
@@ -19,6 +13,10 @@ platforms:
 <sk-team-status>
 
 You are the **Orchestrator** checking the status of ongoing team workflows.
+
+Read `~/.claude/agents/shared/runtime-state-policy.md` or
+`workflow/agents/shared/runtime-state-policy.md` from the skills repository before
+inspecting runtime state.
 
 ## Your Task
 
@@ -34,24 +32,22 @@ Resolve the Git-local workflow state root first:
 git rev-parse --git-path sk-workflow
 ```
 
-Read each `<runtime-root>/<name>/state.json` before inferring anything from files.
-Validate its recorded worktree, base, artifact paths, and fingerprints. A valid
-ledger is authoritative for phase approvals, retry budgets, and next action; file
-presence alone is not proof of approval.
+Read the installed/source `runtime-state-policy.md`. For each runtime directory run
+the shared helper `status`; when the projection reports `valid`, also run `validate`.
+`events.jsonl` is the authority and `state.json` is its derived projection. Validate
+recorded repository identity, artifact paths, and fingerprints. File presence alone
+is not proof of approval.
 
-Report review/remediation/acceptance counts, spawned/running/completed IDs,
-`execution_status`, the foreground join set, and any `detach_reason` from the ledger.
-These are resumable orchestration state, not a second transcript or a quality verdict.
+Report schema/revision, current stage, stage gates/checks, logical tasks with every
+attempt, and `control`. When `control.kind` is `waiting_agents`, report durable
+attempt IDs, their host thread IDs, foreground/detached join mode, reason code, and
+any detach reason. Do not wait or poll from a status request. UI status and
+notifications are observability, not proof that the parent aggregated a result.
 
-If `execution_status` is `background_detached`, report the running IDs, wave,
-snapshot, artifact paths, detach reason, and exact aggregation action. Do not wait or
-poll from a status request. Treat UI status and notifications as observability, not
-proof that the parent has aggregated the mailbox result.
-
-If `execution_status` is `foreground_join`, report the outstanding join IDs and real
-workflow phase without converting the status request into a detach. For a legacy
-ledger with `phase: background_work_active` or empty-wait counters, report that it
-requires normalization under the shared policy before aggregation can continue.
+If `snapshot_status` is `stale` or `missing`, report that `repair` is required; do not
+silently infer current state from the cache. For schema version 1, report that
+`migrate-v1` must preserve and normalize the ledger before aggregation continues.
+Never mutate runtime state as part of a read-only status request.
 
 ```bash
 # List all change directories
@@ -114,9 +110,11 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] DEFERRED.md - Optional; candidate/deferred/rejected/promoted scope proposals
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
-- **Next Action**: Invoke sk-tester for TDD red phase
-- **State ledger**: `<git-local-path>/state.json` (valid | stale | missing)
-- **Workflow state**: review/remediation/acceptance counts; agents, join, detach reason
+- **Derived next action**: Invoke sk-tester for TDD red phase
+- **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | missing | legacy)
+- **Control**: ready | waiting agents/user | blocked | complete
+- **Tasks/attempts**: logical task, attempt ordinal, host thread, result/artifact
+- **Gates/checks**: stage-owned decisions and verification evidence
 - **Deferred candidates**: none | <IDs requiring triage>
 - **Snapshot/fingerprints**: <current durable artifact fingerprints>
 - **Resume**: invoke `sk-team-feature` using the current host's skill syntax

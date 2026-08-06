@@ -31,6 +31,10 @@ developer = (root / "workflow/agents/sk-developer.md").read_text()
 review = (root / "workflow/agents/sk-review-orchestrator.md").read_text()
 feature = (root / "workflow/skills/sk-team-feature/SKILL.md").read_text()
 scope = (root / "workflow/agents/shared/scope-governance.md").read_text()
+runtime_policy = (root / "workflow/agents/shared/runtime-state-policy.md").read_text()
+runtime_tool = root / "workflow/agents/shared/runtime-state/sk_state.py"
+state_schema = root / "workflow/agents/shared/runtime-state/state.schema.json"
+event_schema = root / "workflow/agents/shared/runtime-state/event.schema.json"
 authority = (root / "shared/best-practices/convention-evidence-model.md").read_text()
 architecture_lens = (root / "workflow/agents/review-steps/architecture.md").read_text()
 abstraction_lens = (root / "workflow/agents/review-steps/abstraction.md").read_text()
@@ -58,6 +62,17 @@ for phrase in ("RETROSPECTIVE.md", "named existing skill", "no promotion"):
     assert phrase.lower() in feature.lower(), phrase
 for phrase in ("Scope Delta Gate", "Review Triage Gate", "required_fix", "DEFERRED.md"):
     assert phrase.lower() in scope.lower(), phrase
+for phrase in (
+    "events.jsonl",
+    "authoritative append-only semantic history",
+    "state.json",
+    "expected-revision",
+    "command-id",
+    "migrate-v1",
+):
+    assert phrase.lower() in runtime_policy.lower(), phrase
+assert runtime_tool.is_file() and runtime_tool.stat().st_mode & 0o111
+assert state_schema.is_file() and event_schema.is_file()
 for phrase in ("Enforced", "Approved", "Observed", "Legacy/uncertain"):
     assert phrase in authority, phrase
 
