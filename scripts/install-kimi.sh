@@ -7,14 +7,17 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 KIMI_DIR="${KIMI_AGENTS_ROOT:-$HOME/.config/agents}"
 KIMI_MIN_AGENT_VERSION="1.25.0"
 
+. "$REPO_DIR/scripts/python-runtime.sh"
+sk_require_python
+
 echo "Validating source..."
-python3 "$REPO_DIR/scripts/skills_tool.py" validate
+sk_python "$REPO_DIR/scripts/skills_tool.py" validate
 
 echo "Installing Kimi tree to $KIMI_DIR ..."
-python3 "$REPO_DIR/scripts/skills_tool.py" install \
+sk_python "$REPO_DIR/scripts/skills_tool.py" install \
     --platform kimi \
     --target "$KIMI_DIR"
-python3 "$REPO_DIR/scripts/skills_tool.py" verify \
+sk_python "$REPO_DIR/scripts/skills_tool.py" verify \
     --platform kimi \
     --target "$KIMI_DIR"
 
@@ -23,7 +26,7 @@ echo "Kimi files verified."
 if command -v kimi >/dev/null 2>&1; then
     KIMI_VERSION_OUTPUT="$(kimi --version 2>/dev/null || true)"
     KIMI_DETECTED_VERSION="$(printf '%s\n' "$KIMI_VERSION_OUTPUT" | sed -nE 's/.*version[[:space:]]+([0-9]+(\.[0-9]+)+).*/\1/p' | head -1)"
-    if [ -n "$KIMI_DETECTED_VERSION" ] && ! python3 - \
+    if [ -n "$KIMI_DETECTED_VERSION" ] && ! sk_python - \
         "$KIMI_DETECTED_VERSION" "$KIMI_MIN_AGENT_VERSION" <<'PY'
 import sys
 

@@ -13,16 +13,15 @@ from pathlib import Path
 from typing import Any
 
 from skills_common import (
-    Issue,
     RECEIPT_NAME,
     REPO_ROOT,
+    Issue,
     entry_value,
     safe_relative,
     source_revision,
     tree_entries,
 )
 from skills_render import RenderContext, render_tree
-
 
 RECEIPT_VERSION = 1
 SUITE_ID = "sk-skills"
@@ -109,11 +108,7 @@ def read_regular_json(path: Path) -> object:
     before = path.lstat()
     if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
         raise ValueError(f"{path}: receipt must be a regular, non-symlink file")
-    flags = (
-        os.O_RDONLY
-        | getattr(os, "O_NOFOLLOW", 0)
-        | getattr(os, "O_NONBLOCK", 0)
-    )
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     descriptor = os.open(path, flags)
     with os.fdopen(descriptor, "rb") as receipt_file:
         opened = os.fstat(receipt_file.fileno())
@@ -160,21 +155,24 @@ def validate_receipt_files(value: object, path: Path) -> dict[str, str]:
     }
 
 
-def receipt_versions(data: dict[object, object], path: Path) -> tuple[int, int]:
-    integers = ("receipt_version", "manifest_version")
-    if any(
-        not isinstance(data[field], int) or isinstance(data[field], bool)
-        for field in integers
-    ):
+def receipt_version(value: object, path: Path) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{path}: receipt versions must be integers")
-    return data["receipt_version"], data["manifest_version"]
+    return value
+
+
+def receipt_versions(data: dict[object, object], path: Path) -> tuple[int, int]:
+    return (
+        receipt_version(data["receipt_version"], path),
+        receipt_version(data["manifest_version"], path),
+    )
 
 
 def receipt_strings(data: dict[object, object], path: Path) -> tuple[str, ...]:
     strings = ("suite", "platform", "source_root", "source_commit")
     if any(not isinstance(data[field], str) or not data[field] for field in strings):
         raise ValueError(f"{path}: receipt identity/provenance fields must be strings")
-    return tuple(data[field] for field in strings)
+    return tuple(str(data[field]) for field in strings)
 
 
 def typed_receipt(data: object, path: Path) -> InstallationReceipt:
@@ -404,9 +402,7 @@ def build_staged_plan(
     stale, legacy_links = preflight(request.target_root, expected, previous)
     touched = set(expected) | set(stale) | set(legacy_links)
     shadowed = {
-        name
-        for name in expected
-        if any(name.startswith(f"{link}/") for link in legacy_links)
+        name for name in expected if any(name.startswith(f"{link}/") for link in legacy_links)
     }
     return StagedPlan(
         request,
@@ -558,9 +554,7 @@ def plan_uninstall(
         destination = target_root / relative
         current = entry_value(destination)
         if current is not None and current != installed_value:
-            issues.append(
-                Issue("ERROR", f"modified manifest-owned path preserved: {destination}")
-            )
+            issues.append(Issue("ERROR", f"modified manifest-owned path preserved: {destination}"))
     return UninstallPlan(target_root, files), issues
 
 

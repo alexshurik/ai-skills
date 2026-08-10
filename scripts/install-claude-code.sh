@@ -6,14 +6,17 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_DIR="${CLAUDE_SKILLS_ROOT:-$HOME/.claude}"
 
+. "$REPO_DIR/scripts/python-runtime.sh"
+sk_require_python
+
 echo "Validating source..."
-python3 "$REPO_DIR/scripts/skills_tool.py" validate
+sk_python "$REPO_DIR/scripts/skills_tool.py" validate
 
 echo "Linking Claude Code tree into $CLAUDE_DIR ..."
-python3 "$REPO_DIR/scripts/skills_tool.py" install \
+sk_python "$REPO_DIR/scripts/skills_tool.py" install \
     --platform claude \
     --target "$CLAUDE_DIR"
-python3 "$REPO_DIR/scripts/skills_tool.py" verify \
+sk_python "$REPO_DIR/scripts/skills_tool.py" verify \
     --platform claude \
     --target "$CLAUDE_DIR"
 

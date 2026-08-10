@@ -13,9 +13,9 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Iterable
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-
 
 HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(?P<start>\d+)(?:,(?P<count>\d+))? @@")
 PY_LOCAL_IMPORT_RE = re.compile(r"^(?P<indent>[ \t]+)(?:from\s+\S+\s+import|import\s+\S+)")
@@ -161,7 +161,7 @@ def count_lines_bytes(content: bytes) -> int:
 def directory_flags() -> int | None:
     no_follow = getattr(os, "O_NOFOLLOW", None)
     directory = getattr(os, "O_DIRECTORY", None)
-    if no_follow is None or directory is None:
+    if not isinstance(no_follow, int) or not isinstance(directory, int):
         return None
     return os.O_RDONLY | no_follow | directory
 
@@ -483,15 +483,8 @@ def structural_flags(
 ) -> dict[str, bool]:
     is_new = not base.exists and current.kind == "regular"
     over_300 = current_lines is not None and current_lines > 300
-    crossed_300 = (
-        over_300
-        and (
-            not base.exists
-            or (
-                base.line_count is not None
-                and base.line_count <= 300
-            )
-        )
+    crossed_300 = over_300 and (
+        not base.exists or (base.line_count is not None and base.line_count <= 300)
     )
     micro_file = is_new and current_lines is not None and current_lines <= 40
     return {
@@ -505,9 +498,7 @@ def current_digest(current: CurrentEntry) -> str | None:
     if current.kind == "regular" and current.content is not None:
         return hashlib.sha256(current.content).hexdigest()
     if current.kind == "symlink" and current.symlink_target is not None:
-        return hashlib.sha256(
-            current.symlink_target.encode(errors="surrogateescape")
-        ).hexdigest()
+        return hashlib.sha256(current.symlink_target.encode(errors="surrogateescape")).hexdigest()
     return None
 
 
@@ -516,9 +507,7 @@ def file_evidence(
     relative_path: str,
 ) -> dict[str, object]:
     current = inspect_current_entry(context.root, relative_path)
-    current_lines = (
-        count_lines_bytes(current.content) if current.content is not None else None
-    )
+    current_lines = count_lines_bytes(current.content) if current.content is not None else None
     base_path = context.renamed_from.get(relative_path, relative_path)
     base = base_entry(context.root, context.base, base_path)
     sides = FileSides(current, base)
@@ -561,7 +550,7 @@ def collect(repo: Path, explicit_base: str | None) -> dict[str, object]:
     )
     files = [file_evidence(context, relative_path) for relative_path in paths]
 
-    evidence = {
+    evidence: dict[str, object] = {
         "repository": str(root),
         "base": base,
         "head": git_text(root, "rev-parse", "HEAD"),
@@ -602,15 +591,13 @@ def incomplete_interval_lines(files: list[object]) -> list[str]:
     incomplete = [
         entry
         for entry in files
-        if isinstance(entry, dict)
-        and entry["interval_status"] not in {"complete", "ok"}
+        if isinstance(entry, dict) and entry["interval_status"] not in {"complete", "ok"}
     ]
     if not incomplete:
         return []
     lines = ["", "### Incomplete changed-line evidence", ""]
     lines.extend(
-        f"- `{entry['path']}`: interval status `{entry['interval_status']}`"
-        for entry in incomplete
+        f"- `{entry['path']}`: interval status `{entry['interval_status']}`" for entry in incomplete
     )
     return lines
 
@@ -694,10 +681,8 @@ def write_atomic(path: Path, content: str) -> None:
         os.replace(temporary_name, path)
     finally:
         if temporary_name is not None:
-            try:
+            with suppress(FileNotFoundError):
                 os.unlink(temporary_name)
-            except FileNotFoundError:
-                pass
 
 
 def main() -> int:

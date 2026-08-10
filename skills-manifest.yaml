@@ -30,13 +30,9 @@
     {"name": "sk-tester", "source": "workflow/agents/sk-tester.md"}
   ],
   "review_steps": [
-    {"name": "sk-review-abstraction", "source": "workflow/agents/review-steps/abstraction.md"},
-    {"name": "sk-review-architecture", "source": "workflow/agents/review-steps/architecture.md"},
-    {"name": "sk-review-imports", "source": "workflow/agents/review-steps/imports.md"},
-    {"name": "sk-review-instruction-quality", "source": "workflow/agents/review-steps/instruction-quality.md"},
-    {"name": "sk-review-security", "source": "workflow/agents/review-steps/security.md"},
-    {"name": "sk-review-stack-rules", "source": "workflow/agents/review-steps/stack-rules.md"},
-    {"name": "sk-review-structure", "source": "workflow/agents/review-steps/structure.md"}
+    {"name": "sk-review-architecture-design", "source": "workflow/agents/review-steps/architecture-design.md"},
+    {"name": "sk-review-correctness-safety", "source": "workflow/agents/review-steps/correctness-safety.md"},
+    {"name": "sk-review-engineering-quality", "source": "workflow/agents/review-steps/engineering-quality.md"}
   ],
   "resources": [
     {

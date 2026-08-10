@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = REPO_ROOT / "skills-manifest.yaml"
 RECEIPT_NAME = ".sk-skills-install.json"
@@ -42,7 +41,10 @@ def repo_source_path(value: str) -> Path:
 def load_manifest() -> dict[str, Any]:
     # JSON is a strict subset of YAML 1.2 and needs no third-party parser.
     with MANIFEST_PATH.open(encoding="utf-8") as manifest_file:
-        return json.load(manifest_file)
+        manifest = json.load(manifest_file)
+    if not isinstance(manifest, dict):
+        raise ValueError("skills manifest root must be an object")
+    return manifest
 
 
 def hash_file(path: Path) -> str:

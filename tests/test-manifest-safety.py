@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
@@ -27,35 +26,28 @@ def main() -> None:
     escaping_source = copy.deepcopy(manifest)
     escaping_source["catalog"][0]["source"] = "../outside"
     assert any(
-        "unsafe manifest/receipt path" in message
-        for message in error_messages(escaping_source)
+        "unsafe manifest/receipt path" in message for message in error_messages(escaping_source)
     )
 
     escaping_target = copy.deepcopy(manifest)
     escaping_target["resources"][0]["codex_target"] = "../../outside"
     assert any(
-        "unsafe manifest/receipt path" in message
-        for message in error_messages(escaping_target)
+        "unsafe manifest/receipt path" in message for message in error_messages(escaping_target)
     )
 
     absolute_target = copy.deepcopy(manifest)
     absolute_target["resources"][0]["kimi_target"] = "/tmp/outside"
     assert any(
-        "unsafe manifest/receipt path" in message
-        for message in error_messages(absolute_target)
+        "unsafe manifest/receipt path" in message for message in error_messages(absolute_target)
     )
 
     missing_version = copy.deepcopy(manifest)
     del missing_version["version"]
-    assert any(
-        "manifest version" in message for message in error_messages(missing_version)
-    )
+    assert any("manifest version" in message for message in error_messages(missing_version))
 
     missing_limit = copy.deepcopy(manifest)
     del missing_limit["limits"]["catalog_skill_lines"]
-    assert any(
-        "catalog_skill_lines" in message for message in error_messages(missing_limit)
-    )
+    assert any("catalog_skill_lines" in message for message in error_messages(missing_limit))
 
     malformed_item = copy.deepcopy(manifest)
     malformed_item["catalog"][0] = "not an object"

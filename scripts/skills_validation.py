@@ -10,9 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from skills_common import Issue, REPO_ROOT, repo_source_path, safe_relative
+from skills_common import REPO_ROOT, Issue, repo_source_path, safe_relative
 from skills_render import RenderContext, render_tree
-
 
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<body>.*?)\n---\n", re.DOTALL)
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]*]\((?P<target>[^)]+)\)")
@@ -72,9 +71,7 @@ def validate_openai_yaml(skill_dir: Path) -> list[Issue]:
 
 
 def positive_integer_issue(value: Any, label: str) -> list[Issue]:
-    is_positive_integer = (
-        isinstance(value, int) and not isinstance(value, bool) and value > 0
-    )
+    is_positive_integer = isinstance(value, int) and not isinstance(value, bool) and value > 0
     if is_positive_integer:
         return []
     return [Issue("ERROR", f"{label} must be a positive integer")]
@@ -110,11 +107,7 @@ def validate_manifest_shape(manifest: Any) -> list[Issue]:
     return [
         *positive_integer_issue(manifest.get("version"), "manifest version"),
         *validate_limits_shape(manifest.get("limits")),
-        *[
-            issue
-            for group in MANIFEST_GROUPS
-            for issue in validate_group_shape(manifest, group)
-        ],
+        *[issue for group in MANIFEST_GROUPS for issue in validate_group_shape(manifest, group)],
     ]
 
 
@@ -176,9 +169,7 @@ def validate_prompt(
     line_total = len(spec.path.read_text(encoding="utf-8").splitlines())
     if line_total > spec.line_limit:
         relative = spec.path.relative_to(REPO_ROOT)
-        state.issues.append(
-            Issue("ERROR", f"{relative}: {line_total} lines > {spec.line_limit}")
-        )
+        state.issues.append(Issue("ERROR", f"{relative}: {line_total} lines > {spec.line_limit}"))
 
 
 def validate_prompt_item(
@@ -207,9 +198,7 @@ def validate_resource_item(item: dict[str, Any], state: ValidationState) -> None
     for platform, field_name in PLATFORM_TARGETS.items():
         value = item.get(field_name)
         if not isinstance(value, str):
-            state.issues.append(
-                Issue("ERROR", f"{item.get('name')}: missing {platform} target")
-            )
+            state.issues.append(Issue("ERROR", f"{item.get('name')}: missing {platform} target"))
             continue
         try:
             safe_relative(value)
@@ -322,9 +311,7 @@ def validate_rendered_trees(manifest: dict[str, Any]) -> list[Issue]:
 
 
 def shell_scripts() -> list[Path]:
-    return [
-        path for path in sorted(REPO_ROOT.rglob("*.sh")) if ".git" not in path.parts
-    ]
+    return [path for path in sorted(REPO_ROOT.rglob("*.sh")) if ".git" not in path.parts]
 
 
 def validate_shell_script(script: Path) -> list[Issue]:
@@ -369,9 +356,7 @@ def validate_python_source(source: Path) -> list[Issue]:
 
 def validate_scripts() -> list[Issue]:
     scripts = shell_scripts()
-    issues = [
-        issue for script in scripts for issue in validate_shell_script(script)
-    ]
+    issues = [issue for script in scripts for issue in validate_shell_script(script)]
     issues.extend(validate_shellcheck(scripts))
     issues.extend(
         issue

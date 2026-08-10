@@ -15,7 +15,10 @@ Use this template when passing context between AI agents or sessions.
 [Sub-tasks if any]
 
 ## Durable State
-- Ledger: [git-local state.json path or none]
+- Runtime directory: [git-local sk-workflow path or none]
+- Authoritative journal: [events.jsonl path or none]
+- Derived projection: [state.json path or none]
+- Schema/revision/snapshot health: [values from helper status/validate]
 - Phase/status: [current bounded phase and status]
 - Approved artifact fingerprints: [paths + fingerprints]
 

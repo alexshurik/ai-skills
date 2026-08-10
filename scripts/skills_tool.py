@@ -11,9 +11,10 @@ import os
 import stat
 import sys
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from skills_common import Issue, load_manifest, safe_relative, tree_entries
 from skills_installation import (
@@ -45,9 +46,7 @@ def installed_skill_dirs(root: Path) -> dict[str, Path]:
     return {
         child.name: child
         for child in root.iterdir()
-        if child.name != ".system"
-        and child.is_dir()
-        and (child / "SKILL.md").is_file()
+        if child.name != ".system" and child.is_dir() and (child / "SKILL.md").is_file()
     }
 
 
@@ -57,11 +56,7 @@ def skill_digest(path: Path) -> str:
 
 
 def catalog_inventory(roots: list[Path]) -> list[tuple[str, Path]]:
-    return [
-        (name, path)
-        for root in roots
-        for name, path in installed_skill_dirs(root).items()
-    ]
+    return [(name, path) for root in roots for name, path in installed_skill_dirs(root).items()]
 
 
 def internal_agent_issues(
@@ -153,9 +148,7 @@ def legacy_resource_candidates(
         if metadata is None:
             continue
         if not stat.S_ISREG(metadata.st_mode) and not stat.S_ISLNK(metadata.st_mode):
-            raise ValueError(
-                f"legacy resource leaf must be a regular file or symlink: {relative}"
-            )
+            raise ValueError(f"legacy resource leaf must be a regular file or symlink: {relative}")
         candidates.append(MoveCandidate(relative))
     return candidates
 
@@ -163,7 +156,7 @@ def legacy_resource_candidates(
 def no_follow_directory_flags() -> int:
     no_follow = getattr(os, "O_NOFOLLOW", None)
     directory = getattr(os, "O_DIRECTORY", None)
-    if no_follow is None or directory is None:
+    if not isinstance(no_follow, int) or not isinstance(directory, int):
         raise ValueError("descriptor-relative no-follow migration is unavailable")
     return os.O_RDONLY | no_follow | directory
 
@@ -435,9 +428,7 @@ def run_manifest_command(
         print(f"Installed {args.platform} tree to {args.target}")
         return 0
     if args.command == "verify":
-        return print_issues(
-            compare_expected(manifest, args.platform, args.target.resolve())
-        )
+        return print_issues(compare_expected(manifest, args.platform, args.target.resolve()))
     if args.command == "doctor":
         return print_issues(doctor(manifest, [root.resolve() for root in args.root]))
     moved = migrate_legacy(manifest, args.legacy_root, args.backup_root)

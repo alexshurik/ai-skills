@@ -52,18 +52,19 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   Full reports, evidence, diffs, and logs live in shared artifacts; messages carry
   paths and fingerprints.
 - Durable change artifacts live under `openspec/changes/<name>/`; heavy runtime
-  state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`. The shared
-  helper is the only writer: `events.jsonl` is the semantic journal and `state.json`
-  its schema-v2 projection. Stages own gates/tasks and tasks own attempt history.
+  state lives under `$(git rev-parse --git-path sk-workflow)/<name>/`. The global
+  root owns the semantic `events.jsonl` journal and derived `state.json` projection;
+  the bounded nested-review lease may record leaf attempts through the same helper.
+  Stages own gates/tasks and tasks own attempt history.
 - Planning separates required work, explicit non-goals, and individually approved
   Scope Delta IDs. Review keeps severity separate from `required_fix`,
   `user_decision`, `backlog`, and `baseline`; remediation receives only an approved
   finding-ID allowlist.
 - Optional/rejected proposals stage in change-local `DEFERRED.md`. Promote only
   user-selected items to the repository tracker or `openspec/backlog/` fallback.
-- Full review uses a deterministic lossless review map. Structure/coverage reads all
-  human-authored changed text in full and emits a validated neutral ledger; the
-  other six independent lenses use it only to navigate and verify targeted raw code.
+- Full review uses a deterministic lossless review map and exactly three independent
+  lenses in one wave: architecture-design, correctness-safety, and engineering-quality.
+  Root runs gates once per snapshot; validated scope-manifest union covers every path.
 - Launch a full wave before waiting. Keep required children in a foreground join and
   use the longest event-driven mailbox wait permitted by the host and higher-priority
   policy. Record one semantic foreground attempt join; transport-only timeouts are
@@ -77,6 +78,7 @@ Canonical policies: `workflow/agents/shared/orchestration-policy.md`,
 `workflow/agents/shared/handoff-protocol.md`, and
 `workflow/agents/shared/scope-governance.md`. Runtime transitions and migration are
 defined by `workflow/agents/shared/runtime-state-policy.md`.
+The runtime helper requires Python 3.10+ and resolves `python3`, `python`, or `py -3`.
 
 ORCHESTRATION
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -66,46 +65,40 @@ def main() -> None:
         "do not implement backlog/baseline",
     )
 
-    security = read("workflow/agents/review-steps/security.md")
+    correctness = read("workflow/agents/review-steps/correctness-safety.md")
     require(
-        security,
+        correctness,
         "approved trust model",
-        "exact-message binding",
-        "total trusted-provider compromise",
-        "needs_investigation",
-        "defense-in-depth",
+        "user_decision`/`backlog",
+        "uncertainty is unverified",
+        "never reproduce a secret value",
     )
     reject(
-        security,
+        correctness,
         "all security findings are **blocker** by default",
         "when in doubt, keep it blocker",
     )
 
-    instruction = read("workflow/agents/review-steps/instruction-quality.md")
+    instruction = correctness
     require(
         instruction,
-        "remove, mark manual/future, or formalize",
-        "telemetry, sql, sample-size",
-        "becomes a code task only when",
+        "executable instruction correctness",
+        "contradictory owners",
+        "unsafe commands",
     )
 
-    stack = read("workflow/agents/review-steps/stack-rules.md")
+    stack = read("workflow/agents/review-steps/engineering-quality.md")
     require(
         stack,
-        "70+ line methods",
-        "newly introduced/materially worsened",
-        "unchanged size is `baseline`",
-        "broad refactor becomes mandatory only",
+        "newly worsened metrics",
+        "unchanged debt as baseline",
+        "must not rerun the full suite",
     )
 
     for relative in (
-        "workflow/agents/review-steps/security.md",
-        "workflow/agents/review-steps/architecture.md",
-        "workflow/agents/review-steps/abstraction.md",
-        "workflow/agents/review-steps/structure.md",
-        "workflow/agents/review-steps/imports.md",
-        "workflow/agents/review-steps/stack-rules.md",
-        "workflow/agents/review-steps/instruction-quality.md",
+        "workflow/agents/review-steps/architecture-design.md",
+        "workflow/agents/review-steps/correctness-safety.md",
+        "workflow/agents/review-steps/engineering-quality.md",
     ):
         lens = read(relative)
         require(
@@ -143,7 +136,7 @@ def main() -> None:
         feature,
         "scope delta gate",
         "review triage gate",
-        "allowlisted required ids",
+        "freeze the exact remediation allowlist",
         "deferred.md",
         "openspec/backlog/<slug>.md",
         "do not create a second `review-summary.md`",
@@ -154,7 +147,7 @@ def main() -> None:
         quick,
         "scope delta: none",
         "required_fix | user_decision | backlog | baseline",
-        "explicit allowlist",
+        "freeze the exact allowlist",
         "deferred.md",
     )
 
@@ -177,7 +170,7 @@ def main() -> None:
         "tasks preserve all attempts",
         "deferred.md",
         "openspec/backlog/<slug>.md",
-        "review remains strict across all seven lenses",
+        "review remains strict across all three dimensions",
     )
 
     help_text = read("workflow/skills/sk-team-help/SKILL.md")
@@ -186,7 +179,7 @@ def main() -> None:
         "scope control",
         "git rev-parse --git-path sk-workflow",
         "material proposed addition",
-        "seven review lenses remain strict",
+        "all three review dimensions remain strict",
     )
 
 

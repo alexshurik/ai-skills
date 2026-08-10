@@ -139,10 +139,25 @@ verification; request approval.
 
 Execute the canonical review-orchestrator flow with a depth-2 lens budget when the
 host permits nested delegation. Codex uses a clean review-orchestrator child whose
-seven clean lens children are leaves. Stable Kimi children cannot nest, so its
-generated root-team override performs setup/aggregation and dispatches all lens
-leaves directly. If the active host has neither mechanism, run each lens as a
-separately labelled inline section and disclose that limitation.
+exactly three clean lens children are leaves: architecture-design,
+correctness-safety, and engineering-quality. Stable Kimi children cannot nest, so
+its generated root-team override performs setup/aggregation and dispatches these
+three leaves directly in one wave. If the active host has neither mechanism, run
+three separately labelled inline sections and disclose that limitation.
+
+Use the canonical parked orchestrator bootstrap for nested review. Dispatch the
+orchestrator first with an instruction to remain parked and perform no work. Once
+dispatch returns its real host ID, record its task and `start-attempt`, record the
+`wait-agents --join foreground`, and run `grant-review-lease` with the holder attempt
+and actor IDs. Then deliver the runtime directory, stage, revision, lease ID, and
+actor ID as the lease envelope that activates the child.
+
+The child records successful leaf dispatches/results with CAS and its exact leased
+actor identity, then runs `release-review-lease` before returning. The existing join
+expands and drains automatically. The root performs no state mutation during the
+lease, then reloads and validates before recording the orchestrator result. For a
+forced detach, follow the release → root detach → foreground resume → new lease
+sequence in `runtime-state-policy.md`; never carry a lease across turns.
 
 Persist the compact durable verdict/triage as:
 
@@ -150,33 +165,44 @@ Persist the compact durable verdict/triage as:
 openspec/changes/<name>/CODE_REVIEW.md
 ```
 
-Persist the full technical report and seven lens artifacts in the Git-local review
+Persist the full technical report and three lens artifacts in the Git-local review
 snapshot. Do not create a second `review-summary.md`.
 
-Run an **initial full review** through every applicable independent lens. Before any
-remediation, show the Review Triage Gate: mandatory `required_fix` IDs, scope
-additions requiring a decision, and deferred/backlog candidates. Record decisions
-in `CODE_REVIEW.md` and `DEFERRED.md` when needed; resolve every `user_decision`
-before dispatching remediation. Send the Developer only the
-allowlisted required IDs plus explicitly approved addition IDs, acceptance criteria,
-approved Scope Delta IDs, and non-goals; never send “fix all findings”. Start a clean
-remediation child. Then run a **final full review** through **all applicable lenses**
-against a fresh snapshot. Targeted lenses may give diagnostic feedback during
-remediation but cannot approve. Each reviewer receives a complete lens scope
-manifest with explicit reading depth and exclusions; unexplained omitted paths
-invalidate the review.
+Before Round 1, the root captures an immutable snapshot and runs readiness gates
+once. Red formatter/lint/type/build/tests/diff or another mandatory gate returns to
+Implementation; review does not start. Root stores full logs and passes compact
+provenance only. Engineering-quality must not rerun the full suite/tool battery.
 
-After initial triage, newly discovered non-critical hardening, refactoring,
-observability, or threat-model expansion is deferred and cannot open another
-remediation cycle. Remediation regressions, unresolved allowlisted fixes, newly
-proven critical defects, acceptance violations, and mandatory gate failures still
-block. Disposition-only triage changes do not require another full review; source or
-normative-artifact changes do.
+Round 1 is one full review. Launch exactly three independent lenses together in one
+Codex wave. Root builds a deterministic lossless review map and creates complete
+per-lens scope manifests whose validated union
+accounts for every changed/untracked/deleted/renamed path. Lenses read only assigned
+raw full/targeted current/base content; unchanged content is reusable only by
+verified hash. Do not create a separate structure reviewer or neutral coverage
+ledger. Every lens returns its complete finding set, not one issue per round.
 
-The structure/coverage reviewer runs first, reads every human-authored changed text
-path in full, and writes a neutral coverage ledger validated against the deterministic
-review map. The other six lenses remain independent, use that ledger only for
-navigation, query only assigned rows, and verify targeted raw source themselves.
+Before remediation, show the Review Triage Gate and resolve every `user_decision`.
+Freeze the exact remediation allowlist to mandatory `required_fix` plus explicitly
+approved addition IDs. Record decisions in `CODE_REVIEW.md`/`DEFERRED.md` and send a
+clean remediation developer only that allowlist, acceptance criteria, approved
+Scope Delta IDs, and non-goals; never send “fix all findings”. New noncritical
+suggestions after triage are deferred and cannot create cycles.
+
+Targeted Round 2 uses a fresh post-remediation snapshot. Run root gates once and
+only finding-owning/impact-routed lenses. Require a valid parent full review,
+immutable pre/post fingerprints, a complete remediation delta, unchanged hashes,
+no expansion, and old evidence never proving changed content. Route architecture
+for boundary/API/schema/model/import/loader/structure/abstraction/packaging changes;
+correctness for behavior/trust/validation/recovery/migration/concurrency/idempotency/
+instruction semantics; quality for maintained source/test/tooling changes. Multiple
+lenses may apply, including a narrow contract/schema fix.
+
+A material scope expansion, changed authority/base, dependency/trust/infrastructure
+expansion, unexplained path, invalid parent artifact, or unprovable delta forces all
+three lenses but consumes Round 2. Exceptional Round 3 is allowed only for an
+unresolved allowlisted defect, remediation regression, or newly proven critical
+correctness/security defect; use a fresh snapshot, root gates once, and only owning/
+impact-routed lenses unless escalation requires all three.
 
 Apply the shared foreground-join policy to every required child. Prefer the longest
 host-permitted event-driven wait, re-enter it after transport-only timeouts, and do
@@ -186,10 +212,12 @@ foreground attempt join before waiting. Detach only for a shared-policy reason a
 record a detached attempt join plus `detach_reason`; notifications never substitute
 for mailbox aggregation.
 
-The automatic budget is **two review/remediation cycles** total. After it is
-exhausted, surface remaining findings and ask the user whether to authorize one more
-bounded cycle. Do not proceed on a stale approval. When approved, surface the compact
-scope/provenance/baseline/verdict and request approval for Acceptance.
+There is no automatic Round 4. After Round 3 return `NEEDS USER DECISION` with exact
+blockers/options. Transport-only timeouts do not consume review rounds, and the
+counter does not reset within the workflow without explicit user approval of a new
+scope/workflow. Targeted approval requires valid parent/routing/delta evidence,
+resolved allowlist, green gates, no blocking regression/critical defect, and zero
+required UNVERIFIED dimensions. Every verdict discloses mode, round, and parent.
 
 ### 6. Acceptance
 
@@ -285,13 +313,14 @@ Ask for approval again. Never silently patch an unapproved artifact and continue
 | `VERIFICATION.md` ACCEPTED | Retrospective next |
 | `RETROSPECTIVE.md` approved | Archive ready |
 
-Run the shared helper `status` and `validate` first, then validate recorded artifact
-fingerprints. `events.jsonl` is authoritative and `state.json` is its projection.
-If the projection is missing/stale, rebuild it with `repair`; if schema version 1 is
-found, run `migrate-v1` and validate before continuing. File presence alone does not
-prove user approval. If durable state is missing or a fingerprint differs, recover
-safe facts from artifacts and ask the user to reconfirm only the approval that cannot
-be proven.
+Run the shared helper `status`, follow its `recommended_action`, and apply the
+journal-conditioned status matrix in `runtime-state-policy.md` exactly, including
+its `unsupported_schema` fail-closed route and validation step. Then validate recorded
+artifact fingerprints. `events.jsonl` is
+authoritative and `state.json` is its projection. File presence alone does not prove
+user approval. If durable state is missing or a fingerprint differs, recover safe
+facts from artifacts and ask the user to reconfirm only the approval that cannot be
+proven.
 
 ## Archive
 

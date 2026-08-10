@@ -36,7 +36,7 @@ Structured planning workflow with file-based plan storage. Separates research fr
 ## Utility Commands
 
 ### /sk-code-review
-Review committed, staged, unstaged, and untracked changes through the full baseline-aware multi-lens pipeline without modifying source code.
+Review committed, staged, unstaged, untracked, deleted, and renamed changes through exactly three independent baseline-aware lenses without modifying source code.
 
 ### /sk-explore-codestyle
 Derive project-specific coder, reviewer, and evidence profiles from enforced tooling, approved repository guidance, and representative source samples without promoting legacy frequency into rules.
@@ -67,7 +67,7 @@ Transform ideas into detailed requirements (PM + BA). Creates proposal.md with v
 Research unknown domains, technologies, APIs, and best practices before planning. Creates RESEARCH.md with findings, options, and recommendations.
 
 ### sk-review-orchestrator
-Review complete tracked and untracked changes through independent contract/security, architecture, abstraction, structure, import, stack, and instruction-quality lenses with baseline-aware verdicts.
+Review complete tracked and untracked changes through exactly three independent architecture-design, correctness-safety, and engineering-quality lenses with bounded remediation verification.
 
 ### sk-tester
 Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user approval, supports E2E testing. Creates failing tests based on approved plan.

@@ -121,9 +121,10 @@ feedback artifact; do not accumulate redesign history.
 
 ## Thread 2 — independent review and acceptance
 
-After implementation is green, capture one review snapshot and fingerprint. Spawn
-a fresh clean reviewer/acceptance thread. It must not delegate. Its bounded
-deliverable is:
+After implementation is green, capture one review snapshot and fingerprint. Root
+runs readiness gates once before review; red formatter/lint/type/build/tests/diff
+returns to implementation. Spawn a fresh clean reviewer/acceptance thread. It must
+not delegate or rerun the full root gate/tool battery. Its bounded deliverable is:
 
 ```text
 Objective: independently decide whether the approved quick fix is safe and meets
@@ -135,14 +136,14 @@ Inputs:
 - review evidence artifact path and fingerprint;
 - relevant repository guidance and project profiles.
 
-Review all seven logical dimensions and mark each PASS, FINDINGS, or NOT APPLICABLE:
-1. contract and security;
-2. architecture and boundary ownership;
-3. abstraction quality;
-4. file/module structure and placement;
-5. imports and dependency direction;
-6. stack-specific correctness;
-7. repository-instruction and change-quality compliance.
+Use one combined reviewer only because the change passed the quick scope gate. Mark
+each owner dimension PASS, FINDINGS, or NOT APPLICABLE:
+1. architecture-design — boundaries/ownership, dependency/import direction,
+   abstractions/navigation, structure, API/schema/model shape, packaging;
+2. correctness-safety — approved behavior, edge/state/failure paths, recovery,
+   concurrency/idempotency, trust/security, compatibility, tests, instructions;
+3. engineering-quality — root-produced provenance, stack idioms, readability,
+   complexity, duplication, dead code, error handling, test-code quality.
 
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.
@@ -163,25 +164,29 @@ statuses, skipped/UNVERIFIED checks, and snapshot fingerprint. Keep the return t
 
 This combines execution, not judgment: every dimension remains explicit. If any
 dimension requires specialist parallel analysis, the change is no longer quick;
-escalate to the full workflow and its seven independent clean reviewers.
+escalate to the full workflow and its three independent clean reviewers.
 
 ## Remediation and finality
 
-Before remediation, show mandatory fixes, scope additions requiring a decision, and
-deferred/backlog candidates. An initial `NEEDS WORK` verdict may start one clean
-remediation thread only after every `user_decision` is included, deferred, or
-rejected. Pass the approved design, review fingerprint, and an explicit
-allowlist containing only `required_fix` plus user-approved IDs. Never pass “fix all
-findings”. After remediation, start a fresh Thread 2 against a new snapshot. Targeted
-diagnostics may help locate a problem, but cannot issue final approval.
+Round 1 requires the combined reviewer to return its complete finding set across all
+three dimensions. Before remediation, show mandatory fixes, scope decisions, and
+backlog; resolve every `user_decision` and freeze the exact allowlist containing only
+`required_fix` plus approved IDs. Never pass “fix all findings”.
 
-New non-critical findings in the final review go to `DEFERRED.md`; they cannot open
-another quick remediation loop. Remediation regressions, proven critical defects,
-and approved-behavior failures still block.
+Targeted Round 2 uses a fresh snapshot, root gates once, valid parent review,
+immutable pre/post fingerprints, complete remediation delta, verified unchanged
+hashes, no expansion, and every impacted dimension. Old evidence never proves
+changed content. A material expansion or unprovable delta exits quick mode to the
+full workflow while consuming the round.
 
-Quick mode permits at most one remediation cycle. If the fresh final review still
-finds material issues, stop and offer escalation to `sk-team-feature`; do not retry
-agents indefinitely.
+Exceptional Round 3 is allowed only for an unresolved allowlisted defect,
+remediation regression, or newly proven critical correctness/security defect. Run
+root gates once on the new snapshot and all impacted dimensions. New non-critical
+findings after frozen triage go to `DEFERRED.md`; they cannot open another loop.
+
+Quick mode obeys the same three-round cap. There is no automatic Round 4: return
+`NEEDS USER DECISION` with exact blockers/options and offer escalation to
+`sk-team-feature`. Transport-only waits do not consume or reset review rounds.
 
 Only `ACCEPTED` from a fresh independent review of the current snapshot can finish
 the workflow. Surface its compact decision, ask for explicit final approval, then

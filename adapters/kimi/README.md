@@ -46,13 +46,12 @@ The orchestrator will coordinate subagents:
 
 Kimi subagents have isolated context and return their final result to the root.
 Stable Kimi CLI does not allow a subagent to create another subagent, so the
-generated root team registers all seven review lenses directly. During full review
-the root dispatches those leaf reviewers in two stages: structure first as the
-full-coverage reader, then the other six as targeted independent leaves after the
-neutral ledger validates against the deterministic review map. All use the same
-snapshot. This keeps independent review without nested-agent support or seven
-redundant full-scope reads. Large reports live in git-local workflow artifacts,
-while the Agent mailbox returns compact receipts.
+generated root team registers all three review lenses directly. During full review
+the root runs readiness gates once, validates the three scope-manifest union, and
+dispatches architecture-design, correctness-safety, and engineering-quality together
+over the same immutable snapshot. This keeps independent review without nested-agent
+support or redundant full-scope reads. Large reports live in git-local workflow
+artifacts, while the Agent mailbox returns compact receipts.
 
 Kimi uses the same scope/artifact contract as Codex and Claude: required work and
 approved Scope Delta IDs enter design/tasks; optional additions go through Review
@@ -122,9 +121,9 @@ team plus all internal resources.
     ├── sk-tester.yaml
     ├── sk-developer.yaml
     ├── sk-review-orchestrator.yaml
-    ├── sk-review-security.yaml
-    ├── sk-review-architecture.yaml
-    ├── ...                    # Seven root-dispatchable leaf review lenses
+    ├── sk-review-architecture-design.yaml
+    ├── sk-review-correctness-safety.yaml
+    ├── sk-review-engineering-quality.yaml
     ├── sk-acceptance-reviewer.yaml
     └── references/           # Agent prompts and shared resources
         ├── sk-team-feature.md # Generated prompt with embedded phase prompts

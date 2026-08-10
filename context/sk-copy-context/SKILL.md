@@ -25,10 +25,23 @@ for sessions without a usable workflow ledger, not a transcript export.
 ### 1. Resolve durable state first
 
 Read the canonical [context handoff template](references/context-handoff.md).
-Resolve `git rev-parse --git-path sk-workflow` and look for the active change's
-`state.json`. When it exists, validate its artifact paths/fingerprints and use it as
-the primary handoff. Include only the current goal, approvals/constraints, current
-phase/status, exact artifact/ledger paths, dirty paths, blockers, and next action.
+Resolve `git rev-parse --git-path sk-workflow` and locate the active change's runtime
+directory. `events.jsonl` is the authoritative ledger and `state.json` is only its
+projection. Resolve Python 3.10+ and run the installed/source runtime helper `status`;
+when `snapshot_status` is `valid`, also run `validate` before using the projection.
+Use `~/.claude/agents/shared/runtime-state-policy.md` or the source
+`workflow/agents/shared/runtime-state-policy.md`, and its colocated installed/source
+`runtime-state/sk_state.py` helper. Report the complete status vocabulary:
+valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema.
+Validate valid; repair stale/diverged/missing only with a valid non-empty journal;
+migrate legacy_v1 without history (repair it when valid history exists); fail closed
+with `recover-journal-or-reinitialize` for orphaned or missing/diverged without
+history; and fail closed with `require-compatible-helper` for unsupported_schema.
+Do not mutate state during copy.
+
+Include only the current goal, approvals/constraints, current phase/status, runtime
+directory, journal/projection paths, schema/revision/snapshot health, exact artifact
+fingerprints, dirty paths, blockers, and next action.
 
 Never paste conversation history, full artifacts/diffs, raw tool output, or a list
 of every file merely read. Keep the handoff under 100 lines / about 4,000 tokens.

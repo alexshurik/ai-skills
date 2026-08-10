@@ -36,7 +36,9 @@
         "workflow.waiting_for_user",
         "workflow.blocked",
         "workflow.blocker_resolved",
-        "workflow.completed"
+        "workflow.completed",
+        "review.lease.granted",
+        "review.lease.released"
       ]
     },
     "recorded_at": { "type": "string", "format": "date-time" },
@@ -49,15 +51,322 @@
         "id": { "$ref": "#/$defs/identifier" }
       }
     },
-    "command_id": { "type": "string", "minLength": 1 },
+    "command_id": { "$ref": "#/$defs/nonemptyString" },
     "causation_id": { "$ref": "#/$defs/identifier" },
     "data": { "type": "object" }
   },
+  "allOf": [
+    { "$ref": "#/$defs/workflowStarted" },
+    { "$ref": "#/$defs/workflowMigrated" },
+    { "$ref": "#/$defs/stageEntered" },
+    { "$ref": "#/$defs/stageCompleted" },
+    { "$ref": "#/$defs/gateRequested" },
+    { "$ref": "#/$defs/gateDecided" },
+    { "$ref": "#/$defs/taskCreated" },
+    { "$ref": "#/$defs/attemptStarted" },
+    { "$ref": "#/$defs/resultRecorded" },
+    { "$ref": "#/$defs/lateResultRecorded" },
+    { "$ref": "#/$defs/checkRecorded" },
+    { "$ref": "#/$defs/artifactRecorded" },
+    { "$ref": "#/$defs/waitingForAgents" },
+    { "$ref": "#/$defs/waitingForUser" },
+    { "$ref": "#/$defs/workflowBlocked" },
+    { "$ref": "#/$defs/blockerResolved" },
+    { "$ref": "#/$defs/workflowCompleted" }
+    ,{ "$ref": "#/$defs/reviewLeaseGranted" }
+    ,{ "$ref": "#/$defs/reviewLeaseReleased" }
+  ],
   "$defs": {
     "identifier": {
       "type": "string",
       "minLength": 1,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@+\\-]*$"
+    },
+    "nonemptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000\\r\\n]+$"
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "workflowStartedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run", "repositories"],
+      "properties": {
+        "run": { "type": "object" },
+        "repositories": { "type": "object" }
+      }
+    },
+    "workflowMigratedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_sha256", "state"],
+      "properties": {
+        "source_sha256": { "$ref": "#/$defs/sha256" },
+        "state": { "type": "object" }
+      }
+    },
+    "stageEnteredData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage"],
+      "properties": { "stage": { "$ref": "#/$defs/identifier" } }
+    },
+    "stageCompletedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "outcome"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "outcome": { "enum": ["succeeded", "failed", "skipped"] }
+      }
+    },
+    "gateRequestedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "gate", "reason"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "gate": { "$ref": "#/$defs/identifier" },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "gateDecidedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "gate", "decision", "decided_by"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "gate": { "$ref": "#/$defs/identifier" },
+        "decision": { "enum": ["approved", "rejected", "waived"] },
+        "decided_by": { "$ref": "#/$defs/nonemptyString" },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "taskCreatedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "task", "role"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "task": { "$ref": "#/$defs/identifier" },
+        "role": { "$ref": "#/$defs/identifier" },
+        "required": { "type": "boolean" }
+      }
+    },
+    "attemptStartedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "task", "attempt_id", "host_thread_id"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "task": { "$ref": "#/$defs/identifier" },
+        "attempt_id": { "$ref": "#/$defs/identifier" },
+        "host_thread_id": { "$ref": "#/$defs/nonemptyString" },
+        "input_fingerprint": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "resultRecordedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "task", "attempt_id", "outcome"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "task": { "$ref": "#/$defs/identifier" },
+        "attempt_id": { "$ref": "#/$defs/identifier" },
+        "outcome": { "enum": ["succeeded", "failed", "blocked", "cancelled"] },
+        "verdict": { "$ref": "#/$defs/nonemptyString" },
+        "artifact": { "$ref": "#/$defs/nonemptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "lateResultRecordedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_id"],
+      "properties": {
+        "attempt_id": { "$ref": "#/$defs/identifier" },
+        "verdict": { "$ref": "#/$defs/nonemptyString" },
+        "artifact": { "$ref": "#/$defs/nonemptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "checkRecordedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "check", "status"],
+      "properties": {
+        "stage": { "$ref": "#/$defs/identifier" },
+        "check": { "$ref": "#/$defs/identifier" },
+        "status": { "enum": ["passed", "failed", "unknown"] },
+        "required": { "type": "boolean" },
+        "evidence": { "$ref": "#/$defs/nonemptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifactRecordedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path", "sha256"],
+      "properties": {
+        "name": { "$ref": "#/$defs/identifier" },
+        "path": { "$ref": "#/$defs/nonemptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "kind": { "$ref": "#/$defs/identifier" },
+        "stage": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "waitingForAgentsData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_ids", "join", "reason_code"],
+      "properties": {
+        "attempt_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        },
+        "join": { "enum": ["foreground", "detached"] },
+        "reason_code": { "$ref": "#/$defs/identifier" },
+        "detach_reason": { "$ref": "#/$defs/identifier" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "join": { "const": "detached" } }, "required": ["join"] },
+          "then": { "required": ["detach_reason"] },
+          "else": { "not": { "required": ["detach_reason"] } }
+        }
+      ]
+    },
+    "waitingForUserData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_ids", "reason_code"],
+      "properties": {
+        "gate_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@+\\-]*/[A-Za-z0-9][A-Za-z0-9._:@+\\-]*$" }
+        },
+        "reason_code": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "workflowBlockedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocker_id", "reason", "required_action"],
+      "properties": {
+        "blocker_id": { "$ref": "#/$defs/identifier" },
+        "reason": { "$ref": "#/$defs/nonemptyString" },
+        "required_action": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "blockerResolvedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocker_id"],
+      "properties": { "blocker_id": { "$ref": "#/$defs/identifier" } }
+    },
+    "workflowCompletedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome"],
+      "properties": { "outcome": { "enum": ["completed", "aborted"] } }
+    },
+    "reviewLeaseGrantedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lease_id", "stage", "holder_attempt_id", "holder_actor_id"],
+      "properties": {
+        "lease_id": { "$ref": "#/$defs/identifier" },
+        "stage": { "$ref": "#/$defs/identifier" },
+        "holder_attempt_id": { "$ref": "#/$defs/identifier" },
+        "holder_actor_id": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "reviewLeaseReleasedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lease_id"],
+      "properties": { "lease_id": { "$ref": "#/$defs/identifier" } }
+    },
+    "workflowStarted": {
+      "if": { "properties": { "type": { "const": "workflow.started" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workflowStartedData" } } }
+    },
+    "workflowMigrated": {
+      "if": { "properties": { "type": { "const": "workflow.migrated_from_v1" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workflowMigratedData" } } }
+    },
+    "stageEntered": {
+      "if": { "properties": { "type": { "const": "stage.entered" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/stageEnteredData" } } }
+    },
+    "stageCompleted": {
+      "if": { "properties": { "type": { "const": "stage.completed" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/stageCompletedData" } } }
+    },
+    "gateRequested": {
+      "if": { "properties": { "type": { "const": "gate.requested" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/gateRequestedData" } } }
+    },
+    "gateDecided": {
+      "if": { "properties": { "type": { "const": "gate.decided" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/gateDecidedData" } } }
+    },
+    "taskCreated": {
+      "if": { "properties": { "type": { "const": "task.created" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/taskCreatedData" } } }
+    },
+    "attemptStarted": {
+      "if": { "properties": { "type": { "const": "agent.attempt.started" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/attemptStartedData" } } }
+    },
+    "resultRecorded": {
+      "if": { "properties": { "type": { "const": "agent.result.recorded" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/resultRecordedData" } } }
+    },
+    "lateResultRecorded": {
+      "if": { "properties": { "type": { "const": "agent.late_result.recorded" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/lateResultRecordedData" } } }
+    },
+    "checkRecorded": {
+      "if": { "properties": { "type": { "const": "check.recorded" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/checkRecordedData" } } }
+    },
+    "artifactRecorded": {
+      "if": { "properties": { "type": { "const": "artifact.recorded" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/artifactRecordedData" } } }
+    },
+    "waitingForAgents": {
+      "if": { "properties": { "type": { "const": "workflow.waiting_for_agents" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/waitingForAgentsData" } } }
+    },
+    "waitingForUser": {
+      "if": { "properties": { "type": { "const": "workflow.waiting_for_user" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/waitingForUserData" } } }
+    },
+    "workflowBlocked": {
+      "if": { "properties": { "type": { "const": "workflow.blocked" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workflowBlockedData" } } }
+    },
+    "blockerResolved": {
+      "if": { "properties": { "type": { "const": "workflow.blocker_resolved" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/blockerResolvedData" } } }
+    },
+    "workflowCompleted": {
+      "if": { "properties": { "type": { "const": "workflow.completed" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workflowCompletedData" } } }
+    },
+    "reviewLeaseGranted": {
+      "if": { "properties": { "type": { "const": "review.lease.granted" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/reviewLeaseGrantedData" } } }
+    },
+    "reviewLeaseReleased": {
+      "if": { "properties": { "type": { "const": "review.lease.released" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/reviewLeaseReleasedData" } } }
     }
   }
 }

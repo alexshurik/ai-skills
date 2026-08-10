@@ -102,9 +102,10 @@ hypothetical that depends on an unapproved threat-model expansion may still be
 Insufficient evidence is `UNVERIFIED`/`NEEDS_INVESTIGATION`, not an automatic
 security BLOCKER and not automatic implementation work.
 
-## 4. Review Triage Gate
+## 4. Review Triage Gate and frozen remediation scope
 
-After the initial full review and before remediation, render:
+Round 1 reviewers must each return their complete finding set; do not drip one issue
+per remediation round. After the initial full review and before remediation, render:
 
 ```markdown
 ## Review Triage
@@ -119,7 +120,8 @@ After the initial full review and before remediation, render:
 | ID | Proposal | Why non-blocking |
 ```
 
-Pass the remediation developer an allowlist containing only:
+Resolve every `user_decision`, then freeze the exact remediation allowlist containing
+only:
 
 1. `required_fix` IDs; and
 2. `user_decision` IDs explicitly approved for this change.
@@ -130,7 +132,7 @@ remediation; do not carry an undecided addition through a code cycle. Do not sen
 “fix all findings”. If a proposed fix itself crosses a material scope boundary,
 return to triage rather than implementing it.
 
-After the initial review, freeze non-critical scope. A final review still blocks:
+After triage, freeze non-critical scope. A targeted verification round still blocks:
 
 - an unresolved approved `required_fix`;
 - a regression introduced by remediation;
@@ -140,8 +142,18 @@ After the initial review, freeze non-critical scope. A final review still blocks
 New non-critical hardening, refactoring, observability, or threat-model expansion
 goes to `DEFERRED.md`; it does not start another remediation loop. If triage changes
 only dispositions/deferred decisions and no source or normative artifact, do not
-repeat the full review. Any implemented change requires a fresh snapshot and all
-applicable final lenses.
+repeat review. Any implementation requires a fresh snapshot, root readiness gates
+once, a provable remediation delta, and every finding-owning/impact-routed lens.
+Old evidence never proves changed content.
+
+Round 2 is targeted when the parent full review, immutable pre/post fingerprints,
+complete delta, unchanged hashes, no scope expansion, and routing are all proven.
+A material scope expansion, changed authority/base, dependency/trust/infrastructure
+expansion, unexplained path, invalid parent artifact, or unprovable delta forces all
+three lenses but consumes the same round budget. Round 3 is exceptional and only
+for unresolved allowlisted defects, remediation regressions, or newly proven
+critical correctness/security defects. There is no automatic Round 4; return
+`NEEDS USER DECISION`. Transport-only waits do not consume or reset rounds.
 
 ## 5. Artifact ownership
 
@@ -175,9 +187,9 @@ Resolve the root using `git rev-parse --git-path sk-workflow` and store under
   whose tasks preserve agent attempts; `control` records current wait/block/terminal
   state;
 - checkpoints and large test/static-analysis logs;
-- `review/<snapshot>/change-evidence.json`, `review-map.json`,
-  `coverage-ledger.json`, scope manifests, full lens reports, provenance, and the
-  full technical `CODE_REVIEW.md`.
+- `review/<snapshot>/change-evidence.json`, `review-map.json`, the three lens scope
+  manifests, full lens reports, readiness/static-analysis provenance, remediation
+  delta evidence, and the full technical `CODE_REVIEW.md`.
 
 Runtime state contains only semantic transitions and resumable decisions, not raw
 conversation or tool transcripts. Host session logs already record exact calls and

@@ -64,7 +64,7 @@ runs them only on request.
 | `sk-doc-reviewer` | Doc Review (optional) | Consistency & alignment check before testing |
 | `sk-tester` | TDD Red | Write failing tests before code |
 | `sk-developer` | TDD Green | Implement code to pass tests |
-| `sk-review-orchestrator` | Review | Dispatches contract/security, architecture, abstraction, structure, imports, stack, and instruction-quality lenses |
+| `sk-review-orchestrator` | Review | Dispatches architecture-design, correctness-safety, and engineering-quality lenses |
 | `sk-acceptance-reviewer` | Acceptance | Verify business requirements met |
 
 ## Workflows
@@ -96,14 +96,15 @@ Invoke sk-team-feature with: Add user authentication with OAuth2
 
 ### Quick Workflow (`sk-team-quick`)
 
-For bugfixes, typos, small changes (four phases):
+For bugfixes, typos, and small changes, quick mode uses two bounded threads:
 
 ```
-1. sk-architect → Brief design note (quick mode)
-2. sk-developer → Fix + Tests
-3. sk-review-orchestrator → Quality check (all applicable review lenses)
-4. sk-acceptance-reviewer → Verify fix + write docs (quick mode)
+1. sk-developer → Diagnosis + brief design gate + implementation/tests
+2. fresh non-delegating reviewer → Three owner dimensions + acceptance verdict
 ```
+
+The root retains the design approval and independent-review gates without launching
+the full feature role sequence.
 
 **Example:**
 ```
@@ -139,13 +140,16 @@ $(git rev-parse --git-path sk-workflow)/<feature-name>/
 ├── events.jsonl                  # authoritative semantic transition history
 ├── state.json                    # derived schema-v2 stage/task/attempt projection
 ├── checkpoints/ and logs/
-└── review/<snapshot>/            # evidence, map, ledger, scopes, lenses, full report
+└── review/<snapshot>/            # evidence, map, scopes, provenance, lenses, full report
 ```
 
-Only the installed shared runtime-state helper writes the journal/projection. Gates
-belong to stages, attempts belong to logical tasks, and transport-only wait timeouts
-do not produce events. `sk-team-status` validates the projection and can show every
-agent attempt without reading host transcripts.
+The global root owns the journal/projection; only the named nested-review lease may
+record leaf attempts through the same helper. Gates belong to stages, attempts belong
+to logical tasks, and transport-only wait timeouts do not produce events.
+`sk-team-status` validates the projection and can show every agent attempt without
+reading host transcripts. Python 3.10+ is required; resolve `python3`, `python`, or
+`py -3` before invoking the helper. See the shared `runtime-state-policy.md` for the
+authoritative command, lease, recovery, and migration protocol.
 
 `DEFERRED.md` stages `candidate | deferred | rejected | promoted` proposals; it is
 not automatically the backlog. At archive, user-selected items go to the repository's
@@ -160,8 +164,10 @@ addition as a separately approved `SD-*` item. New queues/storage/workers, telem
 or rollout systems, broader threat models, extra public contracts, cross-system
 finality, and broad refactors cannot enter tasks through a generic approval.
 
-All seven review lenses remain strict. Each finding receives a risk severity plus a
-separate disposition: `required_fix`, `user_decision`, `backlog`, or `baseline`.
+All three review dimensions remain strict. Full review runs three independent
+lenses; quick mode may combine them for a truly small change. Each finding receives
+a risk severity plus a separate disposition: `required_fix`, `user_decision`,
+`backlog`, or `baseline`.
 Only required fixes and explicitly selected decision IDs enter remediation. Stack
 review still reports long/complex touched functions; unchanged debt is classified
 rather than silently forcing a broad refactor. Final review keeps catching
@@ -171,6 +177,11 @@ instead of starting an unbounded loop.
 `CHANGES REQUESTED` means required work remains; `TRIAGE REQUIRED` means only a
 scope decision remains; backlog/baseline observations may stay visible under an
 `APPROVED` current-scope verdict.
+
+Review is capped at three rounds: full Round 1, targeted Round 2 after frozen
+triage, and exceptional Round 3 only for an unresolved allowlisted defect,
+remediation regression, or newly proven critical correctness/security defect.
+There is no automatic Round 4; remaining blockers return `NEEDS USER DECISION`.
 
 ## TDD Approach
 
@@ -219,10 +230,10 @@ Each agent runs in isolated context with specific tools.
   models, reuse decisions, abstraction budget, module-growth forecast, and
   infrastructure non-goals. Developer re-checks these before the first edit.
 
-- **Independent review.** Review includes complete tracked/untracked scope and
-  separate lenses for contract/security, layers, abstraction cost, structure,
-  imports, stack rules, and applicable instruction quality. Baseline debt is shown
-  separately from change-caused findings.
+- **Independent review.** Review includes complete tracked/untracked scope and three
+  owners: architecture-design (shape/ownership), correctness-safety (semantics/risk),
+  and engineering-quality (implementation/tool evidence). Baseline debt is separate
+  from change-caused findings.
 
 - **Scope governance.** Planning uses a Scope Delta Gate. Review uses one compact
   mandatory/user-decision/backlog triage and remediation receives only approved
@@ -240,7 +251,7 @@ Each agent runs in isolated context with specific tools.
 - **Context and nesting.** Codex children use `fork_turns="none"` and inherit the
   parent's model/reasoning. Nesting is capped at depth 2 and only an orchestrator
   with an explicit child budget may delegate. Kimi stable children cannot nest, so
-  its generated root team dispatches the seven review leaves directly.
+  its generated root team dispatches the three review leaves directly.
 
 - **Efficient waiting.** Work launches in concurrency-aware waves. Required children
   stay in a foreground join using the longest host-permitted event-driven mailbox

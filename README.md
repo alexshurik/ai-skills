@@ -4,6 +4,16 @@ A collection of AI coding agent skills for multi-agent development workflows.
 
 **Compatible with:** Claude Code, OpenAI Codex, Cursor, Kimi Code CLI
 
+## Requirements
+
+- Python 3.10 or newer is required at runtime. Installers resolve `python3`,
+  `python`, or the Windows launcher `py -3` and fail before writing when the
+  interpreter is missing or too old.
+- The installed skills use only the Python standard library; Ruff, MyPy, uv, and
+  jsonschema are repository-development dependencies, not end-user dependencies.
+- Repository development uses [uv](https://docs.astral.sh/uv/): run `uv sync --dev`
+  once, then `./scripts/check-python.sh` for format, lint, and type checks.
+
 ## Quick Start
 
 ### Claude Code
@@ -60,7 +70,7 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 | Doc Review | Doc Reviewer | `DOC_REVIEW.md` | Optional, verifies alignment |
 | Testing | Tester | Test files (failing) | Proposes test plan for approval |
 | Implementation | Developer | Code (tests pass) | — |
-| Code Review | Review Orchestrator | `CODE_REVIEW.md` | Reviews complete tracked/untracked scope through independent contract/security, architecture, abstraction, structure, import, stack, and instruction lenses |
+| Code Review | Review Orchestrator | `CODE_REVIEW.md` | Reviews complete tracked/untracked scope through three independent shape, semantics/risk, and implementation/tool-evidence lenses |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 | Retrospective | Orchestrator | `RETROSPECTIVE.md` | Records escaped signals and routes lessons to repo guidance, a named skill proposal, or no promotion |
 | Archive | Orchestrator | `openspec/completed/<feature-name>/` | Moves the approved artifact set after final user approval |
@@ -77,7 +87,8 @@ The quick workflow uses two bounded threads:
 
 1. A developer diagnoses the issue, writes a short design for approval, then
    implements and tests the approved fix.
-2. A fresh reviewer checks all seven review dimensions and verifies acceptance.
+2. A fresh reviewer checks architecture-design, correctness-safety, and
+   engineering-quality, then verifies acceptance.
 
 It keeps the design approval and independent-review gates without running the full
 feature workflow.
@@ -170,9 +181,8 @@ runtime data under `<runtime-root>/<feature-name>/`:
 └── review/<snapshot>/
     ├── change-evidence.json      # complete Git scope and fingerprint
     ├── review-map.json           # lossless path inventory
-    ├── coverage-ledger.json      # neutral full-scope reading record
-    ├── lens-scopes/              # per-lens reading depth and reasons
-    ├── lenses/                   # seven complete lens reports
+    ├── lens-scopes/              # three manifests; validated union covers all paths
+    ├── lenses/                   # three complete lens reports
     ├── static-analysis/          # full analyzer logs/provenance
     └── CODE_REVIEW.md            # full technical review report
 ```
@@ -180,13 +190,35 @@ runtime data under `<runtime-root>/<feature-name>/`:
 `events.jsonl` records only semantic transitions and is authoritative. `state.json`
 is a derived projection: stages own gates/checks/tasks, tasks preserve all attempts,
 and `control` records the current foreground/detached wait, user gate, blocker, or
-terminal outcome. The shared helper is the only writer and uses revision checks,
-idempotent command IDs, durable append, and atomic projection replacement. Exact host
+terminal outcome. The global root owns state; a named nested review orchestrator may
+receive the policy's bounded attempt-only writer lease. All writes use the shared
+helper with revision checks, idempotent command IDs, durable append, and atomic
+projection replacement. Exact host
 tool calls already live in Codex/Claude/Kimi session logs. Do not create parallel
 `SCOPE.md`, `TRIAGE.md`, `AGENT_CALLS.md`, or `review-summary.md`.
 
-Structure is inspired by [OpenSpec](https://openspec.dev/). No additional tools are
-required; directories are created automatically.
+Structure is inspired by [OpenSpec](https://openspec.dev/). Runtime directories are
+created automatically.
+
+### Resume and troubleshoot
+
+Start with the status skill for your host: `/sk-team-status` in Claude Code,
+`$sk-team-status` in Codex, `/skill:sk-team-status` in Kimi, or the installed
+`sk-team-status` command in Cursor. For a direct runtime check, resolve the same
+Python 3.10+ interpreter used by the workflow, then run:
+
+```bash
+<python> workflow/agents/shared/runtime-state/sk_state.py status \
+  --runtime-dir "$(git rev-parse --git-path sk-workflow)/<feature-name>"
+```
+
+If `snapshot_status` is `valid`, run `validate` before resuming. Otherwise follow
+`recommended_action` exactly: `repair` rebuilds only the derived projection from a
+valid journal; `migrate-v1` converts a legacy v1 projection while preserving its
+backup; `recover-journal-or-reinitialize` means authoritative history is unavailable
+and must be recovered or explicitly reconstructed; `require-compatible-helper`
+means the journal or projection is newer and must remain untouched until a compatible
+helper is available. Never hand-edit `events.jsonl` or `state.json`.
 
 ## Scope Governance
 
@@ -203,8 +235,8 @@ models, additional finality/reorg systems, public contracts, and broad neighbori
 refactors require an explicit item decision. A general approval or autonomous-mode
 request does not silently approve them.
 
-Review remains strict across all seven lenses. Every finding has both severity and
-scope disposition:
+Review remains strict across all three dimensions. Every finding has both severity
+and scope disposition:
 
 | Disposition | Meaning | Automatic remediation |
 |---|---|---|
@@ -218,6 +250,12 @@ pre-existing debt. Remediation receives an approved finding-ID allowlist rather
 than a broad “fix everything” instruction. `CHANGES REQUESTED` means required work
 or verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
 `APPROVED` means the approved scope passes.
+
+Round 1 runs all three lenses and freezes exhaustive findings. Targeted Round 2
+verifies a fresh remediation snapshot when the parent, fingerprints, delta,
+unchanged hashes, scope, and impact routing are proven. Round 3 is exceptional for
+unresolved allowlisted defects, remediation regressions, or newly proven critical
+defects. There is no automatic Round 4.
 
 ## Best-Practice Profiles & Project Conventions
 
@@ -240,8 +278,8 @@ default  →  language  →  framework  →  tooling  →  project
 
 Before editing, `sk-developer` checks boundaries, types, reuse, abstractions,
 structure, and imports, then runs the project's formatter and linter. The review
-orchestrator builds one change-evidence inventory, runs seven independent review
-lenses, separates baseline debt, and marks checks that did not execute as
+orchestrator builds one change-evidence inventory, runs three independent review
+lenses in one wave, separates baseline debt, and marks checks that did not execute as
 `UNVERIFIED`. Detailed evidence and safety rules live under
 `workflow/agents/references/` and `shared/review-evidence/`.
 
@@ -274,11 +312,12 @@ same-thread clarification is allowed; a new phase, redo, or remediation gets a
 clean child. The canonical specs are
 `workflow/agents/shared/{orchestration-policy,handoff-protocol,scope-governance}.md`.
 
-Full reviews use one lossless review map. The structure lens covers every changed
-human-authored text file; the other six lenses use the map to inspect relevant raw
-source without repeating the same full-tree read. Required results stay in an
-event-driven foreground join. Detached background state is resumable but is used
-only when requested or forced by host/wait limitations.
+Full reviews use one lossless review map and three scope manifests whose validated
+union covers every path. Architecture-design owns shape/ownership,
+correctness-safety owns semantics/risk, and engineering-quality owns implementation/
+tool evidence. Root runs gates once per snapshot and dispatches all three together.
+Required results stay in an event-driven foreground join. Detached background state
+is resumable but is used only when requested or forced by host/wait limitations.
 
 ## Directory Structure
 
@@ -287,7 +326,7 @@ skills/
 ├── workflow/
 │   ├── skills/                  # Orchestrator commands (sk-team-*)
 │   └── agents/                  # 8 workflow agents
-│       ├── review-steps/        # Seven lenses: security, architecture, abstraction, structure, imports, stack, instructions
+│       ├── review-steps/        # Three lenses: architecture-design, correctness-safety, engineering-quality
 │       ├── references/          # Conditional workflow gates and verdict/tooling policy
 │       └── shared/              # Context, waiting, handoff, and scope-governance policies
 ├── onboarding/                  # Project onboarding commands
@@ -296,8 +335,8 @@ skills/
 ├── context/                     # Context management skill and its handoff template
 ├── shared/
 │   ├── templates/               # Artifact templates
-│   ├── static-analysis/         # Deep-analysis battery used by review step 4
-│   ├── review-evidence/         # Evidence collector plus lossless review-map/coverage validator
+│   ├── static-analysis/         # Root readiness battery consumed by engineering-quality
+│   ├── review-evidence/         # Evidence collector plus review-map/scope validator
 │   └── best-practices/          # Coder + reviewer profiles
 │       ├── default/             # Universal fallback profiles
 │       ├── languages/           # python, js, typescript, go
@@ -311,6 +350,7 @@ skills/
 ├── tests/                       # Structural, packaging, and workflow contract tests
 ├── evals/                       # Non-installed behavioral regression fixtures
 ├── skills-manifest.yaml         # Canonical catalog/internal resource inventory
+├── pyproject.toml / uv.lock     # Pinned format, lint, type, and coverage toolchain
 ├── adapters/                    # Platform-specific adapters
 ├── AGENTS.md                    # Cross-platform agent docs (auto-generated)
 └── README.md
@@ -331,10 +371,11 @@ the public docs, then run the relevant installer.
 ./scripts/uninstall.sh
 ```
 
-Cursor project installs are explicit because their locations vary:
+Cursor project installs are explicit because their locations vary. Use the resolved
+Python 3.10+ command for direct CLI calls:
 
 ```bash
-python3 scripts/skills_tool.py uninstall \
+<python> scripts/skills_tool.py uninstall \
   --target cursor /path/to/project/.cursor/skills
 ```
 

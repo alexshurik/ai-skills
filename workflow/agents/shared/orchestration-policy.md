@@ -16,7 +16,10 @@ the semantic event journal, materialized state, transitions, and migration.
 3. Full evidence lives in durable artifacts or Git-local runtime artifacts. Agent
    messages carry compact decisions and artifact paths.
 4. The root owns the global spawn, retry, concurrency budget, and runtime-state
-   writes. Children never edit the workflow journal or projection.
+   writes. The exact bounded nested-review writer lease is the only child-writer
+   exception: its holder records only permitted nested attempt events through the
+   helper. No child ever edits the workflow journal or projection directly, and
+   every child outside that lease is read-only with respect to runtime state.
 5. Nesting is limited to **depth 2**. A child may spawn helpers only when its task
    envelope grants a named subgraph and exact child count. Depth 3+ is prohibited.
 6. A leaf agent may not spawn. Review lenses are always leaves.
@@ -97,8 +100,10 @@ root
 - Every runtime artifact has a content fingerprint. Parent summaries name the exact
   artifact path and fingerprint they used.
 - `events.jsonl` is the authoritative append-only history of semantic workflow
-  transitions. `state.json` is its derived compact projection. The root mutates both
-  only through `runtime-state/sk_state.py` under `runtime-state-policy.md`.
+  transitions. `state.json` is its derived compact projection. The global root owns
+  both and mutates them only through `runtime-state/sk_state.py`. The sole exception
+  is the bounded nested-review writer lease defined by `runtime-state-policy.md`;
+  it records leaf tasks/attempts inside the root's existing foreground join.
 - Stages own their gates, checks, and tasks; tasks own immutable attempt history.
   `control` records `ready`, `waiting_agents`, `waiting_user`, `blocked`, or
   `complete`. Neither file is a raw transcript or duplicate host tool-call log.

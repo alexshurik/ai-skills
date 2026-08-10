@@ -1,174 +1,150 @@
 # Review Aggregation and Verdict Policy
 
-Read and apply `~/.claude/agents/shared/scope-governance.md` or its
-source-repository equivalent. This file determines review validity and severity;
-scope governance determines whether a finding has remediation authority. Never
-infer one from the other.
+Use `scope-governance.md` for remediation authority. This policy determines review
+validity and verdict; severity never grants scope.
 
-## Required lenses
+## Lenses and ownership
 
-Run these lenses for code changes:
+A full review runs exactly three independent lenses in one wave:
 
-1. contract/security;
-2. architecture/layers;
-3. abstraction/navigation;
-4. structure;
-5. imports;
-6. stack rules.
+1. **architecture-design** — shape and ownership: components/modules, dependency
+   and import direction, responsibility placement, abstraction/navigation,
+   file/module structure, API/schema/model compatibility, packaging/loaders;
+2. **correctness-safety** — semantics and risk: approved behavior, state/edge/failure
+   paths, recovery/migration/concurrency/idempotency, trust/security/data loss,
+   semantic compatibility, test adequacy, executable instruction correctness;
+3. **engineering-quality** — implementation and tool evidence: root-produced gates
+   and static analysis, stack idioms, readability, complexity, duplication, dead
+   code, error handling, and test-code quality.
 
-Run instruction quality when the scope contains repository guidance,
-specifications/ADRs, project profiles, skills, agent prompts/references, or their
-packaging/generation scripts. Otherwise record N/A.
+A lens is valid only when its artifact is parseable, belongs to the current
+snapshot, covers its manifest, inspects assigned raw current/base content, and
+returns a complete finding set or explicit clean result. Timeout, empty output,
+stale hash, unsafe exclusion, or missing required context is UNVERIFIED. No lens may
+spawn. Inline mode must preserve three separately labelled passes.
 
-A lens is valid when it ran as a parallel subagent or disclosed inline section and
-returned parseable findings/N/A. Error, timeout, empty output, or silent omission is
-UNVERIFIED.
+The three scope-manifest union must validate against `review-map.json`. Uniform
+full-file reading by every lens is not required. Unchanged content is reusable only
+when its recorded hash is verified.
 
-A lens is also invalid when its lens scope manifest omits a review-map path, assigns
-no reading depth, or gives no defensible reason for metadata-only/excluded treatment.
-`targeted-content` must include changed intervals, enclosing declarations, relevant
-base context, and required call sites; a material lead expands to full content.
-Complete scope is mandatory; uniform full-file reading by every lens is not.
+## Readiness
 
-The structure/coverage lens is additionally invalid unless its neutral
-`coverage-ledger.json` passes deterministic validation against `review-map.json`.
-Every human-authored readable text path and readable deleted base file must be
-`full-content` and `reviewed`; metadata-only treatment is limited to validated locks,
-binaries, symlinks, unavailable content, and generated/vendor output. The neutral
-ledger may guide another lens but is not evidence for its verdict: specialists must
-verify relevant raw repository/base content independently.
-
-For a full review, the structure/coverage thread runs first and the remaining lens
-verdicts run as independent clean targeted threads over the same immutable snapshot.
-No lens may spawn. A targeted rerun can diagnose remediation, but final approval
-requires a new full snapshot reviewed by every applicable lens.
+The root runs formatter, lint, type/build, tests, diff integrity, project gates, and
+applicable static analysis once per snapshot before dispatch. Any red required gate
+prevents review from starting. Engineering-quality consumes compact provenance and
+must not rerun the full battery. Missing/failed required tooling is UNVERIFIED.
 
 ## Finding classification
 
-- **Change-caused:** introduced, modified, or materially worsened by the diff.
-- **Touched structural regression:** pre-existing issue expanded or relied on by
-  the change.
-- **Baseline/out-of-scope:** unchanged and not worsened.
+- **Change-caused:** introduced, modified, or materially worsened by the change.
+- **Touched-regression:** pre-existing defect expanded or relied on by the change.
+- **Baseline:** unchanged and not worsened; visible but non-blocking.
 
-Only the first two are eligible to affect the current change; finding disposition
-still decides remediation/release authority. Always render baseline separately.
+Finding disposition remains separate from severity. Every finding includes
+`disposition`, `scope_basis`, `risk_if_deferred`, and
+`blocks_release`. Only `required_fix` creates automatic remediation authority.
+Unresolved `user_decision` yields `TRIAGE REQUIRED`; backlog/baseline items never
+block.
 
-For every finding also assign the scope-governance fields `disposition`,
-`scope_basis`, `risk_if_deferred`, and `blocks_release`. Detection remains strict:
-a reviewer may report any evidence-backed concern. Only `required_fix` creates
-automatic remediation authority; `user_decision`, `backlog`, and `baseline` do not.
+Severity:
 
-## Severity
+- **BLOCKER:** realistic auth/contract failure, secret exposure, corruption/data
+  loss, unsafe destructive instruction, broken initialization, or mandatory gate;
+- **MAJOR:** wrong ownership/direction/shape, material semantic risk, missing
+  critical tests, or meaningfully worsened maintainability;
+- **MINOR:** bounded reliability/maintainability defect;
+- **NITPICK:** optional preference.
 
-- **BLOCKER:** exploitable security issue, secret exposure, data loss/corruption,
-  incorrect authorization/contract, broken initialization, or CI-blocking error.
-- **MAJOR:** wrong ownership/dependency direction, misleading business model,
-  meaningful change-caused abstraction/structure/import debt, missing critical
-  tests, or high quantitative risk. An unapproved scope expansion is a planning/
-  triage defect; the proposed expanded implementation is not automatically required.
-- **MINOR:** bounded maintainability/reliability issue that does not invalidate the
-  design.
-- **NITPICK:** optional preference; do not block.
+## Review rounds
 
-Normalize quantitative findings:
+### Round 1 — full
 
-| Finding | Severity |
-|---|---|
-| high/critical vulnerable dependency | BLOCKER |
-| moderate vulnerable dependency | MAJOR |
-| hardcoded credential | BLOCKER |
-| CI linter/type/build failure | BLOCKER |
-| circular dependency | MAJOR |
-| cyclomatic/cognitive complexity >15 | MAJOR |
-| cyclomatic/cognitive complexity >10 | MINOR |
-| meaningful duplication >5 lines | MAJOR |
-| high-confidence dead/unused dependency | MINOR |
+Run all three independent lenses together. Aggregate their complete finding sets,
+resolve every `user_decision`, and freeze the exact remediation allowlist. A lens
+may not hold back findings to generate later cycles.
 
-Assign security severity from a demonstrated attack path, likelihood, impact, the
-approved trust model, and compensating controls. Proven auth bypass, secret exposure,
-arbitrary transaction substitution/repeat spend, or corruption remains BLOCKER.
-Uncertainty is `NEEDS_INVESTIGATION`/UNVERIFIED; optional defense-in-depth or an
-expanded threat model is not an automatic BLOCKER.
+### Targeted Round 2
+
+Use a fresh snapshot. Require:
+
+- a valid parent full review and immutable parent fingerprint;
+- frozen allowlist and complete remediation delta;
+- immutable pre/post fingerprints and verified unchanged hashes;
+- no unexplained paths or scope expansion;
+- root gates run once on the new snapshot;
+- every finding-owning and impact-routed lens.
+
+Impact routing follows lens ownership. Multiple lenses may apply; contract/schema
+fixes route both shape and semantic owners when both changed. Old evidence is never
+proof for changed content.
+
+A material scope expansion, changed authority/base, dependency/trust/infrastructure
+expansion, unexplained path, invalid parent, or unprovable delta forces a full
+three-lens run while consuming Round 2.
+
+### Exceptional Round 3
+
+Allow only for an unresolved allowlisted defect, remediation regression, or newly
+proven critical correctness/security defect. Use a fresh snapshot, root gates once,
+and owning/impact-routed lenses; escalation conditions may require all three.
+
+There is no automatic Round 4. After Round 3 return `NEEDS USER DECISION` with exact
+blockers/options. Transport-only wait timeouts do not increment the round and round
+counters do not reset within the workflow unless the user approves a new change
+scope/workflow.
 
 ## Aggregation
 
-1. Validate every applicable lens result.
-2. Validate review-map/coverage-ledger path equality and fingerprints.
-3. Merge findings matching file, overlapping line, and concern.
-4. Keep highest severity and concatenate distinct evidence/recommendations.
-5. Preserve source lenses, change class, scope basis, disposition, deferral risk,
-   and release-blocking flag.
-6. Group `required_fix`, `user_decision`, `backlog`, and `baseline` before sorting
-   BLOCKER → MAJOR → MINOR → NITPICK within each group.
-7. Keep tool provenance and full log paths in the Git-local technical report; keep
-   only the compact decision/evidence links in the durable OpenSpec artifact.
-
-Do not deduplicate different concerns merely because they point at the same line.
-For example, wrong layer ownership and one-use navigation cost remain independent.
+1. Validate snapshot, scope union, provenance, and lens artifacts.
+2. Merge only identical concerns at overlapping locations.
+3. Preserve source lens, severity, change class, disposition, scope basis, deferral
+   risk, and release flag.
+4. Group required fixes, user decisions, backlog, and baseline; sort by severity.
+5. Keep full findings/logs Git-local and a compact durable verdict in OpenSpec.
 
 ## Approval invariant
 
-Return **APPROVED** only when:
+Return `APPROVED` only when required gates are green, scope is complete, required
+lenses are valid, no `required_fix` remains, baseline is separate, and there are
+zero required UNVERIFIED dimensions.
 
-- every applicable lens ran and is valid;
-- no `required_fix` remains;
-- complete changed/untracked scope was reviewed;
-- deterministic review-map and full-coverage ledger validation passed;
-- the static-analysis provenance table is present;
-- no required gate dimension is UNVERIFIED;
-- baseline findings are separated and visible.
+Targeted-mode approval additionally requires valid parent full review, complete
+routing, all affected lenses valid, resolved allowlist, complete/proven delta, and
+no blocking regression or newly proven critical defect.
 
-Return **TRIAGE REQUIRED** when no `required_fix` remains but one or more
-`user_decision` items has no recorded decision. Backlog/baseline items never block.
-Once the user defers/rejects/promotes those items, update the durable triage without
-rerunning lenses if no source or normative artifact changed.
-
-Otherwise return **CHANGES REQUESTED**. When the cause is missing execution rather
-than a code defect, say `CHANGES REQUESTED — review incomplete`.
+Return `TRIAGE REQUIRED` when only unresolved `user_decision` remains. Otherwise
+return `CHANGES REQUESTED`; use `CHANGES REQUESTED — review incomplete` for missing
+execution/evidence. After the round cap use `NEEDS USER DECISION`, never an
+automatic fourth pass.
 
 ## Required verdict shape
 
 ```markdown
 ## CODE REVIEW COMPLETE
 
-**Decision:** APPROVED | TRIAGE REQUIRED | CHANGES REQUESTED
+**Decision:** APPROVED | TRIAGE REQUIRED | CHANGES REQUESTED | NEEDS USER DECISION
+**Mode:** full | targeted
+**Round:** 1 | 2 | 3
+**Parent:** none | <full-review fingerprint>
+**Snapshot:** <fingerprint>
 
-### Scope
-- Base/head:
-- Tracked changed:
-- Untracked:
-- Deleted/renamed:
+### Scope and routing
+- Base/head and tracked/untracked/deleted/renamed counts
+- Scope-manifest validation and routed lenses
 
-### Pass execution
+### Lens execution
 | Lens | Mode | Status |
 |---|---|---|
-| Contract/security | parallel/inline | OK/FINDINGS/UNVERIFIED/N/A |
-| Architecture/layers | ... | ... |
-| Abstraction/navigation | ... | ... |
-| Structure | ... | ... |
-| Imports | ... | ... |
-| Stack rules | ... | ... |
-| Instruction quality | ... | ... |
+| Architecture-design | parallel/inline/N/A | OK/FINDINGS/UNVERIFIED/N/A |
+| Correctness-safety | ... | ... |
+| Engineering-quality | ... | ... |
 
-### Mandatory in-scope fixes
-[`required_fix` findings]
+### Mandatory fixes / scope decisions / backlog / baseline
+[Grouped findings]
 
-### Scope additions requiring decision
-[`user_decision` findings]
+### Readiness and provenance
+[Compact commands/statuses and full-log paths]
 
-### Deferred/backlog candidates
-[`backlog` findings]
-
-### Baseline/out-of-scope
-[`baseline` findings]
-
-### Deep analysis provenance
-[Compact table, summary, and full-log artifact paths]
-
-### Decision rationale
+### Decision rationale and next action
 [Why the invariant passes/fails]
 ```
-
-Return a compact handoff with verdict, fingerprint, report paths, lens statuses,
-required finding IDs/titles, missing verification, and next step. Keep the full
-findings, baseline section, and provenance in artifacts and show them on request.

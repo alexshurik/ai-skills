@@ -9,8 +9,8 @@ import json
 import sys
 import tempfile
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
-
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -145,7 +145,8 @@ def assert_install_receipts(
         target = target_with_receipt(root, f"install-{name}", payload)
         assert_refuses_without_mutation(
             target,
-            lambda target=target: install(
+            partial(
+                install,
                 copy.deepcopy(manifest),
                 "codex",
                 target,
@@ -161,7 +162,6 @@ def assert_install_receipts(
         symlink_target,
         lambda: install(copy.deepcopy(manifest), "codex", symlink_target),
     )
-
 
     nonregular_target = target_with_receipt(
         root,
@@ -209,9 +209,7 @@ def assert_uninstall_receipts(root: Path, manifest_version: int) -> None:
         target = target_with_receipt(root, f"uninstall-{name}", payload)
         assert_refuses_without_mutation(
             target,
-            lambda target=target: uninstall_many(
-                [UninstallRequest("codex", target, manifest_version)]
-            ),
+            partial(uninstall_many, [UninstallRequest("codex", target, manifest_version)]),
         )
 
     target = target_with_symlink_receipt(
@@ -221,9 +219,7 @@ def assert_uninstall_receipts(root: Path, manifest_version: int) -> None:
     )
     assert_refuses_without_mutation(
         target,
-        lambda: uninstall_many(
-            [UninstallRequest("codex", target, manifest_version)]
-        ),
+        lambda: uninstall_many([UninstallRequest("codex", target, manifest_version)]),
     )
 
     wrong_platform = target_with_receipt(
@@ -237,9 +233,7 @@ def assert_uninstall_receipts(root: Path, manifest_version: int) -> None:
     )
     assert_refuses_without_mutation(
         wrong_platform,
-        lambda: uninstall_many(
-            [UninstallRequest("codex", wrong_platform, manifest_version)]
-        ),
+        lambda: uninstall_many([UninstallRequest("codex", wrong_platform, manifest_version)]),
     )
 
     oversized = target_with_receipt(
@@ -252,9 +246,7 @@ def assert_uninstall_receipts(root: Path, manifest_version: int) -> None:
         receipt_file.truncate(MAX_RECEIPT_BYTES + 1)
     assert_refuses_without_mutation(
         oversized,
-        lambda: uninstall_many(
-            [UninstallRequest("codex", oversized, manifest_version)]
-        ),
+        lambda: uninstall_many([UninstallRequest("codex", oversized, manifest_version)]),
     )
 
 

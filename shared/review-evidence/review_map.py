@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and validate lossless review coverage artifacts."""
+"""Build a lossless review map and validate three-lens scope manifests."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import sys
 import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Any
-
 
 SOURCE_SUFFIXES = {
     ".c",
@@ -152,6 +151,11 @@ INSTRUCTION_PARTS = {
     "skills",
 }
 VALID_DEPTHS = {"full-content", "targeted-content", "metadata-only"}
+REQUIRED_LENSES = {
+    "architecture-design",
+    "correctness-safety",
+    "engineering-quality",
+}
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -190,8 +194,7 @@ def is_generated_candidate(path: Path, parts: tuple[str, ...]) -> bool:
     return bool(
         GENERATED_DIRS.intersection(parts)
         or ".generated." in lowered
-        or lowered.endswith((".min.css", ".min.js", ".map"))
-        or lowered.endswith(("_pb2.py", ".g.dart"))
+        or lowered.endswith((".min.css", ".min.js", ".map", "_pb2.py", ".g.dart"))
     )
 
 
@@ -205,36 +208,51 @@ def content_class(entry: dict[str, Any]) -> tuple[str, str, str]:
     current_status = entry.get("current_read_status")
 
     if name in LOCK_NAMES:
-        return (
+        result = (
             "dependency-lock",
             "metadata-only",
             "lockfile; inspect dependency deltas, not every serialized line",
         )
-    if is_generated_candidate(path, parts):
-        return (
+    elif is_generated_candidate(path, parts):
+        result = (
             "generated-candidate",
             "metadata-only",
             "generated/vendor candidate; verify provenance and escalate if authored",
         )
-    if suffix in BINARY_SUFFIXES:
-        return "binary", "metadata-only", "binary content; verify path, type, size, and provenance"
-    if current_kind == "symlink":
-        return "symlink", "metadata-only", "symlink; verify target and repository boundary"
-    if current_kind == "missing":
+    elif suffix in BINARY_SUFFIXES:
+        result = (
+            "binary",
+            "metadata-only",
+            "binary content; verify path, type, size, and provenance",
+        )
+    elif current_kind == "symlink":
+        result = ("symlink", "metadata-only", "symlink; verify target and repository boundary")
+    elif current_kind == "missing":
         if entry.get("base_read_status") == "ok":
-            return (
+            result = (
                 "deleted-authored",
                 "full-content",
                 "deleted readable file; inspect authoritative base content",
             )
-        return "deleted-unavailable", "metadata-only", "deleted file base content is unavailable"
-    if current_kind != "regular" or current_status != "ok":
-        return "unavailable", "metadata-only", "content unavailable or not a regular readable file"
-    return (
-        "authored-text",
-        "full-content",
-        "human-authored readable text requires full coverage review",
-    )
+        else:
+            result = (
+                "deleted-unavailable",
+                "metadata-only",
+                "deleted file base content is unavailable",
+            )
+    elif current_kind != "regular" or current_status != "ok":
+        result = (
+            "unavailable",
+            "metadata-only",
+            "content unavailable or not a regular readable file",
+        )
+    else:
+        result = (
+            "authored-text",
+            "full-content",
+            "human-authored readable text requires full coverage review",
+        )
+    return result
 
 
 def has_test_marker(path: Path, parts: tuple[str, ...]) -> bool:
@@ -258,33 +276,16 @@ def risk_tags(entry: dict[str, Any], classification: str) -> list[str]:
     for part in parts:
         lexical_tokens.update(token for token in part.replace("-", "_").split("_") if token)
 
-    tags = {"changed-path"}
-    if suffix in SOURCE_SUFFIXES:
-        tags.add("source")
-    if suffix in CONFIG_SUFFIXES or name in {"dockerfile", "makefile"}:
-        tags.add("configuration")
-    if has_test_marker(path, parts):
-        tags.add("test")
-    if name in LOCK_NAMES or name in DEPENDENCY_MANIFESTS or name.startswith("requirements"):
-        tags.add("dependency")
-    if DEPLOY_PARTS.intersection(parts) or name.startswith("dockerfile"):
-        tags.add("deployment")
     lowered_path = raw_path.lower()
-    if TRUST_TERMS.intersection(lexical_tokens) or any(
+    is_trust_lead = bool(TRUST_TERMS.intersection(lexical_tokens)) or any(
         term in lowered_path for term in TRUST_TERMS
-    ):
-        tags.add("trust-boundary-lead")
+    )
     instruction_prefixes = ("adr", "architecture", "design", "proposal", "requirement", "spec")
-    if (
+    is_instruction = bool(
         name in INSTRUCTION_NAMES
         or INSTRUCTION_PARTS.intersection(parts)
         or name.startswith(instruction_prefixes)
-    ):
-        tags.add("instruction")
-    if entry.get("local_imports"):
-        tags.add("import-candidate")
-    if any(entry.get(flag) for flag in ("over_300", "crossed_300", "micro_file_candidate")):
-        tags.add("structure-lead")
+    )
     metadata_classes = {
         "binary",
         "dependency-lock",
@@ -292,8 +293,25 @@ def risk_tags(entry: dict[str, Any], classification: str) -> list[str]:
         "symlink",
         "unavailable",
     }
-    if classification in metadata_classes:
-        tags.add(classification)
+    conditions = (
+        (suffix in SOURCE_SUFFIXES, "source"),
+        (suffix in CONFIG_SUFFIXES or name in {"dockerfile", "makefile"}, "configuration"),
+        (has_test_marker(path, parts), "test"),
+        (
+            name in LOCK_NAMES or name in DEPENDENCY_MANIFESTS or name.startswith("requirements"),
+            "dependency",
+        ),
+        (bool(DEPLOY_PARTS.intersection(parts)) or name.startswith("dockerfile"), "deployment"),
+        (is_trust_lead, "trust-boundary-lead"),
+        (is_instruction, "instruction"),
+        (bool(entry.get("local_imports")), "import-candidate"),
+        (
+            any(entry.get(flag) for flag in ("over_300", "crossed_300", "micro_file_candidate")),
+            "structure-lead",
+        ),
+        (classification in metadata_classes, classification),
+    )
+    tags = {"changed-path", *(tag for matches, tag in conditions if matches)}
     return sorted(tags)
 
 
@@ -305,6 +323,18 @@ def canonical_fingerprint(value: dict[str, Any]) -> str:
         sort_keys=True,
     ).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def verified_review_map_fingerprint(review_map: dict[str, Any]) -> str:
+    claimed = review_map.get("fingerprint")
+    if not isinstance(claimed, str):
+        raise ValueError("review map fingerprint must be a string")
+
+    canonical_map = dict(review_map)
+    del canonical_map["fingerprint"]
+    if canonical_fingerprint(canonical_map) != claimed:
+        raise ValueError("review map fingerprint mismatch")
+    return claimed
 
 
 def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
@@ -329,6 +359,7 @@ def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
             {
                 "path": path,
                 "base_path": raw_entry.get("base_path"),
+                "base_blob_oid": raw_entry.get("base_blob_oid"),
                 "content_class": classification,
                 "coverage_requirement": requirement,
                 "coverage_reason": reason,
@@ -356,52 +387,112 @@ def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
     return review_map
 
 
-def validate_coverage(review_map: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+def expected_scope_entries(review_map: dict[str, Any]) -> dict[str, dict[str, Any]]:
     expected_files = review_map.get("files")
-    entries = ledger.get("entries")
-    if not isinstance(expected_files, list) or not isinstance(entries, list):
-        raise ValueError("review map files and coverage ledger entries must be lists")
-    if ledger.get("review_map_fingerprint") != review_map.get("fingerprint"):
-        raise ValueError("coverage ledger review-map fingerprint mismatch")
+    if not isinstance(expected_files, list):
+        raise ValueError("review map files must be a list")
+    return {str(item["path"]): item for item in expected_files}
 
-    expected = {str(item["path"]): item for item in expected_files}
-    actual: dict[str, dict[str, Any]] = {}
-    for raw_entry in entries:
-        if not isinstance(raw_entry, dict) or not isinstance(raw_entry.get("path"), str):
-            raise ValueError("each coverage entry needs a string path")
-        path = raw_entry["path"]
-        if path in actual:
-            raise ValueError(f"duplicate coverage path: {path}")
-        actual[path] = raw_entry
 
-    missing = sorted(set(expected) - set(actual))
-    extra = sorted(set(actual) - set(expected))
+def manifest_entries(
+    manifest: dict[str, Any],
+    fingerprint: str,
+    actual_lenses: set[str],
+) -> tuple[str, list[dict[str, Any]]]:
+    lens = manifest.get("lens")
+    entries = manifest.get("entries")
+    if lens not in REQUIRED_LENSES or lens in actual_lenses:
+        raise ValueError(f"invalid or duplicate scope lens: {lens!r}")
+    if manifest.get("review_map_fingerprint") != fingerprint:
+        raise ValueError(f"scope manifest fingerprint mismatch: {lens}")
+    if not isinstance(entries, list):
+        raise ValueError(f"scope manifest entries must be a list: {lens}")
+    actual_lenses.add(lens)
+    return lens, entries
+
+
+def collect_scope_assignments(
+    manifests: list[dict[str, Any]], fingerprint: str
+) -> tuple[dict[str, list[dict[str, Any]]], set[str]]:
+    if len(manifests) != len(REQUIRED_LENSES):
+        raise ValueError("exactly three scope manifests are required")
+
+    assigned: dict[str, list[dict[str, Any]]] = {}
+    actual_lenses: set[str] = set()
+    for manifest in manifests:
+        lens, entries = manifest_entries(manifest, fingerprint, actual_lenses)
+        seen: set[str] = set()
+        for entry in entries:
+            if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+                raise ValueError(f"each scope entry needs a string path: {lens}")
+            path = entry["path"]
+            if path in seen:
+                raise ValueError(f"duplicate scope path in {lens}: {path}")
+            seen.add(path)
+            assigned.setdefault(path, []).append(entry)
+    return assigned, actual_lenses
+
+
+def require_complete_scope_paths(
+    expected: dict[str, dict[str, Any]],
+    assigned: dict[str, list[dict[str, Any]]],
+) -> None:
+    missing = sorted(set(expected) - set(assigned))
+    extra = sorted(set(assigned) - set(expected))
     if missing or extra:
-        raise ValueError(f"coverage path mismatch; missing={missing}, extra={extra}")
+        raise ValueError(f"scope path mismatch; missing={missing}, extra={extra}")
+
+
+def validate_scope_entry(
+    path: str,
+    entry: dict[str, Any],
+    expected_entry: dict[str, Any],
+) -> None:
+    depth = entry.get("reading_depth")
+    if depth not in VALID_DEPTHS:
+        raise ValueError(f"invalid reading depth for {path}: {depth!r}")
+    if not isinstance(entry.get("reason"), str) or not entry["reason"].strip():
+        raise ValueError(f"scope entry {path} needs a non-empty reason")
+    if not isinstance(entry.get("risk_leads"), list):
+        raise ValueError(f"scope entry {path} risk leads must be a list")
+    for hash_name in ("base_blob_oid", "current_sha256"):
+        expected_hash = expected_entry.get(hash_name)
+        if expected_hash is not None and entry.get(hash_name) != expected_hash:
+            raise ValueError(f"scope entry {path} has stale {hash_name}")
+
+
+def validate_path_coverage(
+    path: str,
+    expected_entry: dict[str, Any],
+    entries: list[dict[str, Any]],
+) -> None:
+    for entry in entries:
+        validate_scope_entry(path, entry, expected_entry)
+    has_content_read = any(
+        entry["reading_depth"] in {"full-content", "targeted-content"} for entry in entries
+    )
+    if expected_entry.get("coverage_requirement") == "full-content" and not has_content_read:
+        raise ValueError(f"authored content is metadata-only across scopes: {path}")
+
+
+def validate_scopes(
+    review_map: dict[str, Any],
+    manifests: list[dict[str, Any]],
+) -> dict[str, Any]:
+    fingerprint = verified_review_map_fingerprint(review_map)
+    expected = expected_scope_entries(review_map)
+    assigned, actual_lenses = collect_scope_assignments(manifests, fingerprint)
+
+    if actual_lenses != REQUIRED_LENSES:
+        raise ValueError(f"scope lens mismatch: {sorted(actual_lenses)}")
+    require_complete_scope_paths(expected, assigned)
 
     for path, expected_entry in expected.items():
-        entry = actual[path]
-        depth = entry.get("reading_depth")
-        if depth not in VALID_DEPTHS:
-            raise ValueError(f"invalid reading depth for {path}: {depth!r}")
-        if entry.get("status") != "reviewed":
-            raise ValueError(f"coverage entry is not reviewed: {path}")
-        if expected_entry.get("coverage_requirement") == "full-content" and depth != "full-content":
-            raise ValueError(f"full-content coverage required for {path}")
-        for field in ("purpose", "changed_responsibilities", "placement_owner", "risk_leads"):
-            if field not in entry:
-                raise ValueError(f"coverage entry {path} is missing {field}")
-        if not isinstance(entry["purpose"], str) or not entry["purpose"].strip():
-            raise ValueError(f"coverage entry {path} needs a non-empty purpose")
-        if not isinstance(entry["placement_owner"], str) or not entry["placement_owner"].strip():
-            raise ValueError(f"coverage entry {path} needs a non-empty placement owner")
-        if not isinstance(entry["changed_responsibilities"], list):
-            raise ValueError(f"coverage entry {path} changed responsibilities must be a list")
-        if not isinstance(entry["risk_leads"], list):
-            raise ValueError(f"coverage entry {path} risk leads must be a list")
+        validate_path_coverage(path, expected_entry, assigned[path])
 
     return {
-        "review_map_fingerprint": review_map.get("fingerprint"),
+        "review_map_fingerprint": fingerprint,
+        "lenses": sorted(actual_lenses),
         "paths": len(expected),
         "status": "valid",
     }
@@ -422,8 +513,11 @@ def command_build(args: argparse.Namespace) -> int:
     return 0
 
 
-def command_validate(args: argparse.Namespace) -> int:
-    receipt = validate_coverage(read_json(args.review_map), read_json(args.ledger))
+def command_validate_scopes(args: argparse.Namespace) -> int:
+    receipt = validate_scopes(
+        read_json(args.review_map),
+        [read_json(path) for path in args.manifest],
+    )
     print(json.dumps(receipt, sort_keys=True))
     return 0
 
@@ -437,10 +531,13 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--output", type=Path, required=True)
     build.set_defaults(handler=command_build)
 
-    validate = commands.add_parser("validate", help="validate a full-coverage ledger")
+    validate = commands.add_parser(
+        "validate-scopes",
+        help="validate the three-lens scope-manifest union",
+    )
     validate.add_argument("--review-map", type=Path, required=True)
-    validate.add_argument("--ledger", type=Path, required=True)
-    validate.set_defaults(handler=command_validate)
+    validate.add_argument("--manifest", type=Path, action="append", required=True)
+    validate.set_defaults(handler=command_validate_scopes)
     return parser
 
 

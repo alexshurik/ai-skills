@@ -137,25 +137,32 @@ Base: <feature merge-base>
 
 Execute the canonical sk-review-orchestrator flow from a shared review snapshot.
 Include committed, staged, unstaged, untracked, deleted, and renamed scope. Build a
-deterministic lossless review map. Run structure/coverage first so one reviewer reads
-every human-authored text path in full and emits a validated neutral coverage ledger.
-Then build complete per-lens scope manifests with explicit
-full/targeted/metadata/excluded classification so the other six independent lenses
-verify raw relevant content without six redundant full reads. Run contract/security,
-architecture, abstraction, structure, imports, stack rules, and applicable
-instruction quality. Separate change-caused findings from baseline and classify
-every finding through scope governance. Persist the full technical report in the
-Git-local snapshot and the compact verdict/Review Triage in
+deterministic lossless review map. Root runs readiness gates/static analysis once;
+red formatter/lint/type/build/tests/diff prevents review from starting. Build three
+complete lens scope manifests whose validated union accounts for every path. Launch
+architecture-design, correctness-safety, and engineering-quality together in one
+wave. Each reads only assigned raw full/targeted current/base content and returns its
+complete finding set. Engineering-quality consumes compact root provenance and does
+not rerun the full battery. Separate change-caused findings from baseline and
+classify every finding through scope governance. Persist the full technical report
+in the Git-local snapshot and the compact verdict/Review Triage in
 openspec/changes/<name>/CODE_REVIEW.md.
 ```
 
 Before remediation, show mandatory fixes, scope additions requiring a decision, and
-deferred/backlog candidates. Return to a clean remediation agent with the findings
-artifact/fingerprint, acceptance criteria, explicit non-goals, approved Scope Delta
-IDs, and only the allowlisted finding IDs. Final approval requires a fresh full run
-of all lenses applicable to the final snapshot after code/normative artifacts change.
-New non-critical proposals found after initial triage go to `DEFERRED.md` rather than
-opening another remediation cycle.
+deferred/backlog candidates. Resolve every decision and freeze the exact remediation
+allowlist. Return to a clean remediation agent with findings artifact/fingerprint,
+acceptance criteria, non-goals, approved Scope Delta IDs, and only allowlisted IDs.
+Treat the frozen remediation allowlist as the only review-derived implementation
+authority.
+
+Targeted Round 2 uses a fresh snapshot, root gates once, immutable pre/post
+fingerprints, complete delta, verified unchanged hashes, no expansion, and every
+finding-owning/impact-routed lens. Old evidence never proves changed content.
+Exceptional Round 3 is only for unresolved allowlisted defects, a remediation
+regression, or newly proven critical correctness/security defect. No automatic
+Round 4: return NEEDS USER DECISION. New non-critical proposals after frozen triage
+go to `DEFERRED.md` and cannot start another cycle.
 
 ## Acceptance — `sk-acceptance-reviewer`
 

@@ -44,10 +44,17 @@ attempt IDs, their host thread IDs, foreground/detached join mode, reason code, 
 any detach reason. Do not wait or poll from a status request. UI status and
 notifications are observability, not proof that the parent aggregated a result.
 
-If `snapshot_status` is `stale` or `missing`, report that `repair` is required; do not
-silently infer current state from the cache. For schema version 1, report that
-`migrate-v1` must preserve and normalize the ledger before aggregation continues.
-Never mutate runtime state as part of a read-only status request.
+Report the complete `snapshot_status` vocabulary:
+valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema.
+Include `journal_events` and `recommended_action`. Use `validate` for valid; use
+`repair` for stale/diverged/missing only with a valid non-empty journal; use
+`migrate-v1` for legacy_v1 without committed history (or `repair` when
+valid history already exists). For orphaned or missing/diverged without history,
+fail closed with `recover-journal-or-reinitialize`: require journal recovery or
+explicit reinitialization and reconfirmation. For `unsupported_schema`, fail closed
+with `require-compatible-helper` and preserve the projection byte-for-byte. Never
+infer state from an orphaned projection or mutate runtime state as part of a read-only
+status request.
 
 ```bash
 # List all change directories
@@ -111,7 +118,7 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
 - **Derived next action**: Invoke sk-tester for TDD red phase
-- **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | missing | legacy)
+- **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema)
 - **Control**: ready | waiting agents/user | blocked | complete
 - **Tasks/attempts**: logical task, attempt ordinal, host thread, result/artifact
 - **Gates/checks**: stage-owned decisions and verification evidence

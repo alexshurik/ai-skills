@@ -1,122 +1,79 @@
 ---
 name: sk-code-review
-description: Review committed, staged, unstaged, and untracked changes through the full baseline-aware multi-lens pipeline without modifying source code.
+description: Review committed, staged, unstaged, untracked, deleted, and renamed changes through exactly three independent baseline-aware lenses without modifying source code.
 ---
 
 # Review Repository Changes
 
-Treat this as a fresh, read-only review. Ignore prior conclusions and derive scope,
-authority, evidence, findings, and verdict from the repository.
+Run a fresh read-only review. Derive scope, authority, evidence, findings, and verdict
+from the repository. Read `scope-governance.md`, the canonical
+`sk-review-orchestrator.md`, and `review-verdict-policy.md` completely. This skill
+never modifies source or feature artifacts.
 
-Read `~/.claude/agents/shared/scope-governance.md` or
-`workflow/agents/shared/scope-governance.md` from the skills repository.
-Report concerns strictly, but keep severity separate from remediation authority.
-This skill never modifies source or feature artifacts.
+## 1. Capture scope and authority
 
-## 1. Confirm scope exists
+Resolve the Git-local review runtime directory, run the installed change-evidence
+collector with an explicit output, and build `review-map.json`. Stop with `No changes
+to review` only when committed, staged, unstaged, untracked, deleted, and renamed
+scope is empty.
 
-Resolve a git-local review runtime directory and run the installed change-evidence
-collector with an artifact output path:
+Find applicable proposal/design/tasks/ADRs and repository guidance. If competing
+active designs could define the contract, ask the user to select one. Resolve the
+reviewer profile chain; treat project `evidence.md` as non-normative.
 
-```text
-git rev-parse --git-path sk-workflow
-shared/review-evidence/collect-change-evidence.sh --format json \
-  --output <runtime-review-dir>/change-evidence.json
-```
+## 2. Execute the orchestrator at top level
 
-If committed, staged, unstaged, untracked, deleted, and renamed scopes are all
-empty, report `No changes to review` and stop.
+Do not spawn one nested orchestrator from this skill. Execute its canonical flow at
+top level so Codex can dispatch exactly three independent lenses in one Codex wave
+(`root + 3`):
 
-## 2. Find authority
+1. architecture-design;
+2. correctness-safety;
+3. engineering-quality.
 
-Find applicable proposal/design/tasks/ADRs and repository guidance. If multiple
-active designs could define the contract, ask the user to select one.
+Build one JSON scope manifest per lens. Their deterministically validated union
+accounts for every review-map path. Lenses read only raw full/targeted current/base
+content assigned to them; unchanged content is reusable only by verified hash. Do
+not require every lens to read every file and do not create a separate structure
+agent or LLM-authored coverage ledger.
 
-Check for the canonical project profile:
+The root runs formatter/lint/type/build/tests/diff gates and applicable static
+analysis once per snapshot before dispatch. A red required gate means review does
+not start. Store full output in Git-local logs and pass only compact provenance plus
+paths. Engineering-quality must not rerun the full suite/tool battery.
 
-```text
-.agents/best-practices/project/coder.md
-.agents/best-practices/project/reviewer.md
-.agents/best-practices/project/evidence.md
-```
+Every lens returns its complete finding set in Round 1. Launch all three before one
+long event-driven foreground wait. Apply shared no-poll semantics: transport-only
+timeouts are not rounds/retries/events; never list, nudge, or chatter between
+routine returns. Full reports stay Git-local; compact receipts return to the model.
 
-If normative coder/reviewer profiles are absent, offer
-`sk-explore-codestyle`. Do not require a Claude-specific `code-style.md`.
+If dispatch is unavailable, run three separately labelled inline passes and disclose
+`inline`. Never collapse to a single general review.
 
-## 3. Execute the orchestrator flow at top level
+## 3. Verdict and round cap
 
-Do not spawn `sk-review-orchestrator` as one nested subagent. Read its canonical
-flow:
+Classify every finding with severity, `change_class`, `disposition`, `scope_basis`,
+`risk_if_deferred`, and `blocks_release`. Freeze the exact remediation allowlist
+after triage; this standalone read-only skill reports it but does not remediate.
 
-```text
-~/.claude/agents/sk-review-orchestrator.md
-or workflow/agents/sk-review-orchestrator.md
-```
+Use the orchestrator's lifecycle if the caller later authorizes remediation:
 
-Execute that workflow in this top-level context so independent lenses may run in
-parallel waves.
+- Round 1: full three-lens review and exhaustive findings;
+- targeted Round 2: fresh snapshot, root gates once, valid parent full review,
+  immutable pre/post fingerprints, complete delta, verified unchanged hashes, no
+  expansion, and every finding-owning/impact-routed lens;
+- exceptional Round 3: only unresolved allowlisted defects, remediation regression,
+  or newly proven critical correctness/security defects;
+- no automatic Round 4: return `NEEDS USER DECISION` with exact blockers/options.
 
-Required lenses:
-
-1. contract/security;
-2. architecture/layers;
-3. abstraction/navigation;
-4. structure;
-5. imports;
-6. stack rules;
-7. instruction quality when instruction artifacts changed.
-
-Every finding includes `change_class`, `disposition`, `scope_basis`,
-`risk_if_deferred`, and `blocks_release`. Preserve strict stack/security detection;
-unapproved infrastructure or threat-model expansion is `user_decision`, and
-unchanged debt is `baseline`, not an automatic required fix.
-
-Use seven clean lens threads with independent verdicts. Build `review-map.json`
-deterministically. Run structure/coverage first: it reads every human-authored text
-path in full, writes a neutral `coverage-ledger.json`, and reviews placement. Validate
-that ledger against the review map before launching the other six targeted lenses.
-They may use the ledger only for navigation and must verify assigned raw current/base
-content independently. Specialists query only their assigned full/targeted rows and
-do not load the complete review map plus ledger into every context.
-
-Pass artifact paths for complete tracked/untracked scope, evidence, design authority,
-runner, profiles, and static-analysis provenance as specified by the orchestrator; do
-not paste full files, base diffs, or raw tool output into prompts. For Codex, use
-`fork_turns="none"` and omit model/reasoning overrides so reviewers inherit the
-parent's selected profile. Give every reviewer a complete lens scope manifest with
-full/targeted/metadata depth and reasons. No lens may spawn another agent.
-
-Apply the shared foreground-join policy to every required reviewer. Prefer the
-longest host-permitted event-driven wait, re-enter it after transport-only timeouts,
-and do not turn empty wake-ups into workflow counters. Never list, nudge, or emit
-progress chatter between returns. Detach only for a shared-policy reason and persist
-the join set plus `detach_reason`; notifications do not resume aggregation.
-
-If subagent dispatch is genuinely unavailable, execute every applicable lens as a
-separate inline section from the installed `review-steps/` resources and disclose
-`inline` mode. Never collapse to a single general review.
-
-## 4. Enforce verdict semantics
-
-Use the orchestrator's verdict policy:
-
-- change-caused and touched structural regressions affect the verdict;
-- unchanged baseline debt is shown separately;
-- APPROVED requires every applicable lens, complete untracked scope, complete
-  provenance, and zero required UNVERIFIED dimensions;
-- tests and security scans alone cannot approve architectural shape.
-- only `required_fix` findings block the change; unresolved `user_decision` items
-  produce `TRIAGE REQUIRED`, while backlog/baseline remain visible and non-blocking.
+Approval requires complete scope/provenance, valid required lenses, no required
+finding, and zero required UNVERIFIED dimensions. A targeted approval additionally
+requires valid parent/routing/delta evidence. Disclose mode, round, and parent.
 
 ## Guardrails
 
-- Read-only for source and feature artifacts.
-- Do not create commits, branches, or tags.
-- Do not auto-install tools.
-- Do not expose secret values.
-- Do not promote Observed/Legacy project evidence into review rules.
-- Return a compact decision and report paths. Keep full findings, baseline section,
-  commands, exit codes, and logs in review artifacts; show them on request.
-- Keep the full report in the Git-local review snapshot. Because this standalone
-  skill is read-only, do not create `DEFERRED.md`, update OpenSpec, or promote items
-  to an external backlog.
+- Read-only for source and feature artifacts; no commits, branches, tags, installs,
+  secret exposure, or backlog promotion.
+- Do not infer a pass from old evidence, tests, scans, or one lens alone.
+- Keep full findings/baseline/logs in the Git-local snapshot and return a compact
+  decision with artifact paths/fingerprints.

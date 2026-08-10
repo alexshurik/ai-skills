@@ -11,6 +11,7 @@
     "repositories",
     "workflow",
     "control",
+    "writer_lease",
     "artifacts",
     "blockers",
     "last_event"
@@ -26,6 +27,9 @@
     },
     "workflow": { "$ref": "#/$defs/workflow" },
     "control": { "$ref": "#/$defs/control" },
+    "writer_lease": {
+      "oneOf": [{ "$ref": "#/$defs/writer_lease" }, { "type": "null" }]
+    },
     "artifacts": {
       "type": "object",
       "propertyNames": { "$ref": "#/$defs/identifier" },
@@ -147,9 +151,10 @@
     "check": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "entry", "recorded_event"],
+      "required": ["status", "required", "entry", "recorded_event"],
       "properties": {
         "status": { "enum": ["passed", "failed", "unknown"] },
+        "required": { "type": "boolean" },
         "entry": { "type": "integer", "minimum": 1 },
         "recorded_event": { "type": "integer", "minimum": 0 },
         "evidence": { "type": "string", "minLength": 1 },
@@ -159,12 +164,14 @@
     "task": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["role", "status", "created_entry", "created_event", "attempts"],
+      "required": ["role", "required", "status", "created_entry", "created_event", "attempts"],
       "properties": {
         "role": { "$ref": "#/$defs/identifier" },
+        "required": { "type": "boolean" },
         "status": { "enum": ["pending", "running", "succeeded", "failed", "blocked", "cancelled"] },
         "created_entry": { "type": "integer", "minimum": 1 },
         "created_event": { "type": "integer", "minimum": 0 },
+        "lease_holder_attempt_id": { "$ref": "#/$defs/identifier" },
         "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } }
       }
     },
@@ -186,6 +193,7 @@
           }
         },
         "input_fingerprint": { "$ref": "#/$defs/sha256" },
+        "lease_holder_attempt_id": { "$ref": "#/$defs/identifier" },
         "stage_entry": { "type": "integer", "minimum": 1 },
         "started_event": { "type": "integer", "minimum": 0 },
         "result": { "$ref": "#/$defs/result" },
@@ -235,6 +243,18 @@
         "reason": { "type": "string", "minLength": 1 },
         "required_action": { "type": "string", "minLength": 1 },
         "recorded_event": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "writer_lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "stage", "holder_attempt_id", "holder_actor_id", "granted_event"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "stage": { "$ref": "#/$defs/identifier" },
+        "holder_attempt_id": { "$ref": "#/$defs/identifier" },
+        "holder_actor_id": { "$ref": "#/$defs/identifier" },
+        "granted_event": { "type": "integer", "minimum": 1 }
       }
     },
     "control": {

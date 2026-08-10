@@ -10,7 +10,6 @@ from typing import Any
 
 from skills_common import TEXT_SUFFIXES, repo_source_path, safe_relative
 
-
 MAX_RENDER_SOURCE_BYTES = 4 * 1024 * 1024
 
 
@@ -76,11 +75,7 @@ def read_source_file(source: Path) -> tuple[bytes, int]:
     before = checked_source_stat(source)
     if not stat.S_ISREG(before.st_mode):
         raise ValueError(f"render source is not a regular file: {source}")
-    flags = (
-        os.O_RDONLY
-        | getattr(os, "O_NOFOLLOW", 0)
-        | getattr(os, "O_NONBLOCK", 0)
-    )
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     descriptor = os.open(source, flags)
     with os.fdopen(descriptor, "rb") as source_file:
         opened = os.fstat(source_file.fileno())
@@ -111,9 +106,7 @@ def copy_validated(
         return
     metadata = checked_source_stat(source)
     if stat.S_ISDIR(metadata.st_mode):
-        if destination.exists() and (
-            destination.is_symlink() or not destination.is_dir()
-        ):
+        if destination.exists() and (destination.is_symlink() or not destination.is_dir()):
             raise ValueError(f"render target collision: {destination}")
         destination.mkdir(parents=True, exist_ok=True)
         for child in sorted(source.iterdir()):
@@ -263,20 +256,19 @@ Kimi subagents already run in isolated contexts and return only their final resu
 to this root. The current stable Agent tool does not permit a child to create its
 own child, so the root owns all dispatch. During a full code-review phase, do not
 send the whole review to `sk-review-orchestrator` as a child. The root performs the
-orchestrator setup/aggregation steps and launches the registered `review-security`,
-`review-architecture`, `review-abstraction`, `review-structure`, `review-imports`,
-`review-stack-rules`, and (when applicable) `review-instruction-quality` leaf
-subagents over one artifact snapshot. First run `review-structure` as the
-full-coverage reader, validate its neutral coverage ledger against the deterministic
-review map, then launch the other six as targeted independent lenses. This preserves
-seven independent clean verdicts without unsupported nesting or seven redundant
-full-scope reads.
+orchestrator setup/aggregation steps and launches `review-architecture-design`,
+`review-correctness-safety`, and `review-engineering-quality` together over one
+immutable artifact snapshot. Root runs readiness gates once and validates that the
+three scope-manifest union covers every review-map path. This preserves independent
+shape, semantics/risk, and implementation/tool-evidence verdicts without unsupported
+nesting or redundant full-scope reads.
 
 Apply the installed shared `scope-governance.md` during aggregation. Preserve every
 lens finding, but separate severity from `required_fix`, `user_decision`, `backlog`,
 and `baseline`; show Review Triage and pass remediation only an approved finding-ID
 allowlist. New non-critical final-review ideas go to `DEFERRED.md` rather than a new
-automatic remediation cycle.
+automatic remediation cycle. Apply targeted Round 2, exceptional Round 3, and no
+automatic Round 4 exactly as the canonical orchestrator requires.
 
 Within each stage, launch all available lens work in background before awaiting
 results. Kimi sends completion notifications automatically; do not repeatedly poll

@@ -3,20 +3,18 @@
 
 from __future__ import annotations
 
-import sys
-import tempfile
 import os
 import stat
+import sys
+import tempfile
 from pathlib import Path
 from unittest import mock
-
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import skills_tool  # noqa: E402
 from skills_common import load_manifest, tree_entries  # noqa: E402
-
 
 SKILLS = ("sk-code-review", "sk-copy-context")
 
@@ -46,12 +44,12 @@ def assert_later_failure_rolls_back(manifest: dict[str, object], root: Path) -> 
     original = skills_tool.move_candidate
     calls = 0
 
-    def fail_second(*args: object) -> None:
+    def fail_second(candidate: skills_tool.MoveCandidate, legacy_fd: int, backup_fd: int) -> None:
         nonlocal calls
         calls += 1
         if calls == 2:
             raise ValueError("injected later-candidate failure")
-        original(*args)
+        original(candidate, legacy_fd, backup_fd)
 
     with mock.patch.object(skills_tool, "move_candidate", side_effect=fail_second):
         try:
@@ -75,9 +73,9 @@ def assert_redirect_rolls_back(manifest: dict[str, object], root: Path) -> None:
     original = skills_tool.move_candidate
     redirected = False
 
-    def redirect_once(*args: object) -> None:
+    def redirect_once(candidate: skills_tool.MoveCandidate, legacy_fd: int, backup_fd: int) -> None:
         nonlocal redirected
-        original(*args)
+        original(candidate, legacy_fd, backup_fd)
         if not redirected:
             backup.parent.rename(displaced)
             backup.parent.symlink_to(outside, target_is_directory=True)

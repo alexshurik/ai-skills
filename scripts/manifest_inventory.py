@@ -10,7 +10,6 @@ from typing import Any
 from skills_common import load_manifest, repo_source_path
 from skills_validation import parse_frontmatter, validate
 
-
 CATALOG_PREFIXES = {
     "workflow": "workflow/skills/",
     "utilities": "utilities/",
@@ -44,9 +43,7 @@ OUTPUT_FORMATS = (
 def group_items(manifest: dict[str, Any], group: str) -> list[dict[str, Any]]:
     if group in CATALOG_PREFIXES:
         prefix = CATALOG_PREFIXES[group]
-        return [
-            item for item in manifest["catalog"] if item["source"].startswith(prefix)
-        ]
+        return [item for item in manifest["catalog"] if item["source"].startswith(prefix)]
     if group == "onboarding":
         return list(manifest["onboarding"])
     if group == "agents":
@@ -99,10 +96,7 @@ def cursor_document(manifest: dict[str, Any]) -> str:
         f"## {title}\n\n{render_group(manifest, group, 'cursor-command')}"
         for group, title in CURSOR_SECTIONS
     ]
-    sections.append(
-        "## Available Agents\n\n"
-        f"{render_group(manifest, 'agents', 'agent-section')}"
-    )
+    sections.append(f"## Available Agents\n\n{render_group(manifest, 'agents', 'agent-section')}")
     return "\n\n".join(sections)
 
 

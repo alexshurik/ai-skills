@@ -6,19 +6,22 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CODEX_DIR="${CODEX_SKILLS_DIR:-$HOME/.agents/skills}"
 
+. "$REPO_DIR/scripts/python-runtime.sh"
+sk_require_python
+
 echo "Validating source..."
-python3 "$REPO_DIR/scripts/skills_tool.py" validate
+sk_python "$REPO_DIR/scripts/skills_tool.py" validate
 
 echo "Installing Codex tree to $CODEX_DIR ..."
-python3 "$REPO_DIR/scripts/skills_tool.py" install \
+sk_python "$REPO_DIR/scripts/skills_tool.py" install \
     --platform codex \
     --target "$CODEX_DIR"
-python3 "$REPO_DIR/scripts/skills_tool.py" verify \
+sk_python "$REPO_DIR/scripts/skills_tool.py" verify \
     --platform codex \
     --target "$CODEX_DIR"
 
 echo "Checking for duplicate legacy skills..."
-if ! python3 "$REPO_DIR/scripts/skills_tool.py" doctor \
+if ! sk_python "$REPO_DIR/scripts/skills_tool.py" doctor \
     --root "$CODEX_DIR" \
     --root "$HOME/.codex/skills"; then
     echo ""
