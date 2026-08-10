@@ -11,8 +11,7 @@
     {"name": "sk-team-status", "source": "workflow/skills/sk-team-status"},
     {"name": "sk-code-review", "source": "utilities/sk-code-review"},
     {"name": "sk-explore-codestyle", "source": "utilities/sk-explore-codestyle"},
-    {"name": "sk-copy-context", "source": "context/sk-copy-context"},
-    {"name": "sk-plan-mode", "source": "planning/sk-plan-mode"}
+    {"name": "sk-copy-context", "source": "context/sk-copy-context"}
   ],
   "onboarding": [
     {"name": "sk-discover-project", "source": "onboarding/sk-discover-project.md"},

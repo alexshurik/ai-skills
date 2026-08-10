@@ -36,14 +36,12 @@ def main() -> None:
 
     kimi_readme = read("adapters/kimi/README.md")
     kimi_renderer = read("scripts/skills_render.py")
-    assert "Via the current `Agent` tool" in kimi_readme
-    assert (
-        "dispatches architecture-design, correctness-safety, and engineering-quality" in kimi_readme
-    )
-    assert "No hard-coded Kimi plan path" in kimi_readme
-    assert "older than 1.25" in kimi_readme
-    assert "kimi_cli.tools.agent:Agent" in kimi_renderer
-    assert "kimi_cli.tools.multiagent:Task" not in kimi_renderer
+    assert "Markdown agent profiles" in kimi_readme
+    assert "three leaf reviewers" in kimi_readme
+    assert "native `/plan`" in kimi_readme
+    assert "older than 1.25" not in kimi_readme
+    assert "kimi_agent_markdown" in kimi_renderer
+    assert "kimi_agent_yaml" not in kimi_renderer
 
     cursor_readme = read("adapters/cursor/README.md")
     assert ".cursor/skills" in cursor_readme

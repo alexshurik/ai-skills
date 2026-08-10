@@ -16,12 +16,12 @@ mkdir -p "$TEST_HOME/.codex/skills/.system"
 printf 'keep\n' > "$TEST_HOME/.codex/skills/.system/marker"
 mkdir -p "$TEST_HOME/.claude/agents"
 printf 'keep\n' > "$TEST_HOME/.claude/agents/unrelated.keep"
-mkdir -p "$TEST_HOME/.config/agents/agents/references/best-practices"
+mkdir -p "$TEST_HOME/.kimi-code/agents/references/best-practices"
 printf 'keep\n' \
-    > "$TEST_HOME/.config/agents/agents/references/best-practices/unrelated.keep"
-mkdir -p "$TEST_HOME/.config/agents/skills"
+    > "$TEST_HOME/.kimi-code/agents/references/best-practices/unrelated.keep"
+mkdir -p "$TEST_HOME/.kimi-code/skills"
 ln -s "$REPO_DIR/workflow/skills/sk-team-feature" \
-    "$TEST_HOME/.config/agents/skills/sk-team-feature"
+    "$TEST_HOME/.kimi-code/skills/sk-team-feature"
 CURSOR_DIR="$TEST_HOME/cursor-project/.cursor/skills"
 mkdir -p "$CURSOR_DIR/best-practices"
 printf 'keep\n' > "$CURSOR_DIR/best-practices/unrelated.keep"
@@ -146,35 +146,33 @@ test -L "$TEST_HOME/.claude/skills/sk-team-feature"
 test -f "$TEST_HOME/.claude/agents/shared/scope-governance.md"
 test -f "$TEST_HOME/.claude/agents/templates/deferred.md"
 test "$(find "$TEST_HOME/.claude/agents/review-steps" -type l | wc -l | tr -d ' ')" = "3"
-test -f "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
-test -f "$TEST_HOME/.config/agents/agents/sk-review-architecture-design.yaml"
-test -f "$TEST_HOME/.config/agents/agents/sk-review-correctness-safety.yaml"
-test -f "$TEST_HOME/.config/agents/agents/sk-review-engineering-quality.yaml"
-test -f "$TEST_HOME/.config/agents/agents/references/shared/scope-governance.md"
-test -f "$TEST_HOME/.config/agents/agents/references/templates/deferred.md"
-test ! -L "$TEST_HOME/.config/agents/skills/sk-team-feature"
-test -f "$TEST_HOME/.config/agents/skills/sk-team-feature/SKILL.md"
-grep -q "Retrospective" "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
-grep -Fq '${KIMI_AGENTS_MD}' \
-    "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
+test -f "$TEST_HOME/.kimi-code/agents/sk-team.md"
+test -f "$TEST_HOME/.kimi-code/agents/sk-review-architecture-design.md"
+test -f "$TEST_HOME/.kimi-code/agents/sk-review-correctness-safety.md"
+test -f "$TEST_HOME/.kimi-code/agents/sk-review-engineering-quality.md"
+test -f "$TEST_HOME/.kimi-code/agents/references/shared/scope-governance.md"
+test -f "$TEST_HOME/.kimi-code/agents/references/templates/deferred.md"
+test ! -L "$TEST_HOME/.kimi-code/skills/sk-team-feature"
+test -f "$TEST_HOME/.kimi-code/skills/sk-team-feature/SKILL.md"
+grep -q "Retrospective" "$TEST_HOME/.kimi-code/agents/sk-team.md"
+grep -Fq '${base_prompt}' \
+    "$TEST_HOME/.kimi-code/agents/sk-team.md"
 grep -q "Embedded phase prompts" \
-    "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
+    "$TEST_HOME/.kimi-code/agents/sk-team.md"
 grep -Fq \
-    "$TEST_HOME/.config/agents/agents/references/best-practices/project-conventions-guide.md" \
-    "$TEST_HOME/.config/agents/skills/sk-explore-codebase/SKILL.md"
-grep -q "kimi_cli.tools.agent:Agent" \
-    "$TEST_HOME/.config/agents/agents/sk-developer.yaml"
-grep -q "review-architecture-design:" "$TEST_HOME/.config/agents/agents/sk-team.yaml"
-grep -q "Kimi execution override" \
-    "$TEST_HOME/.config/agents/agents/references/sk-team-feature.md"
-if grep -R -q "kimi_cli.tools.multiagent:Task" \
-    "$TEST_HOME/.config/agents/agents"; then
-    echo "Removed Kimi Task tool identifier was rendered" >&2
+    "$TEST_HOME/.kimi-code/agents/references/best-practices/project-conventions-guide.md" \
+    "$TEST_HOME/.kimi-code/skills/sk-explore-codebase/SKILL.md"
+grep -q "subagents: \[\]" "$TEST_HOME/.kimi-code/agents/sk-developer.md"
+grep -q "sk-review-architecture-design" \
+    "$TEST_HOME/.kimi-code/agents/sk-review-orchestrator.md"
+if grep -R -q "Kimi execution override\|kimi_cli\.tools" \
+    "$TEST_HOME/.kimi-code/agents"; then
+    echo "Removed legacy Kimi configuration was rendered" >&2
     exit 1
 fi
 test -f "$TEST_HOME/.agents/skills/best-practices/unrelated.keep"
 test -f "$TEST_HOME/.claude/agents/unrelated.keep"
-test -f "$TEST_HOME/.config/agents/agents/references/best-practices/unrelated.keep"
+test -f "$TEST_HOME/.kimi-code/agents/references/best-practices/unrelated.keep"
 
 # Verification checks complete file content, receipts, and exact symlink targets.
 printf '\ndrift\n' >> "$TEST_HOME/.agents/skills/sk-team-help/SKILL.md"
@@ -246,7 +244,7 @@ HOME="$TEST_HOME" "$REPO_DIR/scripts/install-codex.sh"
 
 # All targets are preflighted before a multi-platform uninstall mutates any of them.
 printf '\nlocal edit\n' \
-    >> "$TEST_HOME/.config/agents/skills/sk-team-help/SKILL.md"
+    >> "$TEST_HOME/.kimi-code/skills/sk-team-help/SKILL.md"
 if HOME="$TEST_HOME" "$REPO_DIR/scripts/uninstall.sh"; then
     echo "Expected later-target drift to block every uninstall" >&2
     exit 1
@@ -260,7 +258,7 @@ test -f "$TEST_HOME/.agents/skills/unrelated/SKILL.md"
 test -f "$TEST_HOME/.agents/skills/best-practices/unrelated.keep"
 test -f "$TEST_HOME/.codex/skills/.system/marker"
 test -f "$TEST_HOME/.claude/agents/unrelated.keep"
-test -f "$TEST_HOME/.config/agents/agents/references/best-practices/unrelated.keep"
+test -f "$TEST_HOME/.kimi-code/agents/references/best-practices/unrelated.keep"
 test ! -e "$TEST_HOME/.agents/skills/sk-team-feature"
 
 python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
@@ -272,7 +270,7 @@ test ! -e "$CURSOR_DIR/sk-team-feature"
 SINGLE_HOME="$TEST_HOME/single-platform-home"
 HOME="$SINGLE_HOME" "$REPO_DIR/scripts/install-kimi.sh"
 HOME="$SINGLE_HOME" "$REPO_DIR/scripts/uninstall.sh"
-test ! -e "$SINGLE_HOME/.config/agents/skills/sk-team-feature"
+test ! -e "$SINGLE_HOME/.kimi-code/skills/sk-team-feature"
 HOME="$SINGLE_HOME" "$REPO_DIR/scripts/uninstall.sh"
 
 echo "OK: installers"

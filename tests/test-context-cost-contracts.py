@@ -211,10 +211,6 @@ def main() -> None:
     static_analysis = read("shared/static-analysis/run-static-analysis.sh")
     require(static_analysis, "--artifact-dir", "summary-only")
 
-    plan_mode = read("planning/sk-plan-mode/SKILL.md")
-    require(plan_mode, "plans/<slug>.md", "existing plan")
-    reject(plan_mode, ".kimi/plan.md (if `.kimi/` directory exists or can be created)")
-
 
 if __name__ == "__main__":
     main()

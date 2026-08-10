@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import stat
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ class RenderContext:
 
 
 def replace_paths(text: str, context: RenderContext) -> str:
+    replacements: tuple[tuple[str, str], ...]
     if context.platform in {"codex", "cursor"}:
         replacements = (
             (
@@ -38,7 +40,18 @@ def replace_paths(text: str, context: RenderContext) -> str:
         references = context.installed_root / "agents" / "references"
         replacements = (
             ("~/.claude/agents/best-practices", str(references / "best-practices")),
-            ("~/.claude/agents/review-steps", str(references / "review-steps")),
+            (
+                "~/.claude/agents/review-steps/architecture-design.md",
+                str(context.installed_root / "agents/sk-review-architecture-design.md"),
+            ),
+            (
+                "~/.claude/agents/review-steps/correctness-safety.md",
+                str(context.installed_root / "agents/sk-review-correctness-safety.md"),
+            ),
+            (
+                "~/.claude/agents/review-steps/engineering-quality.md",
+                str(context.installed_root / "agents/sk-review-engineering-quality.md"),
+            ),
             ("~/.claude/agents/shared", str(references / "shared")),
             ("~/.claude/agents/", f"{references}/"),
         )
@@ -207,41 +220,87 @@ def render_claude(manifest: dict[str, Any], context: RenderContext) -> None:
         )
 
 
-def kimi_agent_yaml(name: str) -> str:
-    return (
-        "version: 1\nagent:\n  extend: ./sk-team.yaml\n"
-        f"  system_prompt_path: ./references/{name}.md\n"
-        "  exclude_tools:\n"
-        '    - "kimi_cli.tools.agent:Agent"\n'
+KIMI_TOOL_ALIASES = {"WebFetch": "FetchURL"}
+
+
+def split_prompt_frontmatter(prompt: str) -> tuple[dict[str, str], str]:
+    lines = prompt.splitlines()
+    if not lines or lines[0] != "---":
+        raise ValueError("Kimi agent source is missing frontmatter")
+    try:
+        closing = lines.index("---", 1)
+    except ValueError as error:
+        raise ValueError("Kimi agent source has unterminated frontmatter") from error
+    metadata: dict[str, str] = {}
+    for line in lines[1:closing]:
+        if line.startswith((" ", "\t", "#")) or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        metadata[key.strip()] = value.strip().strip("\"'")
+    return metadata, "\n".join(lines[closing + 1 :]).lstrip()
+
+
+def kimi_tools(metadata: dict[str, str]) -> tuple[str, ...]:
+    declared = (item.strip() for item in metadata.get("tools", "").split(","))
+    return tuple(KIMI_TOOL_ALIASES.get(item, item) for item in declared if item)
+
+
+def kimi_agent_markdown(
+    name: str,
+    prompt: str,
+    subagents: tuple[str, ...] = (),
+) -> str:
+    metadata, body = split_prompt_frontmatter(prompt)
+    description = metadata.get("description")
+    if not description:
+        raise ValueError(f"Kimi agent {name} is missing a description")
+    subagent_lines = (
+        ["subagents:", *(f"  - {subagent}" for subagent in subagents)]
+        if subagents
+        else ["subagents: []"]
     )
-
-
-def kimi_team_yaml(manifest: dict[str, Any]) -> str:
     lines = [
-        "version: 1",
-        "agent:",
-        "  name: sk-team",
-        "  extend: default",
-        "  system_prompt_path: ./references/sk-team-feature.md",
-        "  subagents:",
+        "---",
+        f"name: {name}",
+        f"description: {json.dumps(description)}",
+        "model_preference: primary",
+        "tools:",
+        *(f"  - {tool}" for tool in kimi_tools(metadata)),
+        *subagent_lines,
+        "---",
+        "",
+        body.rstrip(),
+        "",
     ]
-    for item in (*manifest["agents"], *manifest["review_steps"]):
-        short_name = item["name"].removeprefix("sk-")
-        lines += [
-            f"    {short_name}:",
-            f"      path: ./{item['name']}.yaml",
-            f'      description: "Internal role: {item["name"]}"',
-        ]
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines)
+
+
+def kimi_team_markdown(manifest: dict[str, Any], prompt: str) -> str:
+    lines = [
+        "---",
+        "name: sk-team",
+        'description: "Run the complete SK multi-agent feature workflow"',
+        "model_preference: primary",
+        "subagents:",
+        *(f"  - {item['name']}" for item in manifest["agents"]),
+        "---",
+        "",
+        "${base_prompt}",
+        "",
+        prompt.rstrip(),
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def kimi_team_prompt(context: RenderContext) -> str:
     feature_root = repo_source_path("workflow/skills/sk-team-feature")
     validate_source_tree(feature_root)
-    prompt = replace_paths(
+    skill_prompt = replace_paths(
         read_source_text(feature_root / "SKILL.md"),
         context,
     )
+    _, prompt = split_prompt_frontmatter(skill_prompt)
     prompt = prompt.replace(
         "(references/phase-prompts.md)",
         "(#embedded-phase-prompts)",
@@ -250,34 +309,7 @@ def kimi_team_prompt(context: RenderContext) -> str:
         read_source_text(feature_root / "references/phase-prompts.md"),
         context,
     )
-    kimi_override = """## Kimi execution override
-
-Kimi subagents already run in isolated contexts and return only their final result
-to this root. The current stable Agent tool does not permit a child to create its
-own child, so the root owns all dispatch. During a full code-review phase, do not
-send the whole review to `sk-review-orchestrator` as a child. The root performs the
-orchestrator setup/aggregation steps and launches `review-architecture-design`,
-`review-correctness-safety`, and `review-engineering-quality` together over one
-immutable artifact snapshot. Root runs readiness gates once and validates that the
-three scope-manifest union covers every review-map path. This preserves independent
-shape, semantics/risk, and implementation/tool-evidence verdicts without unsupported
-nesting or redundant full-scope reads.
-
-Apply the installed shared `scope-governance.md` during aggregation. Preserve every
-lens finding, but separate severity from `required_fix`, `user_decision`, `backlog`,
-and `baseline`; show Review Triage and pass remediation only an approved finding-ID
-allowlist. New non-critical final-review ideas go to `DEFERRED.md` rather than a new
-automatic remediation cycle. Apply targeted Round 2, exceptional Round 3, and no
-automatic Round 4 exactly as the canonical orchestrator requires.
-
-Within each stage, launch all available lens work in background before awaiting
-results. Kimi sends completion notifications automatically; do not repeatedly poll
-task status. Keep full reports/logs in shared artifact paths and accept only compact
-final receipts in the root context. Ordinary feature roles remain leaf subagents.
-"""
     return (
-        "${KIMI_AGENTS_MD}\n\n"
-        f"{kimi_override.rstrip()}\n\n"
         f"{prompt.rstrip()}\n\n"
         '<a id="embedded-phase-prompts"></a>\n\n'
         "## Embedded phase prompts\n\n"
@@ -294,7 +326,6 @@ def write_generated(path: Path, content: str) -> None:
 def render_kimi(manifest: dict[str, Any], context: RenderContext) -> None:
     skills = context.output / "skills"
     agents = context.output / "agents"
-    references = agents / "references"
     for item in manifest["catalog"]:
         copy_rendered(
             repo_source_path(item["source"]),
@@ -308,25 +339,28 @@ def render_kimi(manifest: dict[str, Any], context: RenderContext) -> None:
             context,
         )
     write_generated(
-        references / "sk-team-feature.md",
-        kimi_team_prompt(context),
+        agents / "sk-team.md",
+        kimi_team_markdown(manifest, kimi_team_prompt(context)),
     )
-    write_generated(agents / "sk-team.yaml", kimi_team_yaml(manifest))
+    review_agents = tuple(item["name"] for item in manifest["review_steps"])
     for item in manifest["agents"]:
-        copy_rendered(
-            repo_source_path(item["source"]),
-            references / f"{item['name']}.md",
+        source_prompt = replace_paths(
+            read_source_text(repo_source_path(item["source"])),
+            context,
+        )
+        subagents = review_agents if item["name"] == "sk-review-orchestrator" else ()
+        write_generated(
+            agents / f"{item['name']}.md",
+            kimi_agent_markdown(item["name"], source_prompt, subagents),
+        )
+    for item in manifest["review_steps"]:
+        source_prompt = replace_paths(
+            read_source_text(repo_source_path(item["source"])),
             context,
         )
         write_generated(
-            agents / f"{item['name']}.yaml",
-            kimi_agent_yaml(item["name"]),
-        )
-    render_review_steps(manifest, references / "review-steps", context)
-    for item in manifest["review_steps"]:
-        write_generated(
-            agents / f"{item['name']}.yaml",
-            kimi_agent_yaml(item["name"]),
+            agents / f"{item['name']}.md",
+            kimi_agent_markdown(item["name"], source_prompt),
         )
     for item in manifest["resources"]:
         copy_rendered(

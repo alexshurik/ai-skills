@@ -138,12 +138,11 @@ verification; request approval.
 ### 5. Code Review
 
 Execute the canonical review-orchestrator flow with a depth-2 lens budget when the
-host permits nested delegation. Codex uses a clean review-orchestrator child whose
-exactly three clean lens children are leaves: architecture-design,
-correctness-safety, and engineering-quality. Stable Kimi children cannot nest, so
-its generated root-team override performs setup/aggregation and dispatches these
-three leaves directly in one wave. If the active host has neither mechanism, run
-three separately labelled inline sections and disclose that limitation.
+host permits nested delegation. Codex and current Kimi use a clean
+review-orchestrator child whose exactly three clean lens children are leaves:
+architecture-design, correctness-safety, and engineering-quality. If the active
+host cannot nest, run three separately labelled inline sections and disclose that
+limitation.
 
 Use the canonical parked orchestrator bootstrap for nested review. Dispatch the
 orchestrator first with an instruction to remain parked and perform no work. Once

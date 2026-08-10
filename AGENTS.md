@@ -23,10 +23,6 @@
 - `sk-code-review` - Review committed, staged, unstaged, untracked, deleted, and renamed changes through exactly three independent baseline-aware lenses without modifying source code.
 - `sk-explore-codestyle` - Derive project-specific coder, reviewer, and evidence profiles from enforced tooling, approved repository guidance, and representative source samples without promoting legacy frequency into rules.
 
-### Planning
-
-- `sk-plan-mode` - Structured planning workflow with file-based plan storage. Separates research from execution through 4 phases. Wait for explicit user approval before making changes.
-
 ### Context Management
 
 - `sk-copy-context` - Copy current session context to clipboard
@@ -65,8 +61,8 @@ Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user
   independent review use clean contexts; on Codex use `fork_turns="none"` and omit
   model/reasoning overrides so children inherit the parent profile.
 - Keep nesting at depth 2. Only a named orchestrator with an explicit child budget
-  may spawn; review lenses are leaves. Stable Kimi children cannot nest, so its
-  generated root team dispatches review lenses directly.
+  may spawn; review lenses are leaves. Codex and current Kimi support the canonical
+  review-orchestrator → three leaf-reviewers shape.
 - Agents return compact `FINAL` or `BLOCKED` messages to their immediate parent.
   Full reports, evidence, diffs, and logs live in shared artifacts; messages carry
   paths and fingerprints.

@@ -210,7 +210,6 @@ def discovered_manifest_sources() -> set[str]:
     directory_patterns = (
         "workflow/skills/sk-*/SKILL.md",
         "utilities/sk-*/SKILL.md",
-        "planning/sk-*/SKILL.md",
         "context/sk-*/SKILL.md",
     )
     discovered = {

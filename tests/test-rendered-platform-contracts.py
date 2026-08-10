@@ -78,9 +78,10 @@ def kimi_prompts(
         for item in (*manifest["catalog"], *manifest["onboarding"])
     ]
     prompts.extend(
-        output / "agents" / "references" / f"{item['name']}.md" for item in manifest["agents"]
+        output / "agents" / f"{item['name']}.md"
+        for item in (*manifest["agents"], *manifest["review_steps"])
     )
-    prompts.append(output / "agents" / "references" / "sk-team-feature.md")
+    prompts.append(output / "agents" / "sk-team.md")
     return prompts
 
 
@@ -151,6 +152,10 @@ def installed_reference(platform: str, output: Path, canonical: str) -> tuple[st
         return canonical, output / relative
 
     if platform == "kimi":
+        if relative.startswith("agents/review-steps/"):
+            filename = Path(relative).name
+            installed = output / "agents" / f"sk-review-{filename}"
+            return str(installed), installed
         relative = relative.removeprefix("agents/")
         installed = output / "agents" / "references" / relative
         return str(installed), installed
@@ -164,7 +169,7 @@ def installed_reference(platform: str, output: Path, canonical: str) -> tuple[st
 
 def orchestrator_prompt(platform: str, output: Path) -> Path:
     if platform == "kimi":
-        return output / "agents" / "references" / "sk-review-orchestrator.md"
+        return output / "agents" / "sk-review-orchestrator.md"
     return output / "agents" / "sk-review-orchestrator.md"
 
 
@@ -173,7 +178,14 @@ def lens_prompts(platform: str, output: Path) -> list[Path]:
     if platform == "claude":
         directory = output / "agents" / "review-steps"
     elif platform == "kimi":
-        directory = output / "agents" / "references" / "review-steps"
+        return [
+            output / "agents" / f"sk-review-{name}"
+            for name in (
+                "architecture-design.md",
+                "correctness-safety.md",
+                "engineering-quality.md",
+            )
+        ]
     return [
         directory / name
         for name in ("architecture-design.md", "correctness-safety.md", "engineering-quality.md")
@@ -218,15 +230,23 @@ def main() -> None:
             assert_runtime_state_resources(platform, output)
             assert_reference_closure(platform, output)
             if platform == "kimi":
-                team_yaml = (output / "agents" / "sk-team.yaml").read_text(encoding="utf-8")
-                team_prompt = (output / "agents" / "references" / "sk-team-feature.md").read_text(
+                team_prompt = (output / "agents" / "sk-team.md").read_text(encoding="utf-8")
+                reviewer = (output / "agents" / "sk-review-orchestrator.md").read_text(
                     encoding="utf-8"
                 )
-                assert "review-architecture-design:" in team_yaml
-                assert "review-correctness-safety:" in team_yaml
-                assert "review-engineering-quality:" in team_yaml
-                assert "Kimi execution override" in team_prompt
-                assert (output / "agents" / "sk-review-correctness-safety.yaml").is_file()
+                assert "  - sk-review-orchestrator" in team_prompt
+                assert "  - sk-review-architecture-design" not in team_prompt
+                assert "  - sk-review-architecture-design" in reviewer
+                assert "  - sk-review-correctness-safety" in reviewer
+                assert "  - sk-review-engineering-quality" in reviewer
+                assert "${base_prompt}" in team_prompt
+                assert "Kimi execution override" not in team_prompt
+                architect = (output / "agents" / "sk-architect.md").read_text(encoding="utf-8")
+                assert "  - FetchURL" in architect
+                assert "  - WebFetch" not in architect
+                lens = output / "agents" / "sk-review-correctness-safety.md"
+                assert lens.is_file()
+                assert "subagents: []" in lens.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":

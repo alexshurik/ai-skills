@@ -250,8 +250,8 @@ Each agent runs in isolated context with specific tools.
 
 - **Context and nesting.** Codex children use `fork_turns="none"` and inherit the
   parent's model/reasoning. Nesting is capped at depth 2 and only an orchestrator
-  with an explicit child budget may delegate. Kimi stable children cannot nest, so
-  its generated root team dispatches the three review leaves directly.
+  with an explicit child budget may delegate. Current Kimi supports the same
+  review-orchestrator → three leaf-reviewers shape.
 
 - **Efficient waiting.** Work launches in concurrency-aware waves. Required children
   stay in a foreground join using the longest host-permitted event-driven mailbox

@@ -28,11 +28,6 @@ Explore a codebase and generate navigation plus authoritative project convention
 ### /sk-onboard
 Discover a project and generate its map, navigation rules, and authoritative convention profiles
 
-## Planning Commands
-
-### /sk-plan-mode
-Structured planning workflow with file-based plan storage. Separates research from execution through 4 phases. Wait for explicit user approval before making changes.
-
 ## Utility Commands
 
 ### /sk-code-review

@@ -185,7 +185,6 @@ If in an existing project, scan for context:
 ```bash
 # Check for existing specs
 ls openspec/ 2>/dev/null
-ls .planning/ 2>/dev/null
 
 # Understand current structure
 ls -la src/ 2>/dev/null || ls -la 2>/dev/null

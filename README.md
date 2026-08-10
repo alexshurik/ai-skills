@@ -49,7 +49,7 @@ cp -R adapters/cursor/.cursor /path/to/project/
 
 ```bash
 ./scripts/install-kimi.sh
-kimi --agent-file ~/.config/agents/agents/sk-team.yaml
+kimi --agent-file ~/.kimi-code/agents/sk-team.md
 ```
 
 ## Multi-Agent Workflow
@@ -104,7 +104,6 @@ feature workflow.
 | `sk-onboard` | Full project onboarding |
 | `sk-discover-project` | Discover project structure and tech stack |
 | `sk-explore-codebase` | Generate navigation rules and project convention profiles |
-| `sk-plan-mode` | Structured planning with file-based plan storage |
 | `sk-code-review` | Deep review of committed, staged, unstaged, and untracked changes |
 | `sk-explore-codestyle` | Generate code style guidelines |
 | `sk-copy-context` | Copy session context to clipboard |
@@ -112,6 +111,10 @@ feature workflow.
 Invocation syntax is host-specific: Claude uses `/skill-name`, Codex uses
 `$skill-name` or `/skills`, Kimi uses `/skill:skill-name`, and Cursor exposes
 installed skills in its slash-command menu.
+
+Codex, Claude Code, and current Kimi Code all provide native plan mode. Use the
+host's native plan command for standalone planning; `sk-team-feature` remains the
+durable workflow for approved requirements, design, tasks, and execution evidence.
 
 `sk-copy-context` detects `pbcopy` (macOS), `wl-copy`/`xclip` (Linux), or
 PowerShell clipboard support and fails with an actionable message when none is
@@ -330,7 +333,6 @@ skills/
 │       ├── references/          # Conditional workflow gates and verdict/tooling policy
 │       └── shared/              # Context, waiting, handoff, and scope-governance policies
 ├── onboarding/                  # Project onboarding commands
-├── planning/                    # Planning workflows (sk-plan-mode)
 ├── utilities/                   # Standalone tools (sk-code-review, sk-explore-codestyle)
 ├── context/                     # Context management skill and its handoff template
 ├── shared/

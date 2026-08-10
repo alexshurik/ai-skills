@@ -46,8 +46,8 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   independent review use clean contexts; on Codex use `fork_turns="none"` and omit
   model/reasoning overrides so children inherit the parent profile.
 - Keep nesting at depth 2. Only a named orchestrator with an explicit child budget
-  may spawn; review lenses are leaves. Stable Kimi children cannot nest, so its
-  generated root team dispatches review lenses directly.
+  may spawn; review lenses are leaves. Codex and current Kimi support the canonical
+  review-orchestrator → three leaf-reviewers shape.
 - Agents return compact `FINAL` or `BLOCKED` messages to their immediate parent.
   Full reports, evidence, diffs, and logs live in shared artifacts; messages carry
   paths and fingerprints.

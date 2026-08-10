@@ -13,20 +13,17 @@ from skills_validation import parse_frontmatter, validate
 CATALOG_PREFIXES = {
     "workflow": "workflow/skills/",
     "utilities": "utilities/",
-    "planning": "planning/",
     "context": "context/",
 }
 AGENTS_SECTIONS = (
     ("workflow", "Workflow (Multi-Agent Team)"),
     ("onboarding", "Onboarding"),
     ("utilities", "Utilities"),
-    ("planning", "Planning"),
     ("context", "Context Management"),
 )
 CURSOR_SECTIONS = (
     ("workflow", "Workflow Commands"),
     ("onboarding", "Onboarding Commands"),
-    ("planning", "Planning Commands"),
     ("utilities", "Utility Commands"),
     ("context", "Context Commands"),
 )
