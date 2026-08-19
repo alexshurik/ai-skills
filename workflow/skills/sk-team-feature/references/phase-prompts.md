@@ -15,13 +15,21 @@ Worktree: <absolute path>
 Authority: <approved artifact/guidance paths>
 Scope: <paths and explicit non-goals>
 Scope governance: <scope-governance.md path>; approved Scope Delta IDs: <IDs/none>
-User constraints: <material choices not already persisted>
+Constraints: <C-* statement, user/normative authority, and source artifact/gate>
+Preferences: <non-binding caller suggestions or none>
 Acceptance: <observable completion criteria>
 Output: <artifact path>
 Return: FINAL or BLOCKED; status, required actions, critical evidence, artifact
         paths and fingerprints; no raw logs; max 50 lines
 Delegation budget: none | depth-2 <named helpers and maximum count>
 ```
+
+Only put a material restriction under `Constraints` when it is traceable to a user
+decision, approved artifact, or repository policy. Persist a new user choice before
+dispatch or cite its stage gate. Put caller assumptions and implementation
+preferences under `Preferences`; they are advisory and cannot silently remove a
+solution family. Route a preference that changes architecture/scope through the
+applicable decision gate.
 
 Do not append the caller's conversation, full files, logs, prior handoffs, or static
 output when paths are available. A new phase, redo, or remediation is a clean child.
@@ -74,8 +82,27 @@ additions with cost/blast radius (or `None`), and non-goals. Require an explicit
 decision for every proposed addition. Only then create design.md, tasks.md, and
 required ADRs from required plus approved work.
 The design must include boundary ownership, business vocabulary, reuse decisions,
-trust-boundary models, abstraction budget, module-growth forecast, infrastructure
-authority, and non-goals. End with the standard handoff block.
+trust-boundary models, abstraction budget, a conditional mechanism budget,
+state/coordination invariant alignment when applicable, module-growth forecast,
+infrastructure authority, and non-goals. End with the standard handoff block.
+```
+
+## Architecture replan after review — `sk-architect`
+
+```text
+Deliverable: approved bounded design amendment for allowlisted findings
+Feature: <name>
+Worktree: <path>
+Authority: current proposal/design/tasks/ADRs and review artifact/fingerprint
+Findings: <only IDs routed architecture_decision_required>
+
+Preserve each required outcome, approved scope, and non-goals. Do not implement or
+revisit unrelated design. Identify the missing/invalidated decision, compare the
+smallest sufficient options, and apply the mechanism/invariant gates when relevant.
+Return the normal approach-confirmation gate before editing normative artifacts.
+After explicit approval, amend design/tasks and an ADR when required; return their
+new fingerprints and per-finding evidence that the route can become
+within_approved_design or remains blocked. The caller records the route transition.
 ```
 
 ## Documentation Review — `sk-doc-reviewer` (optional)
@@ -122,8 +149,11 @@ forecast, and local-import evidence. Return exact verification and structural
 handoff evidence.
 
 For remediation, also receive an explicit finding-ID allowlist. Implement only
-`required_fix` plus user-approved addition IDs; never treat the complete review
-report as implementation authority.
+`required_fix` plus user-approved addition IDs that are routed
+`within_approved_design`; never treat the complete review report or a reviewer
+recommendation as implementation-design authority. Run the remediation design-delta
+gate before editing and return `BLOCKED — REPLAN_REQUIRED` to Architecture or Scope
+Triage when the approved design cannot contain the intended fix.
 ```
 
 ## Code Review — top-level orchestrator flow
@@ -151,14 +181,18 @@ openspec/changes/<name>/CODE_REVIEW.md.
 
 Before remediation, show mandatory fixes, scope additions requiring a decision, and
 deferred/backlog candidates. Resolve every decision and freeze the exact remediation
-allowlist. Return to a clean remediation agent with findings artifact/fingerprint,
-acceptance criteria, non-goals, approved Scope Delta IDs, and only allowlisted IDs.
-Treat the frozen remediation allowlist as the only review-derived implementation
-authority.
+allowlist plus each ID's remedy authority/route. Send Developer only IDs routed
+`within_approved_design`. Route the others through a clean Architect replan, Scope
+Triage, or bounded investigation first. Return to a clean remediation agent with
+findings artifact/fingerprint, acceptance criteria, non-goals, approved Scope Delta
+IDs, and only developer-routed allowlisted IDs. Treat the allowlist as authority for
+the required outcome, not for an unapproved remedy design.
 
 Targeted Round 2 uses a fresh snapshot, root gates once, immutable pre/post
 fingerprints, complete delta, verified unchanged hashes, no expansion, and every
 finding-owning/impact-routed lens. Old evidence never proves changed content.
+An approved normative design/ADR amendment invalidates targeted mode: the next
+review is full against the new authority fingerprint and remaining round budget.
 Exceptional Round 3 is only for unresolved allowlisted defects, a remediation
 regression, or newly proven critical correctness/security defect. No automatic
 Round 4: return NEEDS USER DECISION. New non-critical proposals after frozen triage

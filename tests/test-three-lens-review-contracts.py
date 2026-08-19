@@ -60,7 +60,10 @@ def assert_full_review_contract() -> None:
         "root runs readiness gates once per snapshot",
         "must not rerun the full suite",
         "complete finding set",
-        "frozen remediation allowlist",
+        "freeze the exact remediation allowlist",
+        "required outcome",
+        "remedy authority",
+        "send only `within_approved_design` ids",
         "targeted round 2",
         "immutable pre/post fingerprints",
         "unchanged hashes",
@@ -69,6 +72,7 @@ def assert_full_review_contract() -> None:
         "needs user decision",
         "parent full review",
         "zero required unverified dimensions",
+        "design/adr amendment always invalidates targeted mode",
     )
     reject(
         orchestrator,
@@ -94,7 +98,13 @@ def assert_full_review_contract() -> None:
     )
 
     scope = read("workflow/agents/shared/scope-governance.md")
-    require(scope, "freeze the exact remediation allowlist", "complete finding set")
+    require(
+        scope,
+        "freeze the exact remediation allowlist",
+        "complete finding set",
+        "remedy_authority",
+        "architecture_decision_required",
+    )
 
 
 def assert_lens_ownership() -> None:
@@ -108,6 +118,8 @@ def assert_lens_ownership() -> None:
         "abstraction/navigation cost",
         "api/schema/model shape",
         "packaging",
+        "simplest viable alternative",
+        "permanent complexity",
     )
     require(
         correctness,
@@ -118,6 +130,8 @@ def assert_lens_ownership() -> None:
         "idempotency",
         "trust boundaries",
         "executable instruction correctness",
+        "invariant alignment row",
+        "transaction/coordination scope",
     )
     require(
         quality,
@@ -134,6 +148,8 @@ def assert_lens_ownership() -> None:
             "change_class:",
             "disposition:",
             "scope_basis:",
+            "required_outcome:",
+            "remedy_authority:",
             "risk_if_deferred:",
             "blocks_release:",
         )
@@ -146,7 +162,14 @@ def assert_consumers() -> None:
     quick = read("workflow/skills/sk-team-quick/SKILL.md")
     require(code_review, "exactly three independent lenses", "one codex wave")
     require(feature, "targeted round 2", "exceptional round 3", "no automatic round 4")
-    require(phase, "complete finding set", "frozen remediation allowlist")
+    require(
+        phase,
+        "complete finding set",
+        "architecture replan after review",
+        "caller records the route transition",
+        "allowlist plus each id's remedy authority/route",
+        "developer-routed allowlisted ids",
+    )
     require(
         quick,
         "one combined reviewer",

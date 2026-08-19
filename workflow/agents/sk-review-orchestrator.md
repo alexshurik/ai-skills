@@ -148,14 +148,19 @@ notifications do not resume aggregation.
 
 Validate lens artifacts/fingerprints and normalize findings through
 `scope-governance.md`. Preserve lens, severity, change class, disposition, scope
-basis, deferral risk, and release-blocking flag. Deduplicate only the same concern
-at overlapping locations. Keep baseline visible and separate.
+basis, required outcome, remedy authority, deferral risk, and release-blocking
+flag. Deduplicate only the same concern at overlapping locations. Keep baseline
+visible and separate.
 
 Write `<snapshot-dir>/CODE_REVIEW.md` and the compact durable change review artifact.
 Render mandatory fixes, scope decisions, deferred/backlog, and baseline separately.
 Before remediation, resolve every `user_decision` and freeze the exact remediation
-allowlist: all `required_fix` IDs plus explicitly approved `user_decision` IDs. This
-frozen remediation allowlist is the only implementation authority from review.
+allowlist: all `required_fix` IDs plus explicitly approved `user_decision` IDs.
+Freeze each ID's remedy authority and route from `scope-governance.md`. The allowlist
+authorizes the required outcome, not an unapproved implementation design. Send only
+`within_approved_design` IDs to Developer. Route architecture, scope, and
+investigation items to their required owner first; reclassify them for Developer
+only against recorded approved authority and its fingerprint.
 Noncritical new suggestions after triage cannot create cycles.
 
 The durable artifact contains Review Triage groups and approved remediation IDs;
@@ -187,6 +192,10 @@ when every impacted lens runs. Launch all routed lenses together in one wave.
 Material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, an unexplained path, invalid parent artifact, or unprovable delta forces
 a full three-lens round, but still consumes Round 2.
+
+A normative design/ADR amendment always invalidates targeted mode. Review the next
+snapshot with all three lenses against the new authority fingerprint and the
+remaining round budget.
 
 ## 7. Exceptional Round 3 and stop
 

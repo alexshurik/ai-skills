@@ -96,6 +96,8 @@ Produce the items defined in `architecture-gates.md`:
 - reuse decision for custom cross-cutting infrastructure;
 - trust-boundary model inventory;
 - abstraction budget;
+- mechanism budget when operational machinery changes;
+- state/coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
 - infrastructure authority and non-goals.
 
@@ -118,6 +120,7 @@ Apply `scope-governance.md` and return the Scope Delta Gate before final artifac
 - public contract/model changes;
 - planned files and structural decisions;
 - reuse/custom-build decisions;
+- mechanism and invariant-alignment decisions when applicable;
 - risks and non-goals.
 
 Ask the user to confirm through the caller. General approach approval covers only
@@ -137,16 +140,17 @@ Create `openspec/changes/<name>/design.md` with:
 6. Data flow and trust boundaries.
 7. Public API/interface changes and compatibility impact.
 8. Data/persistence model changes and migrations.
-9. Business vocabulary and abstraction decisions.
-10. Cross-cutting reuse decisions and dependencies.
-11. Module-growth forecast.
-12. Security threat model and authorization.
-13. Reliability, observability, and performance.
-14. Error handling.
-15. Testing and regression strategy.
-16. Infrastructure authority and explicit non-goals.
-17. Risks and mitigations.
-18. Structural digest: file map, model changes, and interface changes.
+9. State/coordination invariant alignment and lifecycle when applicable.
+10. Business vocabulary, abstraction, and mechanism-budget decisions.
+11. Cross-cutting reuse decisions and dependencies.
+12. Module-growth forecast.
+13. Security threat model and authorization.
+14. Reliability, observability, and performance.
+15. Error handling.
+16. Testing and regression strategy.
+17. Infrastructure authority and explicit non-goals.
+18. Risks and mitigations.
+19. Structural digest: file map, model changes, and interface changes.
 
 For network/process boundaries define timeouts, retry/idempotency policy, failure
 visibility, and graceful-degradation behavior where applicable. Do not add these
@@ -193,6 +197,9 @@ Confirm:
 - trust-boundary data has a precise model;
 - custom cross-cutting infrastructure has reuse evidence;
 - module growth and new abstractions have explicit decisions;
+- every material operational mechanism has a simpler-baseline comparison and
+  justified permanent cost;
+- durable state and coordination scopes/lifetimes align with their invariants;
 - deployment/configuration scope is authorized;
 - every task traces to required scope or an approved Scope Delta ID;
 - every unselected useful proposal is deferred and every rejected repeated-risk

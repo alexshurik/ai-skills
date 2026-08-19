@@ -53,8 +53,10 @@ If dispatch is unavailable, run three separately labelled inline passes and disc
 ## 3. Verdict and round cap
 
 Classify every finding with severity, `change_class`, `disposition`, `scope_basis`,
-`risk_if_deferred`, and `blocks_release`. Freeze the exact remediation allowlist
-after triage; this standalone read-only skill reports it but does not remediate.
+`required_outcome`, `remedy_authority`, `risk_if_deferred`, and `blocks_release`.
+Freeze the exact remediation allowlist and per-ID route after triage; this standalone
+read-only skill reports them but does not remediate. The allowlist records mandatory
+or explicitly selected outcomes; it does not authorize a new remedy design.
 
 Use the orchestrator's lifecycle if the caller later authorizes remediation:
 

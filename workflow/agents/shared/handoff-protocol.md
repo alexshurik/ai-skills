@@ -69,3 +69,11 @@ The caller:
 6. starts a clean child for a new phase, redo, remediation, or review cycle.
 7. passes remediation an allowlist of approved finding IDs, never a generic
    instruction to fix every reviewer suggestion.
+8. cites the authority source for every material delegated constraint and keeps its
+   own assumptions or implementation preferences explicitly non-binding.
+
+When a child proves that the next valid action belongs to a different decision
+owner, it returns `BLOCKED — REPLAN_REQUIRED` with the affected finding/requirement,
+the invalidated design decision, and the required owner (`Architecture` or `Scope
+Triage`). The caller routes a clean successor; it does not turn the child into the
+missing architect or ask the user to choose an unexplored low-level design.

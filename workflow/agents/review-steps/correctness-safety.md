@@ -34,6 +34,8 @@ Correctness-safety owns:
   generated instruction consistency, and destructive or impossible guidance.
 
 Architecture-design owns where contracts/models/modules belong and their shape.
+It also owns the chosen source-of-truth and coordination shape; this lens verifies
+that their runtime semantics preserve the intended invariant.
 Engineering-quality owns idioms, readability, complexity, duplication, dead code,
 error-handling quality, test-code quality, and root-produced tool evidence.
 
@@ -45,6 +47,17 @@ trust-boundary input through validation, authorization, side effects, persistenc
 and output. Verify migrations and remediation do not lose data or weaken old
 contracts. For instruction artifacts, simulate the ordered workflow and reject
 contradictory owners, stale resources, unsafe commands, or unverifiable gates.
+
+For every materially changed durable-state or concurrency path, record an invariant
+alignment row:
+
+| Invariant | Protected resource/operation | Source of truth and scope | Transaction/coordination scope | Lifecycle, deletion, retry, and recovery owner |
+|---|---|---|---|---|
+
+Verify that these scopes and lifetimes align, work remains bounded under expected
+growth, retry/cleanup ownership is unambiguous, and deleting or expiring one owner
+cannot silently erase unfinished work. Use the table only when such state or
+coordination is in scope; do not impose it on ordinary local logic.
 
 Assign security severity from a demonstrated path, likelihood, impact, approved
 trust model, and controls. A proven auth bypass, BOLA/IDOR, secret exposure,
@@ -63,12 +76,15 @@ one finding per round. Every finding uses:
   file: path/to/file
   line: 42
   finding: concise semantic or safety defect
+  required_outcome: observable behavior or invariant remediation must restore
   severity: BLOCKER | MAJOR | MINOR | NITPICK
   change_class: change-caused | touched-regression | baseline
   disposition: required_fix | user_decision | backlog | baseline
   scope_basis: acceptance_criterion | approved_design | enforced_gate |
     realistic_security_defect | remediation_regression | threat_model_expansion |
     infrastructure_expansion | optional_hardening | baseline_debt
+  remedy_authority: within_approved_design | architecture_decision_required |
+    scope_decision_required | investigation_required
   risk_if_deferred: concrete consequence
   blocks_release: true | false
   recommendation: smallest sufficient action

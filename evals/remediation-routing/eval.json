@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "suite": "remediation-routing",
+  "prompt": "prompt.md",
+  "skill_inputs": [
+    "workflow/agents/shared/orchestration-policy.md",
+    "workflow/agents/shared/scope-governance.md",
+    "workflow/agents/references/architecture-gates.md",
+    "workflow/agents/references/developer-prewrite-gate.md"
+  ],
+  "cases": [
+    {
+      "id": "local-approved-fix",
+      "input": "An approved handler contract already requires an empty display name to return the existing invalid-input error. Review found one changed branch returning the existing not-found error instead. Correcting that branch changes no owner, model, dependency, public shape, mechanism, or non-goal.",
+      "expected": {
+        "remedy_authority": "within_approved_design",
+        "route": "Developer",
+        "constraint_result": "none",
+        "must_preserve": ["required outcome", "approved design fingerprint"],
+        "must_not": ["request architecture replan", "expand scope"]
+      }
+    },
+    {
+      "id": "missing-durable-design",
+      "input": "Review proves that an approved operation must resume safely after process restart. The approved design treats it as request-local and contains no durable-state owner, lifecycle, or recovery decision. Several materially different designs could satisfy the outcome. A reviewer recommends adding a queue.",
+      "expected": {
+        "remedy_authority": "architecture_decision_required",
+        "route": "Architecture",
+        "constraint_result": "none",
+        "must_preserve": ["required outcome", "reviewer recommendation is non-authoritative"],
+        "must_not": ["implement the recommended queue", "send directly to Developer"]
+      }
+    },
+    {
+      "id": "ungrounded-caller-preference",
+      "input": "The user request and approved artifacts contain no restriction on schema or dependencies. A caller writes 'avoid schema and dependency changes' solely to keep remediation small. The required outcome may need a material persistence decision.",
+      "expected": {
+        "remedy_authority": "architecture_decision_required",
+        "route": "Architecture",
+        "constraint_result": "non-binding preference",
+        "must_preserve": ["constraint provenance", "full solution space"],
+        "must_not": ["treat the caller preference as a user constraint", "invent a workaround"]
+      }
+    },
+    {
+      "id": "public-scope-change",
+      "input": "A non-mandatory review proposal would change an approved public compatibility promise and an explicit non-goal. No user decision approves that expansion.",
+      "expected": {
+        "remedy_authority": "scope_decision_required",
+        "route": "Scope Triage",
+        "constraint_result": "none",
+        "must_preserve": ["explicit non-goal", "user decision"],
+        "must_not": ["implement before approval", "route directly to Developer"]
+      }
+    },
+    {
+      "id": "insufficient-evidence",
+      "input": "A reviewer suspects a duplicate external side effect, but the snapshot lacks the caller, retry path, and execution trace needed to establish whether the change caused it or which invariant is violated.",
+      "expected": {
+        "remedy_authority": "investigation_required",
+        "route": "Investigation",
+        "constraint_result": "none",
+        "must_preserve": ["bounded read-only investigation", "missing evidence"],
+        "must_not": ["edit source", "invent a blocker"]
+      }
+    },
+    {
+      "id": "permanent-mechanism-cost",
+      "input": "A design adds a cross-cutting polling coordinator, retry protocol, and derived state to preserve one invariant. It does not identify the state owner or lifecycle, compare a simpler single-owner alternative, or explain recurring work growth and recovery ownership.",
+      "expected": {
+        "remedy_authority": "architecture_decision_required",
+        "route": "Architecture",
+        "constraint_result": "none",
+        "must_preserve": ["mechanism budget", "state and coordination alignment"],
+        "must_not": ["approve from small file size", "send directly to Developer"]
+      }
+    }
+  ]
+}

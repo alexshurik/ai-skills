@@ -115,7 +115,8 @@ approach confirmation before artifacts. Require the Scope Delta Gate with requir
 items, separately identified `SD-*` additions (or `None`), cost/blast radius, and
 non-goals. General approach approval does not approve an unlisted addition. Show
 boundary/architecture summary, file map, model/interface changes, growth forecast,
-risks, and non-goals; request approval.
+conditional mechanism budget, state/coordination invariant alignment when
+applicable, risks, and non-goals; request approval.
 
 ### 2.5 Documentation Review — optional
 
@@ -182,9 +183,12 @@ ledger. Every lens returns its complete finding set, not one issue per round.
 
 Before remediation, show the Review Triage Gate and resolve every `user_decision`.
 Freeze the exact remediation allowlist to mandatory `required_fix` plus explicitly
-approved addition IDs. Record decisions in `CODE_REVIEW.md`/`DEFERRED.md` and send a
-clean remediation developer only that allowlist, acceptance criteria, approved
-Scope Delta IDs, and non-goals; never send “fix all findings”. New noncritical
+approved addition IDs, together with each ID's remedy authority and route. Record
+decisions in `CODE_REVIEW.md`/`DEFERRED.md`. Send a clean remediation developer only
+allowlisted IDs routed `within_approved_design`, plus acceptance criteria, approved
+Scope Delta IDs, and non-goals. Route other IDs to a clean Architect replan, Scope
+Triage, or bounded investigation first; never send “fix all findings”. The allowlist
+authorizes required outcomes, not an unapproved remedy design. New noncritical
 suggestions after triage are deferred and cannot create cycles.
 
 Targeted Round 2 uses a fresh post-remediation snapshot. Run root gates once and
@@ -202,6 +206,11 @@ three lenses but consumes Round 2. Exceptional Round 3 is allowed only for an
 unresolved allowlisted defect, remediation regression, or newly proven critical
 correctness/security defect; use a fresh snapshot, root gates once, and only owning/
 impact-routed lenses unless escalation requires all three.
+
+A normative design/ADR amendment invalidates targeted review. Run all three lenses
+against the new authority fingerprint within the remaining round budget. After the
+budget is exhausted, only explicit user approval may start a new review cycle; this
+is not an automatic Round 4.
 
 Apply the shared foreground-join policy to every required child. Prefer the longest
 host-permitted event-driven wait, re-enter it after transport-only timeouts, and do

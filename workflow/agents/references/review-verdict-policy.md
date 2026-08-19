@@ -41,10 +41,11 @@ must not rerun the full battery. Missing/failed required tooling is UNVERIFIED.
 - **Baseline:** unchanged and not worsened; visible but non-blocking.
 
 Finding disposition remains separate from severity. Every finding includes
-`disposition`, `scope_basis`, `risk_if_deferred`, and
-`blocks_release`. Only `required_fix` creates automatic remediation authority.
-Unresolved `user_decision` yields `TRIAGE REQUIRED`; backlog/baseline items never
-block.
+`required_outcome`, `disposition`, `scope_basis`, `remedy_authority`,
+`risk_if_deferred`, and `blocks_release`. Only `required_fix` makes the outcome
+automatically mandatory; it does not authorize a new remedy design. An explicitly
+selected `user_decision` is separate authority. Unresolved `user_decision` yields
+`TRIAGE REQUIRED`; backlog/baseline items never block.
 
 Severity:
 
@@ -82,6 +83,10 @@ A material scope expansion, changed authority/base, dependency/trust/infrastruct
 expansion, unexplained path, invalid parent, or unprovable delta forces a full
 three-lens run while consuming Round 2.
 
+A normative design/ADR amendment invalidates targeted mode and requires a full
+three-lens review against the new authority fingerprint within the remaining round
+budget.
+
 ### Exceptional Round 3
 
 Allow only for an unresolved allowlisted defect, remediation regression, or newly
@@ -97,8 +102,8 @@ scope/workflow.
 
 1. Validate snapshot, scope union, provenance, and lens artifacts.
 2. Merge only identical concerns at overlapping locations.
-3. Preserve source lens, severity, change class, disposition, scope basis, deferral
-   risk, and release flag.
+3. Preserve source lens, severity, change class, disposition, scope basis, required
+   outcome, remedy authority, deferral risk, and release flag.
 4. Group required fixes, user decisions, backlog, and baseline; sort by severity.
 5. Keep full findings/logs Git-local and a compact durable verdict in OpenSpec.
 
@@ -107,6 +112,10 @@ scope/workflow.
 Return `APPROVED` only when required gates are green, scope is complete, required
 lenses are valid, no `required_fix` remains, baseline is separate, and there are
 zero required UNVERIFIED dimensions.
+
+No source remediation begins while an allowlisted finding still routes to
+Architecture, Scope Triage, or Investigation. A route becomes Developer only after
+its required authority and fingerprint are recorded.
 
 Targeted-mode approval additionally requires valid parent full review, complete
 routing, all affected lenses valid, resolved allowlist, complete/proven delta, and

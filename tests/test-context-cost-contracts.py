@@ -52,6 +52,9 @@ def main() -> None:
         "artifact paths",
         "scope-governance.md",
         "stages own their gates, checks, and tasks",
+        "constraints: <c-* statement",
+        "preferences: <non-binding",
+        "cannot eliminate a solution class",
     )
     reject(
         policy,
@@ -62,7 +65,14 @@ def main() -> None:
     )
 
     handoff = read("workflow/agents/shared/handoff-protocol.md")
-    require(handoff, "durable artifact", "compact return", "50 lines")
+    require(
+        handoff,
+        "durable artifact",
+        "compact return",
+        "50 lines",
+        "blocked — replan_required",
+        "authority source for every material delegated constraint",
+    )
     reject(
         handoff,
         "relay handoffs verbatim",

@@ -84,6 +84,14 @@ Scenario: <scenario name>
 ### Explicitly Approved Additions
 - None | <Scope Delta ID and decision>
 
+### Material Constraints
+| ID | Constraint | Authority | Source artifact/gate |
+|---|---|---|---|
+| None | | user / approved artifact / repository policy | |
+
+Caller assumptions and implementation preferences are non-binding and do not belong
+in this table.
+
 ### Deferred Proposals
 - None | <DEFERRED.md item IDs>
 

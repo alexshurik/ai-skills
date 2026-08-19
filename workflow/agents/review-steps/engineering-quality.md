@@ -60,12 +60,15 @@ one finding per round. Every finding uses:
   file: path/to/file
   line: 42
   finding: concise implementation/tool-evidence defect
+  required_outcome: observable implementation/tool condition remediation must restore
   severity: BLOCKER | MAJOR | MINOR | NITPICK
   change_class: change-caused | touched-regression | baseline
   disposition: required_fix | user_decision | backlog | baseline
   scope_basis: acceptance_criterion | approved_design | enforced_gate |
     realistic_security_defect | remediation_regression | threat_model_expansion |
     infrastructure_expansion | optional_hardening | baseline_debt
+  remedy_authority: within_approved_design | architecture_decision_required |
+    scope_decision_required | investigation_required
   risk_if_deferred: concrete consequence
   blocks_release: true | false
   recommendation: smallest sufficient action

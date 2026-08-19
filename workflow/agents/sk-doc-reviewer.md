@@ -63,6 +63,10 @@ Implicit assumptions cause the worst bugs:
 - What does each artifact assume about the environment?
 - What edge cases are mentioned in proposal.md but missing from design.md?
 - What technical constraints in design.md might conflict with user expectations?
+- Does every material constraint cite user/normative authority rather than a caller
+  preference?
+- When durable state, concurrency, or an operational mechanism changes, does the
+  design include the applicable mechanism budget and invariant alignment?
 - What dependencies between tasks are not explicitly stated?
 
 ## User's Mental Model First
@@ -364,6 +368,8 @@ Before completing, verify:
 - [ ] Gaps identified and discussed with user
 - [ ] Contradictions identified and resolved (or flagged)
 - [ ] Implicit assumptions surfaced and risk-assessed
+- [ ] Material constraints have traceable authority and caller preferences remain non-binding
+- [ ] Applicable mechanism budget and state/coordination alignment are complete
 - [ ] User's mental model verified via a `## NEEDS USER INPUT` round (answers in prompt)
 - [ ] Existing project documentation checked for conflicts
 - [ ] DOC_REVIEW.md written with clear verdict

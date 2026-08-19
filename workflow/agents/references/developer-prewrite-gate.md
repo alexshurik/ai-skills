@@ -34,10 +34,32 @@ scope, or a public contract.
 7. Inventory local/dynamic imports and their claimed reason.
 8. Map every planned edit to an acceptance criterion, approved Scope Delta ID, or
    allowlisted `required_fix` finding.
+9. For remediation, load each finding's `required_outcome` and `remedy_authority`,
+   then compare the intended fix with the approved design fingerprint.
 
 If the approved design lacks an owner for a material concern, return
 `## NEEDS USER INPUT` or request Planning rework. Do not invent the owner while
 coding.
+
+## Remediation design-delta gate
+
+Before a remediation source edit, describe the intended fix narrowly and compare it
+with the approved owners, models, public contracts, dependencies, operational
+mechanisms, infrastructure scope, and non-goals.
+
+- Continue only when the finding is routed `within_approved_design` and the
+  comparison has no material design delta.
+- For `architecture_decision_required`, or when the comparison reveals a missing or
+  invalidated design decision, return `BLOCKED — REPLAN_REQUIRED` to Architecture.
+- For `scope_decision_required`, return `BLOCKED — REPLAN_REQUIRED` to Scope Triage.
+- For `investigation_required`, perform no source edits and return the missing
+  evidence needed for a bounded read-only investigation.
+
+The permission to fix a mandatory defect is not permission to select a new
+architecture. Do not turn an ungrounded caller preference into a design restriction,
+or evade an unresolved design decision by repurposing an artifact with mismatched
+semantics. Architecture must first approve its owner, scope, lifecycle, consistency,
+growth, and recovery behavior.
 
 ## New-abstraction decision
 
@@ -86,4 +108,5 @@ Report:
 - new-abstraction inventory with keep/inline reasons;
 - local-import reproduction results;
 - before/after structure evidence;
-- any design deviation and its approval source.
+- any design deviation and its approval source;
+- remediation route and design-delta result for every allowlisted finding.

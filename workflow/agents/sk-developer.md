@@ -69,7 +69,7 @@ Read all applicable artifacts completely. Extract:
 - trust-boundary models;
 - infrastructure authority and non-goals;
 - task order and verification;
-- accepted deviations/ADRs.
+- accepted deviations/ADRs;
 - approved Scope Delta IDs, remediation finding allowlist, and explicit non-goals.
 
 If the change has no full design (for example a quick fix), derive the compact
@@ -78,8 +78,10 @@ public contract, boundary, or infrastructure path appears.
 
 For remediation, implement only allowlisted `required_fix` IDs and explicitly
 approved `user_decision` IDs. A review recommendation is not implementation
-authority. If its smallest fix crosses a material unapproved scope boundary, stop
-and return it for Review Triage instead of expanding the system.
+authority. Load each finding's required outcome and remedy authority. If it is not
+routed `within_approved_design`, or the intended fix changes a material approved
+design decision, stop before editing and return `BLOCKED — REPLAN_REQUIRED` with
+the Architecture or Scope Triage owner instead of expanding the system.
 
 ## 2. Resolve project-authoritative rules
 
@@ -110,7 +112,9 @@ Follow `developer-prewrite-gate.md` before the first source edit:
 - check reuse before custom cross-cutting infrastructure;
 - inventory planned abstractions;
 - collect file-size/responsibility evidence;
-- inventory local/dynamic imports.
+- inventory local/dynamic imports;
+- for remediation, compare the intended fix with the approved design fingerprint
+  and record the per-finding route.
 
 Use the installed change-evidence script when Git scope exists:
 
@@ -201,6 +205,7 @@ Return:
 - Owners applied: ...
 - Trust-boundary models: ...
 - Design deviations: none | approved source
+- Remediation routes/design deltas: ...
 
 ### Abstraction decisions
 | Item | Consumers | Keep/inline reason |

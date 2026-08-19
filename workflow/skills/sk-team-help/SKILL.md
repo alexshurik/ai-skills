@@ -167,12 +167,21 @@ finality, and broad refactors cannot enter tasks through a generic approval.
 All three review dimensions remain strict. Full review runs three independent
 lenses; quick mode may combine them for a truly small change. Each finding receives
 a risk severity plus a separate disposition: `required_fix`, `user_decision`,
-`backlog`, or `baseline`.
-Only required fixes and explicitly selected decision IDs enter remediation. Stack
-review still reports long/complex touched functions; unchanged debt is classified
-rather than silently forcing a broad refactor. Final review keeps catching
-regressions and proven critical defects, while new non-critical ideas are deferred
-instead of starting an unbounded loop.
+`backlog`, or `baseline`, plus `required_outcome` and a separate remedy authority:
+
+| Remedy authority | Route |
+|---|---|
+| `within_approved_design` | Developer |
+| `architecture_decision_required` | Architect replan and design approval |
+| `scope_decision_required` | Scope Triage and user decision |
+| `investigation_required` | Bounded read-only investigation |
+
+Only required fixes and explicitly selected decision IDs enter the allowlist, and
+only Developer-routed IDs enter source remediation. The allowlist authorizes an
+outcome, not a new design. Stack review still reports long/complex touched
+functions; unchanged debt is classified rather than silently forcing a broad
+refactor. Final review keeps catching regressions and proven critical defects, while
+new non-critical ideas are deferred instead of starting an unbounded loop.
 
 `CHANGES REQUESTED` means required work remains; `TRIAGE REQUIRED` means only a
 scope decision remains; backlog/baseline observations may stay visible under an
@@ -181,7 +190,9 @@ scope decision remains; backlog/baseline observations may stay visible under an
 Review is capped at three rounds: full Round 1, targeted Round 2 after frozen
 triage, and exceptional Round 3 only for an unresolved allowlisted defect,
 remediation regression, or newly proven critical correctness/security defect.
-There is no automatic Round 4; remaining blockers return `NEEDS USER DECISION`.
+A normative design/ADR amendment invalidates targeted mode and receives a full
+review against its new authority fingerprint within the remaining budget. There is
+no automatic Round 4; remaining blockers return `NEEDS USER DECISION`.
 
 ## TDD Approach
 
@@ -227,8 +238,9 @@ Each agent runs in isolated context with specific tools.
   never becomes an instruction by itself.
 
 - **Architecture gates.** Planning names one owner per concern, trust-boundary
-  models, reuse decisions, abstraction budget, module-growth forecast, and
-  infrastructure non-goals. Developer re-checks these before the first edit.
+  models, reuse decisions, abstraction budget, conditional mechanism budget,
+  state/coordination invariant alignment, module-growth forecast, and infrastructure
+  non-goals. Developer re-checks these before the first edit.
 
 - **Independent review.** Review includes complete tracked/untracked scope and three
   owners: architecture-design (shape/ownership), correctness-safety (semantics/risk),
@@ -236,8 +248,10 @@ Each agent runs in isolated context with specific tools.
   from change-caused findings.
 
 - **Scope governance.** Planning uses a Scope Delta Gate. Review uses one compact
-  mandatory/user-decision/backlog triage and remediation receives only approved
-  finding IDs. The canonical installed policy is
+  mandatory/user-decision/backlog triage and remediation receives approved finding
+  IDs with per-ID remedy authority. Only `within_approved_design` work goes directly
+  to Developer; other routes return to Architecture, Scope Triage, or Investigation.
+  The canonical installed policy is
   `~/.claude/agents/shared/scope-governance.md` (or the source-repository
   equivalent).
 

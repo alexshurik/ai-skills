@@ -33,12 +33,21 @@ Deliverable: <one bounded result>
 Worktree: <absolute path>
 Authority: <proposal/design/ADR/guidance paths>
 Scope: <paths, base/fingerprint, and explicit exclusions>
-User constraints: <material choices not already persisted>
+Constraints: <C-* statement, user/normative authority, and source artifact/gate>
+Preferences: <non-binding caller suggestions or none>
 Acceptance: <observable completion criteria>
 Output: <artifact path or read-only verdict>
 Return: FINAL or BLOCKED, required actions, and artifact paths; max 50 lines
 Delegation budget: none | depth-2 <named children and maximum count>
 ```
+
+Only a traceable user decision, approved artifact, or repository policy may appear
+under `Constraints`. Persist a new material user choice before dispatch or cite the
+stage gate that records it. Caller assumptions, convenience goals, and preferred
+implementation techniques belong under `Preferences`; they cannot eliminate a
+solution class or override approved authority. If a preference would materially
+change architecture, scope, or a public contract, route it through the applicable
+decision gate instead of presenting it as a constraint.
 
 Do not paste full files, diffs, logs, static-analysis output, prior handoffs, or the
 whole original conversation when the child can read an artifact path.

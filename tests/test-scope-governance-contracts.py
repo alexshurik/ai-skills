@@ -32,9 +32,17 @@ def main() -> None:
         "required_fix | user_decision | backlog | baseline",
         "risk_if_deferred",
         "blocks_release",
+        "required_outcome",
+        "remedy_authority",
+        "within_approved_design",
+        "architecture_decision_required",
+        "scope_decision_required",
+        "investigation_required",
         "review triage gate",
         "resolve every `user_decision`",
         "do not send “fix all findings”",
+        "the allowlist authorizes the required outcome",
+        "do not dispatch a finding to developer",
         "freeze non-critical scope",
         "openspec/changes/<name>/",
         "git rev-parse --git-path sk-workflow",
@@ -62,6 +70,8 @@ def main() -> None:
         "remediation finding allowlist",
         "allowlisted `required_fix`",
         "approved `user_decision`",
+        "blocked — replan_required",
+        "approved design fingerprint",
         "do not implement backlog/baseline",
     )
 
@@ -72,6 +82,8 @@ def main() -> None:
         "user_decision`/`backlog",
         "uncertainty is unverified",
         "never reproduce a secret value",
+        "invariant alignment row",
+        "source of truth and scope",
     )
     reject(
         correctness,
@@ -107,6 +119,8 @@ def main() -> None:
             "change_class:",
             "disposition:",
             "scope_basis:",
+            "required_outcome:",
+            "remedy_authority:",
             "risk_if_deferred:",
             "blocks_release:",
         )
@@ -115,7 +129,8 @@ def main() -> None:
     require(
         verdict,
         "finding disposition",
-        "only `required_fix` creates automatic remediation authority",
+        "only `required_fix` makes the outcome automatically mandatory",
+        "does not authorize a new remedy design",
         "triage required",
         "backlog/baseline items never block",
     )
@@ -126,6 +141,8 @@ def main() -> None:
         "scope-governance.md",
         "review triage groups",
         "approved remediation ids",
+        "remedy authority and route",
+        "send only `within_approved_design` ids",
         "never pass “fix all findings”",
         "after initial triage, freeze non-critical scope",
         "do not create `review-summary.md`",
@@ -137,6 +154,8 @@ def main() -> None:
         "scope delta gate",
         "review triage gate",
         "freeze the exact remediation allowlist",
+        "route other ids to a clean architect replan",
+        "allowlist authorizes required outcomes",
         "deferred.md",
         "openspec/backlog/<slug>.md",
         "do not create a second `review-summary.md`",
@@ -148,7 +167,28 @@ def main() -> None:
         "scope delta: none",
         "required_fix | user_decision | backlog | baseline",
         "freeze the exact allowlist",
+        "any architecture, scope, or investigation route exits quick mode",
         "deferred.md",
+    )
+
+    orchestration = read("workflow/agents/shared/orchestration-policy.md")
+    require(
+        orchestration,
+        "constraints: <c-* statement",
+        "preferences: <non-binding",
+        "only a traceable user decision",
+        "cannot eliminate a solution class",
+    )
+    reject(orchestration, "user constraints: <material choices")
+
+    architecture_gate = read("workflow/agents/references/architecture-gates.md")
+    require(
+        architecture_gate,
+        "mechanism budget",
+        "simplest viable alternative",
+        "permanent complexity",
+        "state and coordination alignment",
+        "bounded one-time change",
     )
 
     deferred = read("shared/templates/deferred.md")
@@ -171,6 +211,8 @@ def main() -> None:
         "deferred.md",
         "openspec/backlog/<slug>.md",
         "review remains strict across all three dimensions",
+        "architecture_decision_required",
+        "normative design/adr amendment invalidates targeted mode",
     )
 
     help_text = read("workflow/skills/sk-team-help/SKILL.md")

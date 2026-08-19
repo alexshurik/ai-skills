@@ -87,6 +87,36 @@ One caller is not an automatic rejection, but it requires substantial isolation,
 a stable policy name, or a real boundary. Mere shortening or speculative reuse is
 not enough.
 
+## Mechanism budget
+
+Apply this gate only when the design adds or materially changes an operational
+mechanism such as durable state, asynchronous/background work, coordination,
+caching, retries, or cross-cutting runtime behavior:
+
+| Mechanism | Invariant served | Simplest viable alternative | Permanent complexity | Boundedness/lifecycle | Keep / remove |
+|---|---|---|---|---|---|
+
+Compare the proposed mechanism with the simplest design that satisfies the approved
+requirements. Account for recurring query/work growth, additional failure modes,
+operational and recovery paths, not just implementation line count. Avoid replacing a
+bounded one-time change with permanent runtime indirection unless the design records
+why that trade-off is better. An existing artifact does not become a new source of
+truth merely because reusing it avoids an explicit model change; its owner, scope,
+lifetime, consistency, and query bounds must fit the invariant.
+
+## State and coordination alignment
+
+When durable state or concurrency is in scope, record:
+
+| Invariant | Protected resource/operation | Source of truth and scope | Transaction/coordination scope | Lifecycle, deletion, retry, and recovery owner |
+|---|---|---|---|---|
+
+The state, protected resource, transaction/coordination, and cleanup ownership must
+use compatible scopes and lifetimes. Define how retries identify an execution owner
+and who may complete, transfer, or clean up unfinished work. Require bounded reads or
+an explicit growth strategy. Do not require this table for ordinary request-local
+logic without durable state or concurrency.
+
 ## Module-growth forecast
 
 For materially touched files record:
@@ -122,6 +152,8 @@ Before task breakdown, confirm the design contains:
 - reuse decisions for custom cross-cutting concerns;
 - trust-boundary model inventory;
 - abstraction budget;
+- mechanism budget when an operational mechanism changes;
+- state and coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
 - infrastructure authority and non-goals.
 
@@ -133,9 +165,11 @@ planning clarification. Do not produce implementation tasks.
 For a genuinely small fix, keep the design brief but still answer:
 
 - which owner changes;
-- whether a new boundary, abstraction, local import, or infrastructure path appears;
+- whether a new boundary, abstraction, operational mechanism, durable-state or
+  coordination path, local import, or infrastructure path appears;
 - whether the touched file gains a second responsibility;
 - what is explicitly out of scope.
 - whether `Scope Delta` is `None`; otherwise stop and escalate before editing.
 
-Escalate to the full workflow if any answer requires a new high-cost design choice.
+Escalate to the full workflow if any answer requires a new high-cost design choice
+or materially different mechanism/state alternative.

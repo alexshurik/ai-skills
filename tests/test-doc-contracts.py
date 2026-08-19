@@ -13,7 +13,7 @@ def read(relative: str) -> str:
     return (REPO_ROOT / relative).read_text(encoding="utf-8")
 
 
-def main() -> None:
+def assert_public_inventory() -> None:
     manifest = json.loads(read("skills-manifest.yaml"))
     public_names = {item["name"] for group in ("catalog", "onboarding") for item in manifest[group]}
     inventory_docs = (
@@ -27,6 +27,8 @@ def main() -> None:
         missing = sorted(name for name in public_names if name not in read(relative))
         assert missing == [], f"{relative} omits manifest skills: {missing}"
 
+
+def assert_adapter_docs() -> None:
     codex_readme = read("adapters/codex/README.md")
     codex_template = read("adapters/codex/skill-template.md")
     assert "$sk-team-feature" in codex_readme
@@ -48,6 +50,8 @@ def main() -> None:
     assert ".cursor/rules" in cursor_readme
     assert "Legacy Compatibility" in cursor_readme
 
+
+def assert_root_and_workflow_docs() -> None:
     root_readme = read("README.md")
     assert "register the source" in root_readme
     assert "skills-manifest.yaml" in root_readme
@@ -57,6 +61,8 @@ def main() -> None:
     assert "sk-team-status" in root_readme
     assert "recover-journal-or-reinitialize" in root_readme
     assert "require-compatible-helper" in root_readme
+    assert "architecture_decision_required" in root_readme
+    assert "normative design/ADR amendment invalidates targeted mode" in root_readme
     assert "review step 4" not in root_readme.lower()
 
     status = read("workflow/skills/sk-team-status/SKILL.md")
@@ -69,7 +75,34 @@ def main() -> None:
     assert "openspec/completed/" in help_text
     assert "events.jsonl" in help_text
     assert "runtime-state" in help_text
+    assert "required_outcome" in help_text
+    assert "investigation_required" in help_text
 
+
+def assert_templates() -> None:
+    proposal_template = read("shared/templates/proposal.md")
+    assert "Material Constraints" in proposal_template
+    assert "Source artifact/gate" in proposal_template
+    assert "Caller assumptions" in proposal_template
+
+    design_template = read("shared/templates/design.md")
+    for phrase in (
+        "Boundary Ownership",
+        "Trust Boundaries",
+        "State and Coordination Alignment",
+        "Mechanism Budget",
+        "Module Growth",
+        "Infrastructure Authority and Non-Goals",
+        "Structural Digest",
+    ):
+        assert phrase in design_template
+
+    retrospective_template = read("shared/templates/retrospective.md")
+    assert "Findings routed to Architecture/Scope Triage/Investigation" in retrospective_template
+    assert "Design replans and new authority fingerprints" in retrospective_template
+
+
+def assert_inlined_protocols() -> None:
     inlined_protocols = (
         "workflow/agents/sk-doc-reviewer.md",
         "workflow/agents/sk-product-analyst.md",
@@ -83,6 +116,14 @@ def main() -> None:
         ignore_start = prompt.index("jscpd:ignore-start")
         ignore_end = prompt.index("jscpd:ignore-end")
         assert ignore_start < protocol_start < protocol_end < ignore_end
+
+
+def main() -> None:
+    assert_public_inventory()
+    assert_adapter_docs()
+    assert_root_and_workflow_docs()
+    assert_templates()
+    assert_inlined_protocols()
 
 
 if __name__ == "__main__":

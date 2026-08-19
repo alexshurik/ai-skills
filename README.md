@@ -239,7 +239,7 @@ refactors require an explicit item decision. A general approval or autonomous-mo
 request does not silently approve them.
 
 Review remains strict across all three dimensions. Every finding has both severity
-and scope disposition:
+and scope disposition, plus a remedy authority that routes implementation:
 
 | Disposition | Meaning | Automatic remediation |
 |---|---|---|
@@ -248,17 +248,31 @@ and scope disposition:
 | `backlog` | Useful non-critical hardening/cleanup | No |
 | `baseline` | Pre-existing and not materially worsened | No |
 
+Remedy authority is a separate axis:
+
+| Remedy authority | Next owner |
+|---|---|
+| `within_approved_design` | Developer |
+| `architecture_decision_required` | Architect replan and explicit design approval |
+| `scope_decision_required` | Scope Triage and explicit user decision |
+| `investigation_required` | Bounded read-only investigation |
+
 Review triage separates mandatory fixes, scope decisions, deferred work, and
 pre-existing debt. Remediation receives an approved finding-ID allowlist rather
-than a broad “fix everything” instruction. `CHANGES REQUESTED` means required work
-or verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
+than a broad “fix everything” instruction. Only findings proven to fit the approved
+design go directly to Developer; missing architecture, scope, or investigation
+decisions return to their owner first. The allowlist authorizes the required outcome,
+not an unapproved remedy design. `CHANGES REQUESTED` means required work or
+verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
 `APPROVED` means the approved scope passes.
 
 Round 1 runs all three lenses and freezes exhaustive findings. Targeted Round 2
 verifies a fresh remediation snapshot when the parent, fingerprints, delta,
 unchanged hashes, scope, and impact routing are proven. Round 3 is exceptional for
 unresolved allowlisted defects, remediation regressions, or newly proven critical
-defects. There is no automatic Round 4.
+defects. A normative design/ADR amendment invalidates targeted mode and requires a
+full review against the new authority fingerprint within the remaining budget.
+There is no automatic Round 4.
 
 ## Best-Practice Profiles & Project Conventions
 

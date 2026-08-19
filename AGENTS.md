@@ -72,9 +72,9 @@ Write tests BEFORE code (TDD red phase). Proposes categorized test plan for user
   the bounded nested-review lease may record leaf attempts through the same helper.
   Stages own gates/tasks and tasks own attempt history.
 - Planning separates required work, explicit non-goals, and individually approved
-  Scope Delta IDs. Review keeps severity separate from `required_fix`,
-  `user_decision`, `backlog`, and `baseline`; remediation receives only an approved
-  finding-ID allowlist.
+  Scope Delta IDs. Review keeps severity/disposition separate from remedy authority;
+  remediation receives an approved finding-ID allowlist with per-ID routing, and
+  only work proven within the approved design goes directly to the developer.
 - Optional/rejected proposals stage in change-local `DEFERRED.md`. Promote only
   user-selected items to the repository tracker or `openspec/backlog/` fallback.
 - Full review uses a deterministic lossless review map and exactly three independent

@@ -118,6 +118,10 @@ Scenario: <Name>
 - Explicitly approved additions, if any
 - Deferred proposals, if any
 
+### Material Constraints
+- C-* statement, user/normative authority, and source artifact/gate
+- Caller assumptions and implementation preferences remain non-binding
+
 ## Open Questions
 - Items needing clarification
 ```
@@ -356,6 +360,8 @@ Before completing, verify:
 - [ ] Edge cases are documented
 - [ ] Data models are described (conceptually)
 - [ ] Out of scope is explicit
+- [ ] Every material constraint has user/normative authority and a source
+- [ ] Caller assumptions/preferences are not recorded as constraints
 - [ ] No technical implementation details
 - [ ] Open questions are captured
 - [ ] proposal.md is written to correct location

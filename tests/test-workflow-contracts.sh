@@ -42,21 +42,51 @@ architecture_lens_normalized = " ".join(architecture_lens.lower().split())
 correctness_lens_normalized = " ".join(correctness_lens.lower().split())
 quality_lens_normalized = " ".join(quality_lens.lower().split())
 
-for phrase in ("boundary matrix", "business-vocabulary", "module-growth", "non-goals"):
+for phrase in (
+    "boundary matrix",
+    "business-vocabulary",
+    "mechanism budget",
+    "state/coordination alignment",
+    "module-growth",
+    "non-goals",
+):
     assert phrase.lower() in architect.lower(), phrase
-for phrase in ("pre-write gate", "observed neighboring code", "local/dynamic import"):
+for phrase in (
+    "pre-write gate",
+    "observed neighboring code",
+    "local/dynamic import",
+    "replan_required",
+    "approved design fingerprint",
+):
     assert phrase.lower() in developer.lower(), phrase
 for phrase in ("untracked", "baseline", "architecture-design", "correctness-safety"):
     assert phrase.lower() in review.lower(), phrase
-for phrase in ("concern owner", "api/schema/model", "abstraction", "packaging"):
+for phrase in (
+    "concern owner",
+    "api/schema/model",
+    "abstraction",
+    "packaging",
+    "simplest viable alternative",
+):
     assert phrase.lower() in architecture_lens_normalized, phrase
-for phrase in ("state transitions", "trust boundaries", "test adequacy"):
+for phrase in (
+    "state transitions",
+    "trust boundaries",
+    "test adequacy",
+    "invariant alignment row",
+):
     assert phrase.lower() in correctness_lens_normalized, phrase
 for phrase in ("root-produced provenance", "test-code quality", "must not rerun"):
     assert phrase.lower() in quality_lens_normalized, phrase
 for phrase in ("RETROSPECTIVE.md", "named existing skill", "no promotion"):
     assert phrase.lower() in feature.lower(), phrase
-for phrase in ("Scope Delta Gate", "Review Triage Gate", "required_fix", "DEFERRED.md"):
+for phrase in (
+    "Scope Delta Gate",
+    "Review Triage Gate",
+    "required_fix",
+    "remedy_authority",
+    "DEFERRED.md",
+):
     assert phrase.lower() in scope.lower(), phrase
 for phrase in (
     "events.jsonl",

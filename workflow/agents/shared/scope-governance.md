@@ -71,12 +71,15 @@ id: SEC-001
 file: path/to/file
 line: 10
 finding: concise defect or proposal
+required_outcome: observable behavior or invariant the remediation must restore
 severity: BLOCKER | MAJOR | MINOR | NITPICK
 change_class: change-caused | touched-regression | baseline
 disposition: required_fix | user_decision | backlog | baseline
 scope_basis: acceptance_criterion | approved_design | enforced_gate |
   realistic_security_defect | remediation_regression | threat_model_expansion |
   infrastructure_expansion | optional_hardening | baseline_debt
+remedy_authority: within_approved_design | architecture_decision_required |
+  scope_decision_required | investigation_required
 risk_if_deferred: concise concrete consequence
 blocks_release: true | false
 recommendation: smallest sufficient action
@@ -102,6 +105,22 @@ hypothetical that depends on an unapproved threat-model expansion may still be
 Insufficient evidence is `UNVERIFIED`/`NEEDS_INVESTIGATION`, not an automatic
 security BLOCKER and not automatic implementation work.
 
+`remedy_authority` is independent of severity and disposition. A mandatory defect
+may still need an architecture or scope decision before source edits:
+
+- `within_approved_design`: at least one sufficient remedy is proven to fit the
+  approved owners, models, contracts, dependencies, mechanisms, and non-goals;
+- `architecture_decision_required`: the required outcome is known, but the approved
+  design is missing, contradicted, or must change before implementation;
+- `scope_decision_required`: the remedy would change approved scope, a public
+  contract, a non-goal, or material cost/blast radius and needs explicit approval;
+- `investigation_required`: available evidence cannot yet establish a safe remedy
+  route; investigate before implementation authority is granted.
+
+A review recommendation is evidence, not authority to choose a new architecture.
+Do not label a remedy `within_approved_design` merely because the finding itself is
+mandatory or its proposed patch looks small.
+
 ## 4. Review Triage Gate and frozen remediation scope
 
 Round 1 reviewers must each return their complete finding set; do not drip one issue
@@ -111,10 +130,10 @@ per remediation round. After the initial full review and before remediation, ren
 ## Review Triage
 
 ### Mandatory in-scope fixes
-| ID | Severity | Defect | Smallest fix |
+| ID | Severity | Defect | Required outcome | Remedy authority | Route |
 
 ### Scope additions requiring a decision
-| ID | Proposal | Risk if deferred | Cost/blast radius | Recommendation |
+| ID | Proposal | Required outcome | Risk if deferred | Cost/blast radius | Route |
 
 ### Deferred/backlog candidates
 | ID | Proposal | Why non-blocking |
@@ -126,7 +145,21 @@ only:
 1. `required_fix` IDs; and
 2. `user_decision` IDs explicitly approved for this change.
 
-Also pass acceptance criteria, approved Scope Delta IDs, and explicit non-goals.
+The allowlist authorizes the required outcome and selected scope, not a new remedy
+design. Freeze a route beside every allowlisted ID:
+
+- `within_approved_design` → Developer;
+- `architecture_decision_required` → clean Architect replan, explicit design
+  approval, then Developer against the new design fingerprint;
+- `scope_decision_required` → Scope Triage and explicit approval before any replan
+  or implementation;
+- `investigation_required` → bounded read-only investigation and re-triage.
+
+Do not dispatch a finding to Developer until its route is
+`within_approved_design`. A later design amendment may reclassify the route without
+changing the finding's disposition, but the new authority and fingerprint must be
+recorded. Also pass acceptance criteria, approved Scope Delta IDs, and explicit
+non-goals.
 Resolve every `user_decision` as include, defer, or reject before dispatching
 remediation; do not carry an undecided addition through a code cycle. Do not send
 “fix all findings”. If a proposed fix itself crosses a material scope boundary,
@@ -154,6 +187,11 @@ three lenses but consumes the same round budget. Round 3 is exceptional and only
 for unresolved allowlisted defects, remediation regressions, or newly proven
 critical correctness/security defects. There is no automatic Round 4; return
 `NEEDS USER DECISION`. Transport-only waits do not consume or reset rounds.
+
+A normative design or ADR amendment invalidates targeted mode: the next review is
+full against the new authority fingerprint and uses the remaining round budget. If
+the budget is exhausted, only explicit user approval may start a new review cycle;
+never disguise it as an automatic Round 4.
 
 ## 5. Artifact ownership
 

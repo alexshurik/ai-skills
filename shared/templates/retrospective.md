@@ -26,6 +26,8 @@ Use `None` when no material signal escaped. Do not invent a lesson to fill the t
 - Proposals deferred/rejected:
 - Unplanned implementation discovered:
 - Review additions incorrectly treated as authority:
+- Findings routed to Architecture/Scope Triage/Investigation:
+- Design replans and new authority fingerprints:
 
 ## Durable Lessons
 

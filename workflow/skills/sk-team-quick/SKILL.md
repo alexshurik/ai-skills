@@ -98,7 +98,9 @@ Stage A — read-only diagnosis:
 1. Reproduce or otherwise prove the problem.
 2. Run the compact pre-write ownership/structure gate.
 3. Write design.md: problem, root cause, intended behavior, exact file ownership,
-   fix approach, risks, verification plan, required scope, and explicit non-goals.
+   fix approach, risks, verification plan, required scope, explicit non-goals, and
+   the authority source for every material constraint. Treat caller assumptions and
+   implementation preferences as non-binding.
    State `Scope Delta: None`; if not none, return the item for user decision and
    escalation instead of editing.
 4. Return BLOCKED with a compact approval checkpoint and the design.md path.
@@ -148,9 +150,10 @@ each owner dimension PASS, FINDINGS, or NOT APPLICABLE:
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.
 
-Classify every finding with severity plus `required_fix | user_decision | backlog |
-baseline`. Keep stack detection strict: report whole-function/profile concerns, but
-unchanged debt does not become mandatory remediation.
+Classify every finding with severity, `required_fix | user_decision | backlog |
+baseline`, `required_outcome`, and `remedy_authority`. Keep stack detection strict:
+report whole-function/profile concerns, but unchanged debt does not become mandatory
+remediation.
 
 Write:
 - REVIEW.md with dimension-by-dimension evidence and findings;
@@ -171,13 +174,19 @@ escalate to the full workflow and its three independent clean reviewers.
 Round 1 requires the combined reviewer to return its complete finding set across all
 three dimensions. Before remediation, show mandatory fixes, scope decisions, and
 backlog; resolve every `user_decision` and freeze the exact allowlist containing only
-`required_fix` plus approved IDs. Never pass “fix all findings”.
+`required_fix` plus approved IDs, together with each remedy authority/route. Never
+pass “fix all findings”. Send Developer only `within_approved_design` items. Any
+architecture, scope, or investigation route exits quick mode before source edits and
+continues through the full workflow's owning gate.
 
 Targeted Round 2 uses a fresh snapshot, root gates once, valid parent review,
 immutable pre/post fingerprints, complete remediation delta, verified unchanged
 hashes, no expansion, and every impacted dimension. Old evidence never proves
 changed content. A material expansion or unprovable delta exits quick mode to the
 full workflow while consuming the round.
+
+A normative design/ADR amendment is never a targeted quick review: exit quick mode
+and run a full three-lens review against the new authority fingerprint.
 
 Exceptional Round 3 is allowed only for an unresolved allowlisted defect,
 remediation regression, or newly proven critical correctness/security defect. Run
