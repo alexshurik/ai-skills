@@ -62,9 +62,9 @@ runs them only on request.
 | `sk-researcher` | Research (optional) | Investigate unknown domains, APIs, best practices |
 | `sk-architect` | Planning | HOW - system design, task breakdown |
 | `sk-doc-reviewer` | Doc Review (optional) | Consistency & alignment check before testing |
-| `sk-tester` | TDD Red | Write failing tests before code |
+| `sk-tester` | Risk-routed TDD Red | Independent failing tests for high-risk/explicitly requested work |
 | `sk-developer` | TDD Green | Implement code to pass tests |
-| `sk-review-orchestrator` | Review | Dispatches architecture-design, correctness-safety, and engineering-quality lenses |
+| `sk-review-orchestrator` | Review | Dispatches three core lenses plus conditional rendered UI/UX |
 | `sk-acceptance-reviewer` | Acceptance | Verify business requirements met |
 
 ## Workflows
@@ -78,8 +78,8 @@ For new features, significant changes, complex work:
    1.5 sk-researcher → RESEARCH.md (optional — unknown domains/APIs)
 2. sk-architect → design.md + tasks.md (system design)
    2.5 sk-doc-reviewer → DOC_REVIEW.md (optional — alignment check)
-3. sk-tester → Tests (failing - TDD red phase)
-4. sk-developer → Code (tests pass - TDD green phase)
+3. [sk-tester] → Independent Red only when risk-routed
+4. sk-developer → Integrated or Tester-backed Red→Green implementation
 5. sk-review-orchestrator → Quality check (may loop to Developer)
 6. sk-acceptance-reviewer → VERIFICATION.md (final check)
 7. Orchestrator → RETROSPECTIVE.md (lesson disposition)
@@ -164,8 +164,9 @@ addition as a separately approved `SD-*` item. New queues/storage/workers, telem
 or rollout systems, broader threat models, extra public contracts, cross-system
 finality, and broad refactors cannot enter tasks through a generic approval.
 
-All three review dimensions remain strict. Full review runs three independent
-lenses; quick mode may combine them for a truly small change. Each finding receives
+All three core review dimensions remain strict, and user-visible frontend changes
+also receive an independent rendered UI/UX lens; quick mode may combine required
+dimensions for a truly small change. Each finding receives
 a risk severity plus a separate disposition: `required_fix`, `user_decision`,
 `backlog`, or `baseline`, plus `required_outcome` and a separate remedy authority:
 
@@ -196,11 +197,13 @@ no automatic Round 4; remaining blockers return `NEEDS USER DECISION`.
 
 ## TDD Approach
 
-The system enforces Test-Driven Development:
-
-1. **Red Phase** (sk-tester): Write failing tests based on requirements
-2. **Green Phase** (sk-developer): Write minimum code to pass tests
-3. **Refactor** (sk-developer): Clean up while keeping tests green
+The system enforces Red→Green→Refactor, but separates roles by risk. A clean Tester
+runs for auth/authz, payments, destructive data, migrations/public contracts,
+concurrency/idempotency, complex external integrations, a new reusable harness, or
+explicit user request. Otherwise Developer writes proportionate tests and code in
+one bounded phase. Prefer lowest-faithful bug regressions, component/browser tests
+for UI states, boundary integration/contract tests, and a few critical E2E journeys;
+use unit tests only for non-trivial logic.
 
 ## Agent Invocation
 

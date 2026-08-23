@@ -52,6 +52,10 @@ def replace_paths(text: str, context: RenderContext) -> str:
                 "~/.claude/agents/review-steps/engineering-quality.md",
                 str(context.installed_root / "agents/sk-review-engineering-quality.md"),
             ),
+            (
+                "~/.claude/agents/review-steps/ui-ux.md",
+                str(context.installed_root / "agents/sk-review-ui-ux.md"),
+            ),
             ("~/.claude/agents/shared", str(references / "shared")),
             ("~/.claude/agents/", f"{references}/"),
         )

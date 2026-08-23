@@ -102,11 +102,12 @@ def main() -> None:
     review = read("workflow/agents/sk-review-orchestrator.md")
     require(
         review,
-        "exactly three independent lenses",
+        "three independent core lenses",
+        "conditional ui/ux lens",
         "review snapshot",
         "artifact paths",
         "targeted approved",
-        "one codex wave",
+        "short second wave",
         "no lens may spawn",
         "scope manifest",
         "review-map.json",
@@ -155,8 +156,8 @@ def main() -> None:
         code_review,
         "scope manifest",
         "review-map.json",
-        "exactly three independent lenses",
-        "one codex wave",
+        "three independent core lenses",
+        "conditional ui/ux",
         "foreground wait",
         "transport-only timeouts",
     )
@@ -166,6 +167,7 @@ def main() -> None:
         "workflow/agents/review-steps/architecture-design.md",
         "workflow/agents/review-steps/correctness-safety.md",
         "workflow/agents/review-steps/engineering-quality.md",
+        "workflow/agents/review-steps/ui-ux.md",
     ):
         require(
             read(relative),

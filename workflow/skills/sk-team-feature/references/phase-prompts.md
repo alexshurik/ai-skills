@@ -84,7 +84,10 @@ required ADRs from required plus approved work.
 The design must include boundary ownership, business vocabulary, reuse decisions,
 trust-boundary models, abstraction budget, a conditional mechanism budget,
 state/coordination invariant alignment when applicable, module-growth forecast,
-infrastructure authority, and non-goals. End with the standard handoff block.
+infrastructure authority, and non-goals. For meaningful user-visible UI work, add a
+short visual-composition intent/reference inside design.md: primary task/title/
+action, hierarchy/axes, existing product canon, responsive reflow, and relevant
+states. Do not create a separate visual-spec artifact. End with the standard handoff block.
 ```
 
 ## Architecture replan after review — `sk-architect`
@@ -119,7 +122,7 @@ decision completeness, scope, and the user's mental model. Return material
 questions through NEEDS USER INPUT before finalizing the verdict.
 ```
 
-## Testing — `sk-tester`
+## Testing — `sk-tester` (risk-routed only)
 
 ```text
 Deliverable: approved categorized tests demonstrating Red
@@ -127,9 +130,14 @@ Feature: <name>
 Worktree: <path>
 Artifacts: proposal.md, design.md, tasks.md, ADRs
 
-Read project test/safety guidance. Return a categorized test plan through
+Dispatch this role only for auth/authz, payments, destructive/data-loss behavior,
+migrations/public API/schema, concurrency/idempotency, complex external side
+effects, a new reusable harness, or explicit user request. Otherwise Developer owns
+the approved Red→Green strategy. Read project test/safety guidance. Return a categorized test plan through
 NEEDS USER INPUT and stop. Include unit, integration/service, contract, import/
-architecture regression, and user-journey tests as applicable. Separate safe
+architecture regression, component/browser, and critical user-journey tests only as
+applicable. Do not require a unit test per criterion or duplicate equivalent
+assertions across layers. Separate safe
 default tests from live/paid/credential-backed tests. Write tests only after the
 user approves or modifies the plan. Confirm Red for the intended reason.
 ```
@@ -147,6 +155,11 @@ with Red→Green→Refactor. Respect boundary owners, trust-boundary models,
 non-goals, authority-classified project conventions, abstraction budget, structure
 forecast, and local-import evidence. Return exact verification and structural
 handoff evidence.
+
+When no separate Tester was risk-routed, write the approved tests with the code.
+For meaningful UI work, perform an early rendered loop against the visual intent at
+desktop and 320–390 px mobile widths, then capture roughly 4–6 representative
+exact-source screenshots. Do not build a persistent report generator.
 
 For remediation, also receive an explicit finding-ID allowlist. Implement only
 `required_fix` plus user-approved addition IDs that are routed
@@ -168,10 +181,11 @@ Base: <feature merge-base>
 Execute the canonical sk-review-orchestrator flow from a shared review snapshot.
 Include committed, staged, unstaged, untracked, deleted, and renamed scope. Build a
 deterministic lossless review map. Root runs readiness gates/static analysis once;
-red formatter/lint/type/build/tests/diff prevents review from starting. Build three
-complete lens scope manifests whose validated union accounts for every path. Launch
-architecture-design, correctness-safety, and engineering-quality together in one
-wave. Each reads only assigned raw full/targeted current/base content and returns its
+red formatter/lint/type/build/tests/diff prevents review from starting. Classify all
+Git paths, then build three complete core scope manifests whose validated union
+covers every `reviewable` path. Launch architecture-design, correctness-safety, and
+engineering-quality together; when user-visible frontend impact is confirmed, run
+the independent rendered `ui-ux` lens without repeating gates. Each reads only assigned raw full/targeted current/base content and returns its
 complete finding set. Engineering-quality consumes compact root provenance and does
 not rerun the full battery. Separate change-caused findings from baseline and
 classify every finding through scope governance. Persist the full technical report
@@ -188,7 +202,8 @@ findings artifact/fingerprint, acceptance criteria, non-goals, approved Scope De
 IDs, and only developer-routed allowlisted IDs. Treat the allowlist as authority for
 the required outcome, not for an unapproved remedy design.
 
-Targeted Round 2 uses a fresh snapshot, root gates once, immutable pre/post
+Targeted Round 2 uses a fresh snapshot, targeted gates for changed inputs plus exact
+green-receipt reuse for unchanged inputs, immutable pre/post
 fingerprints, complete delta, verified unchanged hashes, no expansion, and every
 finding-owning/impact-routed lens. Old evidence never proves changed content.
 An approved normative design/ADR amendment invalidates targeted mode: the next
@@ -209,9 +224,11 @@ Design/tasks: corresponding approved artifacts
 Code review: openspec/changes/<name>/CODE_REVIEW.md
 
 Verify every acceptance criterion with evidence. Confirm applicable safe gates,
-tasks, contract behavior, and approved review status. Create VERIFICATION.md and
-other genuinely applicable acceptance artifacts. Do not accept an incomplete or
-CHANGES REQUESTED code review.
+tasks, contract behavior, and approved review status. Reuse a trusted green full-
+suite receipt only for the exact current input closure; otherwise rerun as required
+by risk/repository policy. Create VERIFICATION.md; create SUMMARY/API_CHANGELOG/
+OPERATIONAL_TASKS only for a real consumer, API change, or manual operations need.
+Treat tasks.md as read-only. Do not accept an incomplete or CHANGES REQUESTED review.
 ```
 
 ## Retrospective — orchestrator

@@ -59,7 +59,7 @@ sk-team-feature "Add user authentication"
 ```
 
 ```
-Discovery → [Research] → Planning → [Doc Review] → Testing → Implementation → Code Review → Acceptance → Retrospective → Archive
+Discovery → [Research] → Planning → [Doc Review] → [Risk-routed Tester] → Implementation → Code Review → Acceptance → Retrospective → Archive
 ```
 
 | Phase | Agent | Output | User interaction |
@@ -68,9 +68,9 @@ Discovery → [Research] → Planning → [Doc Review] → Testing → Implement
 | Research | Researcher | `RESEARCH.md` | Optional, for unknown domains |
 | Planning | Architect | `design.md`, `tasks.md` | Asks about approach and trade-offs |
 | Doc Review | Doc Reviewer | `DOC_REVIEW.md` | Optional, verifies alignment |
-| Testing | Tester | Test files (failing) | Proposes test plan for approval |
+| Testing | Tester or Developer | Failing tests at faithful layers | Separate Tester only for high-risk/explicitly requested work; otherwise integrated Red→Green |
 | Implementation | Developer | Code (tests pass) | — |
-| Code Review | Review Orchestrator | `CODE_REVIEW.md` | Reviews complete tracked/untracked scope through three independent shape, semantics/risk, and implementation/tool-evidence lenses |
+| Code Review | Review Orchestrator | `CODE_REVIEW.md` | Three independent core lenses plus conditional rendered UI/UX for user-visible frontend impact |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 | Retrospective | Orchestrator | `RETROSPECTIVE.md` | Records escaped signals and routes lessons to repo guidance, a named skill proposal, or no promotion |
 | Archive | Orchestrator | `openspec/completed/<feature-name>/` | Moves the approved artifact set after final user approval |
@@ -87,8 +87,8 @@ The quick workflow uses two bounded threads:
 
 1. A developer diagnoses the issue, writes a short design for approval, then
    implements and tests the approved fix.
-2. A fresh reviewer checks architecture-design, correctness-safety, and
-   engineering-quality, then verifies acceptance.
+2. A fresh reviewer checks architecture-design, correctness-safety, engineering-
+   quality, and conditional rendered UI/UX, then verifies acceptance.
 
 It keeps the design approval and independent-review gates without running the full
 feature workflow.
@@ -129,10 +129,17 @@ embedded in shell source.
 | `sk-researcher` | Research unknown domains and best practices |
 | `sk-architect` | System design and task breakdown |
 | `sk-doc-reviewer` | Documentation consistency and alignment review |
-| `sk-tester` | TDD red phase — test plan approval, E2E support |
+| `sk-tester` | Risk-routed independent TDD red phase for high-risk/explicit requests |
 | `sk-developer` | TDD green phase — implementation |
 | `sk-review-orchestrator` | Orchestrates parallel review passes with stack-specific profiles |
 | `sk-acceptance-reviewer` | Business validation and QA |
+
+The separate Tester is selected by risk: auth/authz, payments, destructive data,
+migrations/public contracts, concurrency/idempotency, complex external side effects,
+a new reusable harness, or explicit user request. Ordinary UI and standard local
+changes keep Red→Green in Developer. Tests favor real bug regressions, component/
+browser coverage for UI states, boundary integration/contract checks, and a few
+critical E2E journeys; unit tests are reserved for non-trivial logic.
 
 ## Artifacts
 
@@ -238,7 +245,8 @@ models, additional finality/reorg systems, public contracts, and broad neighbori
 refactors require an explicit item decision. A general approval or autonomous-mode
 request does not silently approve them.
 
-Review remains strict across all three dimensions. Every finding has both severity
+Review remains strict across all three core dimensions, with independent rendered
+UI/UX review when the change has user-visible frontend impact. Every finding has both severity
 and scope disposition, plus a remedy authority that routes implementation:
 
 | Disposition | Meaning | Automatic remediation |
@@ -266,9 +274,10 @@ not an unapproved remedy design. `CHANGES REQUESTED` means required work or
 verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
 `APPROVED` means the approved scope passes.
 
-Round 1 runs all three lenses and freezes exhaustive findings. Targeted Round 2
+Round 1 runs all three core lenses plus conditional UI/UX and freezes exhaustive findings. Targeted Round 2
 verifies a fresh remediation snapshot when the parent, fingerprints, delta,
-unchanged hashes, scope, and impact routing are proven. Round 3 is exceptional for
+unchanged hashes, scope, and impact routing are proven. It reruns targeted gates for
+changed inputs and reuses green receipts only for identical input closure. Round 3 is exceptional for
 unresolved allowlisted defects, remediation regressions, or newly proven critical
 defects. A normative design/ADR amendment invalidates targeted mode and requires a
 full review against the new authority fingerprint within the remaining budget.
@@ -295,8 +304,8 @@ default  →  language  →  framework  →  tooling  →  project
 
 Before editing, `sk-developer` checks boundaries, types, reuse, abstractions,
 structure, and imports, then runs the project's formatter and linter. The review
-orchestrator builds one change-evidence inventory, runs three independent review
-lenses in one wave, separates baseline debt, and marks checks that did not execute as
+orchestrator builds one change-evidence inventory, runs three independent core
+lenses plus conditional rendered UI/UX, separates baseline debt, and marks checks that did not execute as
 `UNVERIFIED`. Detailed evidence and safety rules live under
 `workflow/agents/references/` and `shared/review-evidence/`.
 
@@ -329,10 +338,15 @@ same-thread clarification is allowed; a new phase, redo, or remediation gets a
 clean child. The canonical specs are
 `workflow/agents/shared/{orchestration-policy,handoff-protocol,scope-governance}.md`.
 
-Full reviews use one lossless review map and three scope manifests whose validated
-union covers every path. Architecture-design owns shape/ownership,
+Full reviews use one lossless Git map with four scope classes: `reviewable`,
+`preserved_baseline`, `workflow_output`, and `derived_acceptance_output`. Three core
+scope manifests cover every reviewable path; the conditional UI/UX manifest covers
+declared user-visible impact. Architecture-design owns shape/ownership,
 correctness-safety owns semantics/risk, and engineering-quality owns implementation/
-tool evidence. Root runs gates once per snapshot and dispatches all three together.
+tool evidence. UI/UX independently inspects rendered representative desktop/mobile
+states. Root establishes one green full receipt before first review by reusing exact
+trusted Developer rows and running missing/stale gates; remediation uses targeted
+gates plus exact-input receipt reuse.
 Required results stay in an event-driven foreground join. Detached background state
 is resumable but is used only when requested or forced by host/wait limitations.
 
@@ -343,7 +357,7 @@ skills/
 ├── workflow/
 │   ├── skills/                  # Orchestrator commands (sk-team-*)
 │   └── agents/                  # 8 workflow agents
-│       ├── review-steps/        # Three lenses: architecture-design, correctness-safety, engineering-quality
+│       ├── review-steps/        # Three core lenses + conditional rendered UI/UX
 │       ├── references/          # Conditional workflow gates and verdict/tooling policy
 │       └── shared/              # Context, waiting, handoff, and scope-governance policies
 ├── onboarding/                  # Project onboarding commands

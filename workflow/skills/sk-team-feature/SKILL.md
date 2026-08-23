@@ -124,26 +124,47 @@ Recommend for complex, multi-component, public-contract, external-integration, o
 high-risk changes. Dispatch `sk-doc-reviewer`, surface traceability/verdict, route
 NEEDS_CLARIFICATION to Discovery or Planning, and request approval.
 
-### 3. Testing
+### 3. Testing strategy and risk route
 
-Dispatch `sk-tester`. Surface its proposed categorized test plan and wait for
-approval before any test code. Keep live/paid/credential-backed suites explicit.
-After Red is demonstrated, show test files/groups/skips and request approval.
+Classify testing before dispatch. Use a separate clean `sk-tester` only for any of:
+
+- auth/authz or another trust-boundary change;
+- payments or destructive/data-loss behavior;
+- migrations or public API/schema compatibility;
+- concurrency/idempotency;
+- a complex external integration or material side effects;
+- a new reusable test harness;
+- the user's explicit request for a separate Tester.
+
+Surface its categorized plan for approval, then require Red for the intended reason.
+For ordinary UI, local behavior, and standard application changes, do not launch a
+separate Tester: approve the test strategy in Planning and have Developer implement
+tests and code together Red→Green. This route is risk-based, not UI-only. Keep
+live/paid/credential-backed/destructive suites explicitly approved in either route.
+Every real bug gets a lowest-faithful-layer regression test; unit tests cover only
+non-trivial logic; component/browser tests cover UI states/interactions; integration/
+contract tests cover boundaries; use only a few critical E2E journeys and a small
+stable visual-regression set. Do not require one test per acceptance criterion or
+duplicate the same assertion at multiple layers without unique confidence.
 
 ### 4. Implementation
 
 Dispatch `sk-developer`. Require the pre-write architecture gate and full handoff
 evidence. Show files, boundary/abstraction/structure decisions, and exact
 verification; request approval.
+For meaningful user-visible UI work, require the early rendered visual loop and
+exact-source desktop/mobile evidence from Developer before review.
 
 ### 5. Code Review
 
 Execute the canonical review-orchestrator flow with a depth-2 lens budget when the
-host permits nested delegation. Codex and current Kimi use a clean
-review-orchestrator child whose exactly three clean lens children are leaves:
-architecture-design, correctness-safety, and engineering-quality. If the active
-host cannot nest, run three separately labelled inline sections and disclose that
-limitation.
+host permits nested delegation. Codex and current Kimi use a clean review-
+orchestrator child whose three core lens children are leaves: architecture-design,
+correctness-safety, and engineering-quality. When the review map confirms user-
+visible frontend impact, also run the clean `ui-ux` leaf. On a four-slot host it runs
+as a short second wave after the core three; that is still Round 1 and does not rerun
+gates. If the active host cannot nest, run separately labelled inline sections and
+disclose that limitation.
 
 Use the canonical parked orchestrator bootstrap for nested review. Dispatch the
 orchestrator first with an instruction to remain parked and perform no work. Once
@@ -165,18 +186,22 @@ Persist the compact durable verdict/triage as:
 openspec/changes/<name>/CODE_REVIEW.md
 ```
 
-Persist the full technical report and three lens artifacts in the Git-local review
+Persist the full technical report, three core artifacts, and conditional UI/UX
+artifact in the Git-local review
 snapshot. Do not create a second `review-summary.md`.
 
-Before Round 1, the root captures an immutable snapshot and runs readiness gates
-once. Red formatter/lint/type/build/tests/diff or another mandatory gate returns to
+Before Round 1, the root captures an immutable snapshot and establishes one green
+full applicable readiness receipt: validate/reuse exact trusted Developer rows and
+run only missing, stale, or untrusted gates. Red formatter/lint/type/build/tests/diff or another mandatory gate returns to
 Implementation; review does not start. Root stores full logs and passes compact
 provenance only. Engineering-quality must not rerun the full suite/tool battery.
 
-Round 1 is one full review. Launch exactly three independent lenses together in one
-Codex wave. Root builds a deterministic lossless review map and creates complete
-per-lens scope manifests whose validated union
-accounts for every changed/untracked/deleted/renamed path. Lenses read only assigned
+Round 1 is one full review. Launch three independent core lenses together and
+conditional UI/UX without repeating root gates. Root builds a deterministic
+lossless review map that accounts for every changed/untracked/deleted/renamed path,
+classifies reviewable/preserved-baseline/workflow-output/derived-acceptance-output,
+and creates complete core scope manifests whose validated union covers every
+reviewable path. Lenses read only assigned
 raw full/targeted current/base content; unchanged content is reusable only by
 verified hash. Do not create a separate structure reviewer or neutral coverage
 ledger. Every lens returns its complete finding set, not one issue per round.
@@ -191,23 +216,26 @@ Triage, or bounded investigation first; never send “fix all findings”. The a
 authorizes required outcomes, not an unapproved remedy design. New noncritical
 suggestions after triage are deferred and cannot create cycles.
 
-Targeted Round 2 uses a fresh post-remediation snapshot. Run root gates once and
-only finding-owning/impact-routed lenses. Require a valid parent full review,
+Targeted Round 2 uses a fresh post-remediation snapshot. Run fresh targeted gates
+for changed inputs, reuse only exact-input green receipt rows, and run only finding-
+owning/impact-routed lenses. Require a valid parent full review,
 immutable pre/post fingerprints, a complete remediation delta, unchanged hashes,
 no expansion, and old evidence never proving changed content. Route architecture
 for boundary/API/schema/model/import/loader/structure/abstraction/packaging changes;
 correctness for behavior/trust/validation/recovery/migration/concurrency/idempotency/
 instruction semantics; quality for maintained source/test/tooling changes. Multiple
-lenses may apply, including a narrow contract/schema fix.
+lenses may apply, including a narrow contract/schema fix; UI/UX reruns only affected
+rendered screens/states when remediation is user-visible.
 
 A material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, unexplained path, invalid parent artifact, or unprovable delta forces all
-three lenses but consumes Round 2. Exceptional Round 3 is allowed only for an
+three core lenses plus conditional UI/UX but consumes Round 2. Exceptional Round 3 is allowed only for an
 unresolved allowlisted defect, remediation regression, or newly proven critical
-correctness/security defect; use a fresh snapshot, root gates once, and only owning/
-impact-routed lenses unless escalation requires all three.
+correctness/security defect; use a fresh snapshot, targeted gates plus exact-input
+receipt reuse, and only owning/
+impact-routed lenses unless escalation requires all three core lenses plus conditional UI/UX.
 
-A normative design/ADR amendment invalidates targeted review. Run all three lenses
+A normative design/ADR amendment invalidates targeted review. Run all three core lenses plus conditional UI/UX
 against the new authority fingerprint within the remaining round budget. After the
 budget is exhausted, only explicit user approval may start a new review cycle; this
 is not an automatic Round 4.
@@ -230,7 +258,10 @@ required UNVERIFIED dimensions. Every verdict discloses mode, round, and parent.
 ### 6. Acceptance
 
 Dispatch `sk-acceptance-reviewer`. Require an approved compact `CODE_REVIEW.md` for
-the current snapshot. Show
+the current source and review-policy fingerprints. Acceptance reuses a trusted green full-suite receipt
+only for an exact input closure; it reruns the full safe suite when no exact receipt
+exists, repository/release policy requires independence, or the change is high-risk.
+Show
 criterion evidence and verdict. Route NEEDS WORK to the owning prior phase with a
 budget of **one acceptance repair**. A second repair requires an explicit user
 decision. Request approval before Retrospective.
@@ -314,8 +345,9 @@ Ask for approval again. Never silently patch an unapproved artifact and continue
 |---|---|
 | no proposal | Discovery |
 | `proposal.md` | Discovery approved / Planning next |
-| `design.md` + `tasks.md` | Planning approved / Testing next |
-| approved tests in Red | Implementation next |
+| `design.md` + `tasks.md` | Planning approved / test-risk route next |
+| separate Tester selected + approved tests in Red | Implementation next |
+| integrated testing selected | Developer Red→Green next |
 | implementation + green evidence | Code Review next |
 | `CODE_REVIEW.md` APPROVED | Acceptance next |
 | `VERIFICATION.md` ACCEPTED | Retrospective next |

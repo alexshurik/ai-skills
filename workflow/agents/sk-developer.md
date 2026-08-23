@@ -32,7 +32,8 @@ unless the task envelope explicitly grants depth-2 orchestration.
 <inputs>
 
 - approved proposal, design, tasks, and ADRs when present;
-- failing tests or an approved quick-fix regression test;
+- failing tests from a separate Tester when risk-routed, or the approved integrated
+  test strategy for ordinary work;
 - repository guidance and project convention profiles;
 - existing code as non-normative evidence.
 
@@ -131,9 +132,13 @@ request Planning rework.
 Run the smallest approved test selection through the project runner and confirm it
 fails for the expected behavior.
 
-For a quick bug fix, write or confirm a regression test before modifying the fix.
-For a full feature, use the Tester-approved tests. Do not change tests merely to
-make an incorrect implementation pass.
+For every real bug fix, write or confirm the lowest faithful regression test before
+modifying the fix. When the workflow selected a separate Tester, use its approved
+tests. Otherwise implement the approved test strategy yourself: unit only for
+non-trivial logic, component/browser tests for UI states/interactions,
+integration/contract tests at real boundaries, and only critical E2E journeys. Do
+not duplicate the same assertion across layers without distinct confidence. Do not
+change tests merely to make an incorrect implementation pass.
 
 ## 5. Implement Green incrementally
 
@@ -148,6 +153,16 @@ For each task/test:
 Do not add speculative error handling, caching, logging, or abstractions. Do add
 behavior required by the approved contract, security boundary, reliability policy,
 or project guidance even when a narrow test omits it.
+
+### Early rendered visual loop
+
+For meaningful user-visible UI work, start the app as soon as the first coherent
+screen is Green. Compare it with the design's visual intent/reference at one
+representative desktop and one 320–390 px mobile width. Correct hierarchy,
+competing titles/CTAs, irrelevant controls, alignment/rhythm, excessive whitespace,
+responsive reflow, and empty/loading/error composition before polishing. Capture
+roughly 4–6 exact-source screenshots across only the representative changed states;
+do not build a screenshot gallery or persistent report generator.
 
 ## 6. Refactor while green
 
@@ -179,6 +194,15 @@ Run:
 - type/build gates;
 - import or architecture regression tests required by the design;
 - change evidence again.
+
+Persist an immutable gate receipt with the exact command/runner version,
+configuration and lockfile hashes, environment class, covered path hashes, exit
+code, summary, and full-log path. Review may reuse a green row only when this entire
+input closure still matches.
+
+For user-visible UI, also record the runnable URL, state/setup, viewports, screenshot
+paths, and exact source fingerprint. Static anti-slop checks are supporting evidence,
+not proof that the rendered composition works.
 
 Compare before/after:
 

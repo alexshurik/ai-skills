@@ -183,7 +183,7 @@ Round 2 is targeted when the parent full review, immutable pre/post fingerprints
 complete delta, unchanged hashes, no scope expansion, and routing are all proven.
 A material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, unexplained path, invalid parent artifact, or unprovable delta forces all
-three lenses but consumes the same round budget. Round 3 is exceptional and only
+three core lenses plus conditional UI/UX but consumes the same round budget. Round 3 is exceptional and only
 for unresolved allowlisted defects, remediation regressions, or newly proven
 critical correctness/security defects. There is no automatic Round 4; return
 `NEEDS USER DECISION`. Transport-only waits do not consume or reset rounds.
@@ -193,7 +193,39 @@ full against the new authority fingerprint and uses the remaining round budget. 
 the budget is exhausted, only explicit user approval may start a new review cycle;
 never disguise it as an automatic Round 4.
 
-## 5. Artifact ownership
+## 5. Review scope classes
+
+Every review snapshot keeps lossless Git accounting while separating what the
+reviewers must read from evidence produced by the workflow itself:
+
+- `reviewable`: product source, tests, maintained tooling, configuration, and
+  normative proposal/design/tasks/ADRs. Core lens manifests must cover this class,
+  and only this class enters the source fingerprint.
+- `preserved_baseline`: pre-work dirty paths intentionally preserved and proven
+  byte-identical to their recorded initial hashes. Account for them; do not rereview
+  them unless the change touches or relies on them.
+- `workflow_output`: review, triage, deferred-decision, and retrospective artifacts
+  such as `CODE_REVIEW.md`. Account for them, but never make a review consume the
+  report it is producing.
+- `derived_acceptance_output`: verification summaries, genuinely applicable API/
+  operational supplements, screenshots, and visual reports derived from reviewed
+  source. Account for them; do not promote them to maintained source by default.
+
+Classification is deterministic and stored in `review-map.json`. A manual override
+must include its reason and exact path. Misclassifying product code, tests, reusable
+tooling, or a normative design artifact as output invalidates review. A one-off seed,
+screenshot helper, or report generator stays Git-local runtime material by default;
+adding it as maintained repository source is an explicit Scope Delta with normal
+review and test obligations.
+
+`review-map.json` carries three identities: an accounting fingerprint over every
+Git path, a source fingerprint over `reviewable` paths, and a review fingerprint
+over source plus the conditional-lens policy. A later edit to
+`CODE_REVIEW.md` or `VERIFICATION.md` changes accounting but cannot invalidate the
+source/review fingerprints or trigger a review-of-review cycle. Changing whether
+UI/UX is required changes the review fingerprint and cannot reuse an old verdict.
+
+## 6. Artifact ownership
 
 ### Durable, version-controlled decisions
 
@@ -225,8 +257,8 @@ Resolve the root using `git rev-parse --git-path sk-workflow` and store under
   whose tasks preserve agent attempts; `control` records current wait/block/terminal
   state;
 - checkpoints and large test/static-analysis logs;
-- `review/<snapshot>/change-evidence.json`, `review-map.json`, the three lens scope
-  manifests, full lens reports, readiness/static-analysis provenance, remediation
+- `review/<snapshot>/change-evidence.json`, `review-map.json`, three core lens scope
+  manifests plus conditional UI/UX, full lens reports, readiness/static-analysis provenance, remediation
   delta evidence, and the full technical `CODE_REVIEW.md`.
 
 Runtime state contains only semantic transitions and resumable decisions, not raw
@@ -234,7 +266,7 @@ conversation or tool transcripts. Host session logs already record exact calls a
 are not workflow artifacts. Mailbox messages carry compact status, paths, and
 fingerprints only. Apply `runtime-state-policy.md` for the event/projection contract.
 
-## 6. Deferred lifecycle
+## 7. Deferred lifecycle
 
 Use the repository's existing issue tracker/backlog when one is authoritative.
 Otherwise `openspec/backlog/<slug>.md` is the portable fallback.

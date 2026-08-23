@@ -40,9 +40,9 @@ state/recovery/concurrency, and executable instruction semantics.
 
 ## Provenance rule
 
-The root runs readiness gates and static analysis once per snapshot and stores
-compact summaries plus log paths. Consume that evidence; do not rerun the full
-battery. A narrowly scoped read-only reproduction is allowed only when required to
+The root runs the full readiness battery before first review, then fresh targeted
+gates plus exact-input receipt reuse after remediation. It stores compact summaries
+and log paths. Consume that evidence; do not rerun the full battery. A narrowly scoped read-only reproduction is allowed only when required to
 validate one tool finding, and must be recorded separately. A red or missing
 required gate means UNVERIFIED/blocked; never convert it to a pass.
 

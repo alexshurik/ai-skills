@@ -39,7 +39,8 @@ def assert_adapter_docs() -> None:
     kimi_readme = read("adapters/kimi/README.md")
     kimi_renderer = read("scripts/skills_render.py")
     assert "Markdown agent profiles" in kimi_readme
-    assert "three leaf reviewers" in kimi_readme
+    assert "three core" in kimi_readme
+    assert "conditional rendered UI/UX" in kimi_readme
     assert "native `/plan`" in kimi_readme
     assert "older than 1.25" not in kimi_readme
     assert "kimi_agent_markdown" in kimi_renderer

@@ -31,7 +31,8 @@
   "review_steps": [
     {"name": "sk-review-architecture-design", "source": "workflow/agents/review-steps/architecture-design.md"},
     {"name": "sk-review-correctness-safety", "source": "workflow/agents/review-steps/correctness-safety.md"},
-    {"name": "sk-review-engineering-quality", "source": "workflow/agents/review-steps/engineering-quality.md"}
+    {"name": "sk-review-engineering-quality", "source": "workflow/agents/review-steps/engineering-quality.md"},
+    {"name": "sk-review-ui-ux", "source": "workflow/agents/review-steps/ui-ux.md"}
   ],
   "resources": [
     {

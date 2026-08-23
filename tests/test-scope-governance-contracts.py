@@ -111,6 +111,7 @@ def main() -> None:
         "workflow/agents/review-steps/architecture-design.md",
         "workflow/agents/review-steps/correctness-safety.md",
         "workflow/agents/review-steps/engineering-quality.md",
+        "workflow/agents/review-steps/ui-ux.md",
     ):
         lens = read(relative)
         require(
@@ -146,6 +147,9 @@ def main() -> None:
         "never pass “fix all findings”",
         "after initial triage, freeze non-critical scope",
         "do not create `review-summary.md`",
+        "reviewable",
+        "workflow_output",
+        "derived_acceptance_output",
     )
 
     feature = read("workflow/skills/sk-team-feature/SKILL.md")
@@ -210,7 +214,8 @@ def main() -> None:
         "tasks preserve all attempts",
         "deferred.md",
         "openspec/backlog/<slug>.md",
-        "review remains strict across all three dimensions",
+        "review remains strict across all three core dimensions",
+        "independent rendered ui/ux review",
         "architecture_decision_required",
         "normative design/adr amendment invalidates targeted mode",
     )
@@ -221,7 +226,8 @@ def main() -> None:
         "scope control",
         "git rev-parse --git-path sk-workflow",
         "material proposed addition",
-        "all three review dimensions remain strict",
+        "all three core review dimensions remain strict",
+        "independent rendered ui/ux lens",
     )
 
 

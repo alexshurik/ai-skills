@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a lossless review map and validate three-lens scope manifests."""
+"""Build a lossless review map and validate core plus conditional lens scopes."""
 
 from __future__ import annotations
 
@@ -156,6 +156,28 @@ REQUIRED_LENSES = {
     "correctness-safety",
     "engineering-quality",
 }
+OPTIONAL_LENSES = {"ui-ux"}
+REVIEW_CLASSES = {
+    "reviewable",
+    "preserved_baseline",
+    "workflow_output",
+    "derived_acceptance_output",
+}
+WORKFLOW_OUTPUT_NAMES = {
+    "code_review.md",
+    "deferred.md",
+    "doc_review.md",
+    "retrospective.md",
+    "review.md",
+}
+DERIVED_ACCEPTANCE_OUTPUT_NAMES = {
+    "api_changelog.md",
+    "operational_tasks.md",
+    "summary.md",
+    "verification.md",
+    "visual_report.html",
+}
+UI_SUFFIXES = {".astro", ".css", ".html", ".jsx", ".scss", ".svelte", ".tsx", ".vue"}
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -337,13 +359,149 @@ def verified_review_map_fingerprint(review_map: dict[str, Any]) -> str:
     return claimed
 
 
-def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
-    files = evidence.get("files")
-    if not isinstance(files, list):
-        raise ValueError("evidence.files must be a list")
-    if not isinstance(evidence.get("fingerprint"), str):
-        raise ValueError("evidence fingerprint must be a string")
+def default_review_class(path: str) -> str:
+    parts = safe_parts(path)
+    name = Path(path).name.lower()
+    is_change_artifact = bool(
+        len(parts) >= 3 and parts[0] == "openspec" and parts[1] in {"changes", "completed"}
+    )
+    if not is_change_artifact:
+        return "reviewable"
+    if name in WORKFLOW_OUTPUT_NAMES:
+        return "workflow_output"
+    if name in DERIVED_ACCEPTANCE_OUTPUT_NAMES:
+        return "derived_acceptance_output"
+    return "reviewable"
 
+
+def validated_path_classes(raw: dict[str, Any]) -> dict[str, str]:
+    path_classes = raw.get("path_classes", {})
+    if not isinstance(path_classes, dict):
+        raise ValueError("review_policy.path_classes must be an object")
+    for path, review_class in path_classes.items():
+        if not isinstance(path, str):
+            raise ValueError("review policy paths must be strings")
+        safe_parts(path)
+        if review_class not in REVIEW_CLASSES:
+            raise ValueError(f"invalid review class for {path}: {review_class!r}")
+    return path_classes
+
+
+def validated_preserved_hashes(raw: dict[str, Any], path_classes: dict[str, str]) -> dict[str, str]:
+    preserved_hashes = raw.get("preserved_baseline_hashes", {})
+    if not isinstance(preserved_hashes, dict) or any(
+        not isinstance(path, str) or not isinstance(digest, str)
+        for path, digest in preserved_hashes.items()
+    ):
+        raise ValueError("review_policy.preserved_baseline_hashes must be an object")
+    preserved_paths = {
+        path for path, review_class in path_classes.items() if review_class == "preserved_baseline"
+    }
+    if set(preserved_hashes) != preserved_paths:
+        raise ValueError("preserved baseline paths require exact initial hashes")
+    return preserved_hashes
+
+
+def validated_classification_reasons(
+    raw: dict[str, Any], path_classes: dict[str, str]
+) -> dict[str, str]:
+    reasons = raw.get("path_class_reasons", {})
+    if not isinstance(reasons, dict) or any(
+        not isinstance(path, str) or not isinstance(reason, str) or not reason.strip()
+        for path, reason in reasons.items()
+    ):
+        raise ValueError("review_policy.path_class_reasons must be an object")
+    if set(reasons) != set(path_classes):
+        raise ValueError("every manual path class needs exactly one non-empty reason")
+    return reasons
+
+
+def validated_ui_policy(raw: dict[str, Any]) -> tuple[bool | None, str | None, list[str] | None]:
+    ui_required = raw.get("ui_ux_required")
+    if ui_required is not None and not isinstance(ui_required, bool):
+        raise ValueError("review_policy.ui_ux_required must be boolean")
+    ui_reason = raw.get("ui_ux_reason")
+    if ui_reason is not None and (not isinstance(ui_reason, str) or not ui_reason.strip()):
+        raise ValueError("review_policy.ui_ux_reason must be a non-empty string")
+    if ui_required is not None and ui_reason is None:
+        raise ValueError("an explicit UI/UX decision needs ui_ux_reason")
+    ui_impact_paths = raw.get("ui_impact_paths")
+    if ui_impact_paths is not None and (
+        not isinstance(ui_impact_paths, list)
+        or any(not isinstance(path, str) for path in ui_impact_paths)
+    ):
+        raise ValueError("review_policy.ui_impact_paths must be a list of paths")
+    for path in ui_impact_paths or []:
+        safe_parts(path)
+    if ui_required is True and not ui_impact_paths:
+        raise ValueError("required UI/UX review needs explicit ui_impact_paths")
+    if ui_required is False and ui_impact_paths:
+        raise ValueError("non-empty UI impact paths require UI/UX review")
+    return ui_required, ui_reason, ui_impact_paths
+
+
+def classification_policy(evidence: dict[str, Any]) -> dict[str, Any]:
+    raw = evidence.get("review_policy", {})
+    if not isinstance(raw, dict):
+        raise ValueError("evidence.review_policy must be an object")
+    path_classes = validated_path_classes(raw)
+    preserved_hashes = validated_preserved_hashes(raw, path_classes)
+    classification_reasons = validated_classification_reasons(raw, path_classes)
+    ui_required, ui_reason, ui_impact_paths = validated_ui_policy(raw)
+    return {
+        "path_classes": path_classes,
+        "preserved_baseline_hashes": preserved_hashes,
+        "path_class_reasons": classification_reasons,
+        "ui_ux_required": ui_required,
+        "ui_ux_reason": ui_reason,
+        "ui_impact_paths": ui_impact_paths,
+    }
+
+
+def is_ui_candidate(path: str, review_class: str) -> bool:
+    lowered = path.lower()
+    return bool(
+        review_class == "reviewable"
+        and Path(path).suffix.lower() in UI_SUFFIXES
+        and not has_test_marker(Path(path), safe_parts(path))
+        and not any(part in lowered for part in ("/build/", "/dist/", "/generated/"))
+    )
+
+
+def mapped_evidence_entry(raw_entry: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
+    path = raw_entry["path"]
+    classification, requirement, reason = content_class(raw_entry)
+    review_class = policy["path_classes"].get(path, default_review_class(path))
+    if review_class == "preserved_baseline" and (
+        raw_entry.get("current_sha256") != policy["preserved_baseline_hashes"][path]
+    ):
+        raise ValueError(f"preserved baseline changed after capture: {path}")
+    return {
+        "path": path,
+        "base_path": raw_entry.get("base_path"),
+        "base_blob_oid": raw_entry.get("base_blob_oid"),
+        "content_class": classification,
+        "review_class": review_class,
+        "review_class_reason": policy["path_class_reasons"].get(
+            path, "deterministic default classification"
+        ),
+        "coverage_requirement": requirement,
+        "coverage_reason": reason,
+        "base_lines": raw_entry.get("base_lines"),
+        "current_lines": raw_entry.get("current_lines"),
+        "current_kind": raw_entry.get("current_kind"),
+        "current_sha256": raw_entry.get("current_sha256"),
+        "changed_intervals": raw_entry.get("changed_intervals", []),
+        "interval_status": raw_entry.get("interval_status"),
+        "local_imports": raw_entry.get("local_imports", []),
+        "risk_tags": risk_tags(raw_entry, classification),
+        "ui_impact_candidate": is_ui_candidate(path, review_class),
+    }
+
+
+def map_evidence_files(
+    files: list[Any], policy: dict[str, Any]
+) -> tuple[list[dict[str, Any]], set[str]]:
     mapped: list[dict[str, Any]] = []
     seen: set[str] = set()
     for raw_entry in files:
@@ -354,34 +512,84 @@ def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
         if path in seen:
             raise ValueError(f"duplicate evidence path: {path}")
         seen.add(path)
-        classification, requirement, reason = content_class(raw_entry)
-        mapped.append(
-            {
-                "path": path,
-                "base_path": raw_entry.get("base_path"),
-                "base_blob_oid": raw_entry.get("base_blob_oid"),
-                "content_class": classification,
-                "coverage_requirement": requirement,
-                "coverage_reason": reason,
-                "base_lines": raw_entry.get("base_lines"),
-                "current_lines": raw_entry.get("current_lines"),
-                "current_kind": raw_entry.get("current_kind"),
-                "current_sha256": raw_entry.get("current_sha256"),
-                "changed_intervals": raw_entry.get("changed_intervals", []),
-                "interval_status": raw_entry.get("interval_status"),
-                "local_imports": raw_entry.get("local_imports", []),
-                "risk_tags": risk_tags(raw_entry, classification),
-            }
+        mapped.append(mapped_evidence_entry(raw_entry, policy))
+    return mapped, seen
+
+
+def resolved_ui_review(
+    policy: dict[str, Any], reviewable_files: list[dict[str, Any]]
+) -> tuple[bool, str, list[str], list[str]]:
+    ui_candidates = [item["path"] for item in reviewable_files if item["ui_impact_candidate"]]
+    ui_impact_paths = policy["ui_impact_paths"] or ui_candidates
+    non_reviewable_ui_paths = sorted(
+        set(ui_impact_paths) - {item["path"] for item in reviewable_files}
+    )
+    if non_reviewable_ui_paths:
+        raise ValueError(f"UI impact paths must be reviewable: {non_reviewable_ui_paths}")
+    ui_required = policy["ui_ux_required"]
+    if ui_required is None:
+        ui_required = bool(ui_candidates)
+        ui_reason = (
+            "automatic UI-file candidate detection; root must override false for tests/config/"
+            "type-only or proven non-rendered changes"
+            if ui_required
+            else "no user-visible frontend candidate detected"
         )
+    else:
+        ui_reason = policy["ui_ux_reason"]
+    return ui_required, ui_reason, ui_candidates, ui_impact_paths
+
+
+def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
+    files = evidence.get("files")
+    if not isinstance(files, list):
+        raise ValueError("evidence.files must be a list")
+    if not isinstance(evidence.get("fingerprint"), str):
+        raise ValueError("evidence fingerprint must be a string")
+
+    policy = classification_policy(evidence)
+    mapped, seen = map_evidence_files(files, policy)
+
+    unknown_policy_paths = sorted(
+        (set(policy["path_classes"]) | set(policy["ui_impact_paths"] or [])) - seen
+    )
+    if unknown_policy_paths:
+        raise ValueError(f"review policy paths are not in evidence: {unknown_policy_paths}")
+
+    sorted_files = sorted(mapped, key=lambda item: item["path"])
+    reviewable_files = [item for item in sorted_files if item["review_class"] == "reviewable"]
+    ui_required, ui_reason, ui_candidates, ui_impact_paths = resolved_ui_review(
+        policy, reviewable_files
+    )
+
+    source_identity = {
+        "base": evidence.get("base"),
+        "files": reviewable_files,
+    }
+    source_fingerprint = canonical_fingerprint(source_identity)
+    resolved_policy = {
+        "ui_ux_required": ui_required,
+        "ui_ux_reason": ui_reason,
+        "ui_candidates": ui_candidates,
+        "ui_impact_paths": sorted(set(ui_impact_paths)),
+    }
 
     review_map: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "repository": evidence.get("repository"),
         "base": evidence.get("base"),
         "head": evidence.get("head"),
         "evidence_fingerprint": evidence.get("fingerprint"),
-        "files": sorted(mapped, key=lambda item: item["path"]),
-        "note": "Lossless deterministic inventory. Risk tags are leads, not review verdicts.",
+        "files": sorted_files,
+        "source_fingerprint": source_fingerprint,
+        "review_fingerprint": canonical_fingerprint(
+            {"source_fingerprint": source_fingerprint, "review_policy": resolved_policy}
+        ),
+        "review_policy": resolved_policy,
+        "note": (
+            "Lossless deterministic Git inventory. Lens coverage applies only to reviewable "
+            "paths; risk tags and UI candidates are leads, not verdicts."
+        ),
     }
     review_map["fingerprint"] = canonical_fingerprint(review_map)
     return review_map
@@ -391,7 +599,11 @@ def expected_scope_entries(review_map: dict[str, Any]) -> dict[str, dict[str, An
     expected_files = review_map.get("files")
     if not isinstance(expected_files, list):
         raise ValueError("review map files must be a list")
-    return {str(item["path"]): item for item in expected_files}
+    return {
+        str(item["path"]): item
+        for item in expected_files
+        if item.get("review_class", "reviewable") == "reviewable"
+    }
 
 
 def manifest_entries(
@@ -401,7 +613,7 @@ def manifest_entries(
 ) -> tuple[str, list[dict[str, Any]]]:
     lens = manifest.get("lens")
     entries = manifest.get("entries")
-    if lens not in REQUIRED_LENSES or lens in actual_lenses:
+    if lens not in REQUIRED_LENSES | OPTIONAL_LENSES or lens in actual_lenses:
         raise ValueError(f"invalid or duplicate scope lens: {lens!r}")
     if manifest.get("review_map_fingerprint") != fingerprint:
         raise ValueError(f"scope manifest fingerprint mismatch: {lens}")
@@ -414,8 +626,8 @@ def manifest_entries(
 def collect_scope_assignments(
     manifests: list[dict[str, Any]], fingerprint: str
 ) -> tuple[dict[str, list[dict[str, Any]]], set[str]]:
-    if len(manifests) != len(REQUIRED_LENSES):
-        raise ValueError("exactly three scope manifests are required")
+    if len(manifests) not in {len(REQUIRED_LENSES), len(REQUIRED_LENSES) + 1}:
+        raise ValueError("three core scope manifests and at most one UI/UX manifest are required")
 
     assigned: dict[str, list[dict[str, Any]]] = {}
     actual_lenses: set[str] = set()
@@ -429,7 +641,7 @@ def collect_scope_assignments(
             if path in seen:
                 raise ValueError(f"duplicate scope path in {lens}: {path}")
             seen.add(path)
-            assigned.setdefault(path, []).append(entry)
+            assigned.setdefault(path, []).append({**entry, "_lens": lens})
     return assigned, actual_lenses
 
 
@@ -483,23 +695,50 @@ def validate_scopes(
     expected = expected_scope_entries(review_map)
     assigned, actual_lenses = collect_scope_assignments(manifests, fingerprint)
 
-    if actual_lenses != REQUIRED_LENSES:
+    if not REQUIRED_LENSES.issubset(actual_lenses):
         raise ValueError(f"scope lens mismatch: {sorted(actual_lenses)}")
+    ui_required = bool(review_map.get("review_policy", {}).get("ui_ux_required"))
+    if ui_required != ("ui-ux" in actual_lenses):
+        raise ValueError("UI/UX scope mismatch: ui-ux manifest presence must match review policy")
+
+    core_assigned = {
+        path: entries
+        for path, entries in assigned.items()
+        if any(entry.get("_lens") in REQUIRED_LENSES for entry in entries)
+    }
     require_complete_scope_paths(expected, assigned)
+    missing_core = sorted(set(expected) - set(core_assigned))
+    if missing_core:
+        raise ValueError(f"core scope path mismatch; missing={missing_core}")
+    if ui_required:
+        ui_assigned = {
+            path
+            for path, entries in assigned.items()
+            if any(entry.get("_lens") == "ui-ux" for entry in entries)
+        }
+        required_ui_paths = set(review_map["review_policy"].get("ui_impact_paths", []))
+        missing_ui = sorted(required_ui_paths - ui_assigned)
+        if not ui_assigned or missing_ui:
+            raise ValueError(f"UI/UX scope path mismatch; missing={missing_ui}")
 
     for path, expected_entry in expected.items():
         validate_path_coverage(path, expected_entry, assigned[path])
 
     return {
         "review_map_fingerprint": fingerprint,
+        "source_fingerprint": review_map.get("source_fingerprint"),
+        "review_fingerprint": review_map.get("review_fingerprint"),
         "lenses": sorted(actual_lenses),
-        "paths": len(expected),
+        "accounted_paths": len(review_map.get("files", [])),
+        "reviewable_paths": len(expected),
         "status": "valid",
     }
 
 
 def command_build(args: argparse.Namespace) -> int:
     evidence = read_json(args.evidence)
+    if args.policy is not None:
+        evidence["review_policy"] = read_json(args.policy)
     review_map = build_review_map(evidence)
     write_atomic(args.output, review_map)
     print(
@@ -528,12 +767,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     build = commands.add_parser("build", help="build a lossless deterministic review map")
     build.add_argument("--evidence", type=Path, required=True)
+    build.add_argument(
+        "--policy",
+        type=Path,
+        help="optional path-class and conditional UI/UX decision JSON",
+    )
     build.add_argument("--output", type=Path, required=True)
     build.set_defaults(handler=command_build)
 
     validate = commands.add_parser(
         "validate-scopes",
-        help="validate the three-lens scope-manifest union",
+        help="validate core and conditional UI/UX scope manifests",
     )
     validate.add_argument("--review-map", type=Path, required=True)
     validate.add_argument("--manifest", type=Path, action="append", required=True)

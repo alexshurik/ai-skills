@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lock the three-lens review lifecycle and bounded remediation contract."""
+"""Lock the core-plus-conditional review lifecycle and remediation contract."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ LENSES = {
     "sk-review-architecture-design": "architecture-design.md",
     "sk-review-correctness-safety": "correctness-safety.md",
     "sk-review-engineering-quality": "engineering-quality.md",
+    "sk-review-ui-ux": "ui-ux.md",
 }
 
 
@@ -52,12 +53,14 @@ def assert_full_review_contract() -> None:
     orchestrator = read("workflow/agents/sk-review-orchestrator.md")
     require(
         orchestrator,
-        "exactly three independent lenses",
+        "three independent core lenses",
+        "conditional ui/ux lens",
         "architecture-design",
         "correctness-safety",
         "engineering-quality",
-        "one codex wave",
-        "root runs readiness gates once per snapshot",
+        "short second wave",
+        "establishes one green full applicable readiness receipt before the first review",
+        "complete input closure",
         "must not rerun the full suite",
         "complete finding set",
         "freeze the exact remediation allowlist",
@@ -111,6 +114,7 @@ def assert_lens_ownership() -> None:
     architecture = read("workflow/agents/review-steps/architecture-design.md")
     correctness = read("workflow/agents/review-steps/correctness-safety.md")
     quality = read("workflow/agents/review-steps/engineering-quality.md")
+    ui_ux = read("workflow/agents/review-steps/ui-ux.md")
     require(
         architecture,
         "owns shape and ownership",
@@ -140,7 +144,16 @@ def assert_lens_ownership() -> None:
         "must not rerun the full suite",
         "test-code quality",
     )
-    for lens in (architecture, correctness, quality):
+    require(
+        ui_ux,
+        "rendered evidence",
+        "exact source fingerprint",
+        "one representative desktop width",
+        "mobile width",
+        "source alone",
+        "do not create a durable `ui_review.md`",
+    )
+    for lens in (architecture, correctness, quality, ui_ux):
         require(
             lens,
             "complete finding set",
@@ -160,7 +173,7 @@ def assert_consumers() -> None:
     feature = read("workflow/skills/sk-team-feature/SKILL.md")
     phase = read("workflow/skills/sk-team-feature/references/phase-prompts.md")
     quick = read("workflow/skills/sk-team-quick/SKILL.md")
-    require(code_review, "exactly three independent lenses", "one codex wave")
+    require(code_review, "three independent core lenses", "conditional ui/ux")
     require(feature, "targeted round 2", "exceptional round 3", "no automatic round 4")
     require(
         phase,

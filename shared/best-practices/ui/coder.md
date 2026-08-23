@@ -5,6 +5,25 @@ Applies on top of any framework/language profile whenever the work touches UI
 (React, Vue, Svelte, Angular, Solid, Tailwind, or plain HTML/CSS). Detection and
 audit detail live in [`catalog.md`](catalog.md); these are the rules you build TO.
 
+## Rendered composition gate
+
+For a new/reworked page, layout, navigation, hierarchy, responsive flow, or UI state,
+do not start from isolated components. Load the visual intent/reference from the
+approved design and identify:
+
+- the one primary user task, one page title, and dominant action;
+- primary → secondary → meta reading order and a small set of alignment axes;
+- existing product screens/components that are the canon;
+- desktop/mobile reflow and relevant populated/empty/loading/error states.
+
+Use one primary CTA per viewport unless separate stages or responsive replacement
+justify another. Render controls only when their action is available (for example,
+no pagination for one page and no inert refresh/navigation around an empty list).
+An empty state is one short reason plus one useful next action. Separate regions with
+space/background before adding cards; desktop must not be a stretched mobile column.
+Static anti-slop checks can catch token/pattern defects but cannot pass hierarchy or
+composition.
+
 ## Why AI UI looks generic (read this first)
 
 An LLM writes UI **locally** — each fragment collapses to the **median of the training

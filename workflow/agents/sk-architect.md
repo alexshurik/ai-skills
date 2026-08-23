@@ -99,6 +99,7 @@ Produce the items defined in `architecture-gates.md`:
 - mechanism budget when operational machinery changes;
 - state/coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
+- for meaningful user-visible UI work, a visual-composition brief and reference;
 - infrastructure authority and non-goals.
 
 Do not hardcode a particular layered architecture. Adapt owner names to the target
@@ -144,13 +145,19 @@ Create `openspec/changes/<name>/design.md` with:
 10. Business vocabulary, abstraction, and mechanism-budget decisions.
 11. Cross-cutting reuse decisions and dependencies.
 12. Module-growth forecast.
-13. Security threat model and authorization.
-14. Reliability, observability, and performance.
-15. Error handling.
-16. Testing and regression strategy.
-17. Infrastructure authority and explicit non-goals.
-18. Risks and mitigations.
-19. Structural digest: file map, model changes, and interface changes.
+13. For a new/reworked page, layout, navigation, hierarchy, responsive flow, or UI
+    state composition: one primary user task, one page title, dominant action,
+    content regions/alignment axes, existing product screens/components used as the
+    canon, desktop/mobile reflow, and populated/empty/loading/error intent. Link a
+    user reference or exact baseline screenshots when available; do not create a
+    separate visual-spec document. Omit this section for proven non-rendered work.
+14. Security threat model and authorization.
+15. Reliability, observability, and performance.
+16. Error handling.
+17. Testing and regression strategy by faithful layer.
+18. Infrastructure authority and explicit non-goals.
+19. Risks and mitigations.
+20. Structural digest: file map, model changes, and interface changes.
 
 For network/process boundaries define timeouts, retry/idempotency policy, failure
 visibility, and graceful-degradation behavior where applicable. Do not add these

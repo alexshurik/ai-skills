@@ -28,9 +28,9 @@ kimi --agent-file ~/.kimi-code/agents/sk-team.md
 ```
 
 The main profile may delegate to the eight workflow roles. Ordinary roles are
-leaves. `sk-review-orchestrator` alone may delegate one level deeper to exactly
-three leaf reviewers: architecture-design, correctness-safety, and
-engineering-quality. Current Kimi returns background subagent results to the parent
+leaves. `sk-review-orchestrator` alone may delegate one level deeper to three core
+leaf reviewers—architecture-design, correctness-safety, and engineering-quality—
+plus conditional rendered UI/UX for user-visible frontend changes. Current Kimi returns background subagent results to the parent
 automatically, so the workflow does not poll task status.
 
 ## Individual skills
@@ -69,6 +69,7 @@ under `openspec/changes/<name>/`; a separate SK planning skill is unnecessary.
     ├── sk-review-architecture-design.md
     ├── sk-review-correctness-safety.md
     ├── sk-review-engineering-quality.md
+    ├── sk-review-ui-ux.md
     ├── sk-acceptance-reviewer.md
     └── references/              # Shared policies, templates, and tooling
 ```

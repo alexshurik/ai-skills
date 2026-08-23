@@ -80,9 +80,9 @@ must be reconfirmed rather than copying a previous chat into the new session.
 |-------------------|-------|--------|
 | None | - | Not started |
 | proposal.md only | Discovery | Complete - Planning next |
-| proposal.md, design.md, tasks.md | Planning | Complete - Doc Review or Testing next |
-| Above + DOC_REVIEW.md | Doc Review | Complete - Testing next |
-| Above + test files (failing) | Testing | Complete - Implementation next |
+| proposal.md, design.md, tasks.md | Planning | Complete - Doc Review or test-risk route next |
+| Above + DOC_REVIEW.md | Doc Review | Complete - test-risk route next |
+| Above + independent failing tests | Testing | Complete - Implementation next |
 | Above + implementation (tests pass) | Implementation | Complete - Review next |
 | Above + `CODE_REVIEW.md` APPROVED | Review | Complete - Acceptance next |
 | Above + `CODE_REVIEW.md` TRIAGE REQUIRED | Review | User scope decision next |
@@ -117,7 +117,9 @@ status as `UNVERIFIED` instead of assuming `npm test`.
   - [ ] DEFERRED.md - Optional; candidate/deferred/rejected/promoted scope proposals
   - [ ] VERIFICATION.md - Pending
   - [ ] RETROSPECTIVE.md - Pending
-- **Derived next action**: Invoke sk-tester for TDD red phase
+- **Derived next action**: Classify the test-risk route; invoke sk-tester only for
+  high-risk/explicit separate testing, otherwise invoke Developer for integrated
+  Red→Green
 - **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema)
 - **Control**: ready | waiting agents/user | blocked | complete
 - **Tasks/attempts**: logical task, attempt ordinal, host thread, result/artifact
@@ -175,7 +177,7 @@ Example: `sk-team-quick Fix typo in login error message`
 |-------|---------|
 | sk-product-analyst | Requirements (WHAT & WHY) |
 | sk-architect | Design (HOW) |
-| sk-tester | TDD tests |
+| sk-tester | Risk-routed independent TDD tests |
 | sk-developer | Implementation |
 | sk-review-orchestrator | Code quality |
 | sk-doc-reviewer | Documentation review |

@@ -68,9 +68,9 @@ Test every acceptance criterion and documented edge case. Don't invent new requi
 <input>
 - `openspec/changes/<name>/proposal.md` - requirements and acceptance criteria
 - `openspec/changes/<name>/design.md` - technical design
-- `openspec/changes/<name>/tasks.md` - task breakdown to mark complete
+- `openspec/changes/<name>/tasks.md` - read-only approved task breakdown
 - Implemented code (after Code Review passed)
-- All tests passing
+- Green exact-input gate receipt for the current source, with full logs available
 </input>
 
 <output>
@@ -102,25 +102,22 @@ Acceptance Criteria to Verify:
 ```
 </step>
 
-<step name="run_all_tests">
-Execute the test suite using the project's stack (detect from manifest/config — do NOT assume npm):
-- JS/TS: `npm test` / `pnpm test` / `yarn test` (or the script in package.json)
-- Python: `pytest` (or `uv run pytest`)
-- Go: `go test ./...`
-- Rust: `cargo test`
-- else: the command in the project's CI config / README
+<step name="validate_gate_receipt_or_run_tests">
+Load the immutable review gate receipt and compare its source fingerprint and full
+input closure with the current source: command, runner/toolchain, configs, lockfiles,
+environment class, and covered path hashes.
 
-```bash
-# example — pick the command that matches the detected stack
-pytest -q 2>&1   # or: npm test / go test ./... / cargo test
-```
+- If a trusted green full-suite receipt matches exactly, consume it and run only
+  criterion-specific interaction/manual checks needed for acceptance.
+- Run the full safe/applicable suite when the receipt is missing/stale, repository or
+  release policy mandates an independent run, or the change is high-risk: auth/
+  authz, payments, destructive data, migration/public contract, concurrency/
+  idempotency, or complex external side effects.
+- Never run live/paid/credential-backed/destructive suites without explicit
+  authorization.
 
-Capture results:
-- Total tests
-- Passed/Failed
-- Coverage percentage (if available)
-
-All tests MUST pass for acceptance.
+Record whether each result was `executed` or `reused`, the receipt path/fingerprint,
+and any skipped/UNVERIFIED dimensions. Any red required gate blocks acceptance.
 </step>
 
 <step name="verify_each_criterion">
@@ -135,7 +132,10 @@ grep -r "<keyword>" src/ --include="*.ts" | head -10
 ```
 
 ### Test Verification
-Confirm corresponding test exists and passes:
+Confirm the behavior has proportionate evidence at the lowest faithful layer. An
+acceptance criterion does not mechanically require its own unit test; manual,
+component/browser, integration/contract, E2E, or reviewed gate evidence may be the
+right proof.
 
 ```bash
 npm test -- --testPathPattern="<keyword>" 2>&1
@@ -149,12 +149,13 @@ Document evidence for each criterion:
 ### Traceability Chain
 For each criterion, document the full chain:
 ```
-Requirement (proposal.md) → Design Decision (design.md) → Task (tasks.md) → Test (test file:line) → Code (src file:line)
+Requirement (proposal.md) → Design Decision (design.md) → Task (tasks.md) → Evidence (test/manual/rendered/gate) → Code (src file:line)
 ```
-Flag any broken links in the chain (e.g., requirement without a test, task without implementation).
+Flag any broken evidence link or task without implementation; do not flag the mere
+absence of a unit test when another faithful proof exists.
 
 ### Test Quality Check
-For each criterion's test:
+For each test used as criterion evidence:
 - Verify assertion is meaningful (not just `toBeTruthy()` or `toEqual(true)`)
 - Confirm test would FAIL if the feature code were removed/broken
 - Check test description matches the behavior being tested
@@ -179,15 +180,17 @@ Verify edge cases from proposal.md:
 Run any edge case specific tests.
 </step>
 
-<step name="verify_e2e_flow">
-Trace complete user flow through code:
+<step name="verify_critical_flow">
+When the change creates or materially changes a critical user/service journey,
+trace that complete flow through code and rendered/runtime evidence:
 
 1. **Entry point** - Where user initiates action
 2. **Processing** - How request is handled
 3. **Data persistence** - What gets saved
 4. **Response** - What user receives
 
-Verify the chain is complete and correct.
+Verify the chain is complete and correct. Mark `N/A` with reason for work that has no
+such external journey; do not invent an E2E obligation.
 </step>
 
 <step name="check_nonfunctional">
@@ -206,7 +209,8 @@ Scan feature-related files for unfinished work:
 grep -rn "TODO\|FIXME\|HACK\|XXX\|NotImplemented\|placeholder" <feature-files> || echo "Clean"
 ```
 
-Any hits in feature code are blockers — code must be complete before acceptance.
+Only a change-caused marker that proves approved behavior is incomplete is a blocker.
+Documented/generated markers and unchanged baseline debt remain non-blocking.
 </step>
 
 <step name="write_verification_report">
@@ -218,9 +222,9 @@ Create VERIFICATION.md:
 ## Summary
 - **Status**: ACCEPTED / NEEDS WORK
 - **Date**: YYYY-MM-DD
-- **Tests**: X passed, 0 failed
+- **Gates**: X executed, Y reused, 0 required failures
 
-## Test Results
+## Gate and test evidence
 ```
 npm test output summary
 ```
@@ -244,7 +248,7 @@ npm test output summary
 | Empty input | Error message | Shows error | PASS |
 | Invalid data | Validation fails | Validates | PASS |
 
-## E2E Flow Verification
+## Critical Flow Verification (or N/A)
 - [x] User can initiate action
 - [x] System processes correctly
 - [x] Data is persisted
@@ -256,7 +260,7 @@ npm test output summary
 ## Final Verdict
 
 ### ACCEPTED
-All acceptance criteria met. Tests passing. Ready for deployment.
+All acceptance criteria met. Required gates green. Ready for deployment.
 
 OR
 
@@ -267,38 +271,28 @@ Issues must be addressed:
 ```
 </step>
 
-<step name="mark_tasks_complete" condition="ACCEPTED">
-Update tasks.md — mark verified tasks as complete:
-
-1. Read `openspec/changes/<name>/tasks.md`
-2. For each `- [ ] Task X.Y: Description`:
-   - Cross-reference against evidence gathered during verification
-   - If task was verified with evidence → change to `- [x] Task X.Y: Description`
-   - If task has no verification evidence → leave as `- [ ]`
-3. Write updated tasks.md
-
-**Rule**: Only mark tasks you actually verified during this review. Unchecked tasks signal gaps.
-</step>
-
 <step name="create_deliverables" condition="ACCEPTED">
-If verdict is ACCEPTED, create three artifacts. Fill every field from the ACTUAL
-change under review — the skeletons below are structure only; do NOT carry over
-any example content.
+`VERIFICATION.md` is the only universal acceptance artifact. Create a supplement
+only when its applicability condition is true; otherwise create no placeholder or
+"No changes" file:
 
-### 1. SUMMARY.md — executive summary
-Sections: **Overview** (one paragraph: what was built and why) · **Key Decisions**
-(each: chosen approach + the trade-off) · **Files Changed** (table: file | new/modified | description) · **Testing** (counts + coverage) · **Deployment Notes**.
+### SUMMARY.md — only for a named stakeholder/consumer or repository requirement
+Summarize overview, material decisions, verification, and deployment notes for that
+consumer. The existence of an accepted change alone is not a reason.
 
-### 2. API_CHANGELOG.md — for the frontend team (only if the change touches an API)
+### API_CHANGELOG.md — only when the public API actually changes
 Sections: **New Endpoints** (table: method | path | description | auth) with request→response
 shapes per endpoint · **Modified Endpoints** (table: endpoint | change | breaking? | migration)
-· **Breaking Changes** + migration guide · **Deprecations**. If no API changed, write "No API changes" and skip.
+· **Breaking Changes** + migration guide · **Deprecations**.
 
-### 3. OPERATIONAL_TASKS.md — for managers/ops (only if deployment needs manual steps)
+### OPERATIONAL_TASKS.md — only when deployment has real manual steps
 Derive entries by scanning the change for operational needs: new external services,
 new environment variables/secrets, database migrations, infra/DNS/TLS changes, third-party
 registrations. Sections: **Pre-Deployment (required)** · **Post-Deployment verification +
-monitoring** · **Rollback plan**. List only steps this change actually requires; if none, write "No operational tasks".
+monitoring** · **Rollback plan**. List only steps this change actually requires.
+
+Acceptance treats approved `tasks.md` as read-only normative input. Record gaps in
+`VERIFICATION.md`; never mutate task checkboxes after code review.
 </step>
 
 <step name="return_result">
@@ -312,25 +306,21 @@ Return structured result to orchestrator:
 
 ### Summary
 - Acceptance criteria: X/Y verified
-- Tests: X passed, 0 failed
+- Gates: X executed, Y reused, 0 required failures
 - Edge cases: X/Y verified
 
 ### Artifacts Created
 | Artifact | Purpose |
 |----------|---------|
 | VERIFICATION.md | QA verification report |
-| tasks.md | Updated with completion checkboxes |
-| SUMMARY.md | Executive summary for stakeholders |
-| API_CHANGELOG.md | API changes for frontend team |
-| OPERATIONAL_TASKS.md | Call to action for managers/ops |
+| [applicable supplement only] | [actual consumer/need] |
 
 ### Details
 [Key findings]
 
 ### Next Step
 - ACCEPTED: Feature complete, ready for deployment
-  - Share API_CHANGELOG.md with frontend team
-  - Share OPERATIONAL_TASKS.md with managers/ops
+  - Share only applicable supplements with their named consumers
 - NEEDS WORK: Return to [appropriate phase] to address issues
 ```
 
@@ -344,7 +334,7 @@ verification report only on request.
 
 ## MUST Pass (Blockers)
 - All acceptance criteria verified
-- All tests passing
+- All required executed or exact-receipt-reused gates green
 - No security issues
 - No data integrity issues
 - No placeholder code (TODO/FIXME/HACK/XXX) in feature code
@@ -370,12 +360,12 @@ Only MUST criteria block acceptance.
 
 ## ACCEPTED when:
 - ALL acceptance criteria from proposal.md verified
-- All tests passing
+- Required gates are green from execution or a trusted exact-input receipt
 - No blocking issues found
-- E2E flow works correctly
+- Applicable critical user/service flow works correctly
 
 ## NEEDS WORK when:
-- Any acceptance criterion fails, tests failing, security/data issues, or E2E flow broken
+- Any acceptance criterion fails, a required gate is red/UNVERIFIED, security/data issues, or an applicable critical flow is broken
 
 When issuing NEEDS WORK, you MUST specify:
 1. **Which criteria** failed (by number from proposal.md)
@@ -402,14 +392,14 @@ When issuing NEEDS WORK, you MUST specify:
 Before completing, verify:
 - [ ] All acceptance criteria from proposal.md checked
 - [ ] Evidence documented for each criterion
-- [ ] All tests passing
+- [ ] Required gate receipt exact and green, or required tests rerun and green
 - [ ] Edge cases verified
-- [ ] E2E flow traced
+- [ ] Applicable critical flow verified, or N/A reason recorded
 - [ ] VERIFICATION.md written with verdict
 - [ ] If ACCEPTED:
-  - [ ] tasks.md updated — verified tasks marked [x]
-  - [ ] SUMMARY.md created with key decisions
+  - [ ] tasks.md left unchanged
+  - [ ] SUMMARY.md created only for a named consumer/repository requirement
   - [ ] API_CHANGELOG.md created (if API changes exist)
-  - [ ] OPERATIONAL_TASKS.md created with all external setup tasks
+  - [ ] OPERATIONAL_TASKS.md created only when real manual steps exist
 - [ ] Verdict is clear with reasoning
 </quality_checklist>

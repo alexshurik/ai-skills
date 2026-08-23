@@ -12,6 +12,20 @@ the changed files, and points each finding at the fix (to the project's own toke
 system). It does **not** invent a brand or grade taste; it removes the generic and calls
 out where a screen is left sterile.
 
+For source-quality review, use the checks below. For the conditional `ui-ux` lens,
+rendered inspection is mandatory: open the exact-source app or inspect
+exact-fingerprint screenshots for the primary changed journey, representative
+desktop/mobile widths, and only relevant changed states. Source/grep alone yields
+`UNVERIFIED`, not a visual pass.
+
+Rendered review checks one primary task/title/action, primary → secondary → meta
+hierarchy, shared alignment axes and section rhythm, control relevance, honest empty
+states, desktop/mobile reflow, product-canon reuse, excessive whitespace, competing
+CTAs, and whether the first viewport reads as one composition. A normal change needs
+roughly 4–6 useful screenshots, not a generated gallery. Taste alternatives stay
+non-blocking unless they expose an approved-reference, usability, accessibility, or
+product-consistency violation.
+
 **Severity:** `ban` (always wrong — fix) · `system` (systemic check — align to tokens) ·
 `flag` (raise as a question, don't hard-fail).
 

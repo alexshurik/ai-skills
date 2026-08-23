@@ -126,7 +126,10 @@ For materially touched files record:
 
 A file over 300 lines or gaining a second responsibility requires an explicit
 structural decision. Also reject fragmentation into trivial one-purpose files.
-The number is a review trigger, not an automatic split rule.
+The number is a review trigger, not an automatic split rule. A forecast miss alone
+is not a blocker without a second responsibility, concrete complexity/readability/
+navigation defect, a repository-enforced cap, or an explicit user limit. Exact hard
+LOC caps remain blockers when repository tooling or the user actually requires them.
 
 ## Infrastructure authority and non-goals
 

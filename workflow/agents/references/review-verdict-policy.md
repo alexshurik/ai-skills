@@ -5,7 +5,7 @@ validity and verdict; severity never grants scope.
 
 ## Lenses and ownership
 
-A full review runs exactly three independent lenses in one wave:
+A full review runs three independent core lenses and a conditional UI/UX lens:
 
 1. **architecture-design** — shape and ownership: components/modules, dependency
    and import direction, responsibility placement, abstraction/navigation,
@@ -16,23 +16,36 @@ A full review runs exactly three independent lenses in one wave:
 3. **engineering-quality** — implementation and tool evidence: root-produced gates
    and static analysis, stack idioms, readability, complexity, duplication, dead
    code, error handling, and test-code quality.
+4. **ui-ux** — only for user-visible frontend impact: independently rendered
+   hierarchy, task/action clarity, control relevance, affordance, layout/rhythm,
+   responsive reflow, accessibility usability, product fit, and representative
+   journeys. Frontend tests-only, build/config/tooling, type-only, and proven
+   non-rendered refactors are `N/A`.
 
 A lens is valid only when its artifact is parseable, belongs to the current
 snapshot, covers its manifest, inspects assigned raw current/base content, and
-returns a complete finding set or explicit clean result. Timeout, empty output,
+returns a complete finding set or explicit clean result. UI/UX additionally needs
+browser or exact-fingerprint screenshot evidence for representative desktop/mobile
+states. Timeout, empty output,
 stale hash, unsafe exclusion, or missing required context is UNVERIFIED. No lens may
-spawn. Inline mode must preserve three separately labelled passes.
+spawn. Inline mode must preserve separately labelled required passes.
 
-The three scope-manifest union must validate against `review-map.json`. Uniform
-full-file reading by every lens is not required. Unchanged content is reusable only
-when its recorded hash is verified.
+The three core scope-manifest union must cover every `reviewable` path in
+`review-map.json`; a required UI/UX manifest covers the declared UI-impact paths.
+The map still accounts for preserved baseline, workflow output, and derived
+acceptance output. Uniform full-file reading by every lens is not required.
+Unchanged content is reusable only when its recorded hash is verified.
 
 ## Readiness
 
-The root runs formatter, lint, type/build, tests, diff integrity, project gates, and
-applicable static analysis once per snapshot before dispatch. Any red required gate
-prevents review from starting. Engineering-quality consumes compact provenance and
-must not rerun the full battery. Missing/failed required tooling is UNVERIFIED.
+The root establishes one green full formatter, lint, type/build, tests, diff,
+project-gate, and applicable static-analysis receipt before first review by validating
+exact trusted rows and running missing/stale rows. Any red required gate prevents
+review from starting. A green gate receipt is reusable only when its complete input
+closure—command, toolchain, configs, lockfiles, environment class, and covered path
+hashes—is identical. Changed content gets fresh targeted evidence. Engineering-
+quality consumes compact provenance and must not rerun the full battery.
+Missing/failed required tooling is UNVERIFIED.
 
 ## Finding classification
 
@@ -60,7 +73,7 @@ Severity:
 
 ### Round 1 — full
 
-Run all three independent lenses together. Aggregate their complete finding sets,
+Run all three core lenses and conditional UI/UX. Aggregate their complete finding sets,
 resolve every `user_decision`, and freeze the exact remediation allowlist. A lens
 may not hold back findings to generate later cycles.
 
@@ -72,7 +85,7 @@ Use a fresh snapshot. Require:
 - frozen allowlist and complete remediation delta;
 - immutable pre/post fingerprints and verified unchanged hashes;
 - no unexplained paths or scope expansion;
-- root gates run once on the new snapshot;
+- fresh targeted gates for changed inputs and exact receipt reuse for unchanged inputs;
 - every finding-owning and impact-routed lens.
 
 Impact routing follows lens ownership. Multiple lenses may apply; contract/schema
@@ -81,17 +94,18 @@ proof for changed content.
 
 A material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, unexplained path, invalid parent, or unprovable delta forces a full
-three-lens run while consuming Round 2.
+core-lens run plus conditional UI/UX while consuming Round 2.
 
 A normative design/ADR amendment invalidates targeted mode and requires a full
-three-lens review against the new authority fingerprint within the remaining round
-budget.
+core-lens review plus conditional UI/UX against the new authority fingerprint
+within the remaining round budget.
 
 ### Exceptional Round 3
 
 Allow only for an unresolved allowlisted defect, remediation regression, or newly
-proven critical correctness/security defect. Use a fresh snapshot, root gates once,
-and owning/impact-routed lenses; escalation conditions may require all three.
+proven critical correctness/security defect. Use a fresh snapshot, targeted gates
+plus exact receipt reuse, and owning/impact-routed lenses; escalation conditions may
+require all three core lenses plus conditional UI/UX.
 
 There is no automatic Round 4. After Round 3 return `NEEDS USER DECISION` with exact
 blockers/options. Transport-only wait timeouts do not increment the round and round
@@ -135,7 +149,7 @@ automatic fourth pass.
 **Mode:** full | targeted
 **Round:** 1 | 2 | 3
 **Parent:** none | <full-review fingerprint>
-**Snapshot:** <fingerprint>
+**Accounting / source / review:** <fingerprints>
 
 ### Scope and routing
 - Base/head and tracked/untracked/deleted/renamed counts
@@ -147,6 +161,7 @@ automatic fourth pass.
 | Architecture-design | parallel/inline/N/A | OK/FINDINGS/UNVERIFIED/N/A |
 | Correctness-safety | ... | ... |
 | Engineering-quality | ... | ... |
+| UI/UX | parallel/inline/N/A | OK/FINDINGS/UNVERIFIED/N/A |
 
 ### Mandatory fixes / scope decisions / backlog / baseline
 [Grouped findings]

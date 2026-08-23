@@ -43,6 +43,7 @@ ORCHESTRATOR_REFERENCES = {
     "~/.claude/agents/review-steps/engineering-quality.md": (
         "workflow/agents/review-steps/engineering-quality.md"
     ),
+    "~/.claude/agents/review-steps/ui-ux.md": ("workflow/agents/review-steps/ui-ux.md"),
 }
 
 
@@ -184,11 +185,17 @@ def lens_prompts(platform: str, output: Path) -> list[Path]:
                 "architecture-design.md",
                 "correctness-safety.md",
                 "engineering-quality.md",
+                "ui-ux.md",
             )
         ]
     return [
         directory / name
-        for name in ("architecture-design.md", "correctness-safety.md", "engineering-quality.md")
+        for name in (
+            "architecture-design.md",
+            "correctness-safety.md",
+            "engineering-quality.md",
+            "ui-ux.md",
+        )
     ]
 
 
@@ -239,6 +246,7 @@ def main() -> None:
                 assert "  - sk-review-architecture-design" in reviewer
                 assert "  - sk-review-correctness-safety" in reviewer
                 assert "  - sk-review-engineering-quality" in reviewer
+                assert "  - sk-review-ui-ux" in reviewer
                 assert "${base_prompt}" in team_prompt
                 assert "Kimi execution override" not in team_prompt
                 architect = (output / "agents" / "sk-architect.md").read_text(encoding="utf-8")

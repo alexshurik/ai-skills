@@ -18,6 +18,7 @@ expected_lenses = {
     "sk-review-architecture-design",
     "sk-review-correctness-safety",
     "sk-review-engineering-quality",
+    "sk-review-ui-ux",
 }
 actual_lenses = {item["name"] for item in manifest["review_steps"]}
 assert actual_lenses == expected_lenses, (actual_lenses, expected_lenses)

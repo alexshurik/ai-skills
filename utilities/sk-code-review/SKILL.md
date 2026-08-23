@@ -1,6 +1,6 @@
 ---
 name: sk-code-review
-description: Review committed, staged, unstaged, untracked, deleted, and renamed changes through exactly three independent baseline-aware lenses without modifying source code.
+description: Review complete Git scope through three core baseline-aware lenses plus conditional rendered UI/UX without modifying source code.
 ---
 
 # Review Repository Changes
@@ -24,30 +24,37 @@ reviewer profile chain; treat project `evidence.md` as non-normative.
 ## 2. Execute the orchestrator at top level
 
 Do not spawn one nested orchestrator from this skill. Execute its canonical flow at
-top level so Codex can dispatch exactly three independent lenses in one Codex wave
-(`root + 3`):
+top level so Codex can dispatch three independent core lenses in one Codex wave
+(`root + 3`), then conditional UI/UX when required:
 
 1. architecture-design;
 2. correctness-safety;
 3. engineering-quality.
+4. ui-ux, only for confirmed user-visible frontend impact.
 
-Build one JSON scope manifest per lens. Their deterministically validated union
-accounts for every review-map path. Lenses read only raw full/targeted current/base
+Classify every Git path as reviewable, preserved baseline, workflow output, or
+derived acceptance output. Record `ui_ux_required`, reason, and exact UI-impact
+paths in `review-policy.json`; frontend tests/config/tooling/type-only and proven
+non-rendered refactors are false. Build one JSON scope manifest per core lens and a UI/UX
+manifest only when required. The core union covers every reviewable path while the
+map accounts for every Git path. Lenses read only raw full/targeted current/base
 content assigned to them; unchanged content is reusable only by verified hash. Do
 not require every lens to read every file and do not create a separate structure
 agent or LLM-authored coverage ledger.
 
-The root runs formatter/lint/type/build/tests/diff gates and applicable static
-analysis once per snapshot before dispatch. A red required gate means review does
+The root establishes one green full applicable formatter/lint/type/build/tests/diff
+and static-analysis receipt before first review, reusing only exact trusted rows and
+running missing/stale rows. Later snapshots use fresh targeted gates plus
+exact-input receipt reuse. A red required gate means review does
 not start. Store full output in Git-local logs and pass only compact provenance plus
 paths. Engineering-quality must not rerun the full suite/tool battery.
 
-Every lens returns its complete finding set in Round 1. Launch all three before one
+Every lens returns its complete finding set in Round 1. Launch all three core leaves before one
 long event-driven foreground wait. Apply shared no-poll semantics: transport-only
 timeouts are not rounds/retries/events; never list, nudge, or chatter between
 routine returns. Full reports stay Git-local; compact receipts return to the model.
 
-If dispatch is unavailable, run three separately labelled inline passes and disclose
+If dispatch is unavailable, run separately labelled required inline passes and disclose
 `inline`. Never collapse to a single general review.
 
 ## 3. Verdict and round cap
@@ -60,8 +67,8 @@ or explicitly selected outcomes; it does not authorize a new remedy design.
 
 Use the orchestrator's lifecycle if the caller later authorizes remediation:
 
-- Round 1: full three-lens review and exhaustive findings;
-- targeted Round 2: fresh snapshot, root gates once, valid parent full review,
+- Round 1: full core-lens review plus conditional UI/UX and exhaustive findings;
+- targeted Round 2: fresh snapshot, fresh targeted gates plus exact receipt reuse, valid parent full review,
   immutable pre/post fingerprints, complete delta, verified unchanged hashes, no
   expansion, and every finding-owning/impact-routed lens;
 - exceptional Round 3: only unresolved allowlisted defects, remediation regression,

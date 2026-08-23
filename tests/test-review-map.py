@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise deterministic review-map generation and lens-scope validation."""
+"""Exercise deterministic review-map classification and lens-scope validation."""
 
 from __future__ import annotations
 
@@ -83,18 +83,36 @@ def fixture() -> tuple[
             evidence_entry("src/auth/session.py", local_imports=[{"line": 3}]),
             evidence_entry("tests/test_session.py"),
             evidence_entry("docs/ADR.md"),
+            evidence_entry("docs/review.md"),
             evidence_entry("package-lock.json"),
             evidence_entry("dist/app.js"),
+            evidence_entry("src/App.vue"),
+            evidence_entry("openspec/changes/example/CODE_REVIEW.md"),
+            evidence_entry("openspec/changes/example/VISUAL_REPORT.html"),
+            evidence_entry("notes/preserved.txt"),
             evidence_entry(
                 "public/logo.png",
                 current_read_status="unavailable",
                 current_lines=None,
             ),
         ],
+        "review_policy": {
+            "path_classes": {"notes/preserved.txt": "preserved_baseline"},
+            "path_class_reasons": {"notes/preserved.txt": "pre-work dirty path, hash unchanged"},
+            "preserved_baseline_hashes": {"notes/preserved.txt": "a" * 64},
+            "ui_ux_required": True,
+            "ui_ux_reason": "App.vue changes rendered layout",
+            "ui_impact_paths": ["src/App.vue"],
+        },
     }
     review_map = build_review_map(evidence)
     files = {entry["path"]: entry for entry in review_map["files"]}
-    lenses = ("architecture-design", "correctness-safety", "engineering-quality")
+    lenses = (
+        "architecture-design",
+        "correctness-safety",
+        "engineering-quality",
+        "ui-ux",
+    )
     manifests = build_manifests(review_map, files, lenses)
     return review_map, files, manifests, lenses, evidence
 
@@ -117,8 +135,17 @@ def build_manifests(
                     "current_sha256": entry["current_sha256"],
                     "risk_leads": entry["risk_tags"],
                 }
-                for index, (path, entry) in enumerate(sorted(files.items()))
-                if index % len(lenses) == lens_index
+                for index, (path, entry) in enumerate(
+                    sorted(
+                        (path, entry)
+                        for path, entry in files.items()
+                        if entry["review_class"] == "reviewable"
+                    )
+                )
+                if (
+                    (lens == "ui-ux" and path == "src/App.vue")
+                    or (lens != "ui-ux" and index % (len(lenses) - 1) == lens_index)
+                )
             ],
         }
         for lens_index, lens in enumerate(lenses)
@@ -135,9 +162,33 @@ def assert_map_classification(
     assert "import-candidate" in files["src/auth/session.py"]["risk_tags"]
     assert "test" in files["tests/test_session.py"]["risk_tags"]
     assert "instruction" in files["docs/ADR.md"]["risk_tags"]
+    assert files["docs/review.md"]["review_class"] == "reviewable"
     assert files["package-lock.json"]["content_class"] == "dependency-lock"
     assert files["dist/app.js"]["content_class"] == "generated-candidate"
     assert files["public/logo.png"]["content_class"] == "binary"
+    assert files["src/App.vue"]["ui_impact_candidate"]
+    assert files["openspec/changes/example/CODE_REVIEW.md"]["review_class"] == "workflow_output"
+    assert (
+        files["openspec/changes/example/VISUAL_REPORT.html"]["review_class"]
+        == "derived_acceptance_output"
+    )
+    assert files["notes/preserved.txt"]["review_class"] == "preserved_baseline"
+    assert review_map["review_policy"]["ui_ux_required"]
+    assert len(review_map["source_fingerprint"]) == 64
+    assert len(review_map["review_fingerprint"]) == 64
+
+
+def assert_workflow_output_does_not_invalidate_source(evidence: dict[str, Any]) -> None:
+    before = build_review_map(evidence)
+    changed = json.loads(json.dumps(evidence))
+    for entry in changed["files"]:
+        if entry["path"].endswith("CODE_REVIEW.md"):
+            entry["current_sha256"] = "c" * 64
+            break
+    after = build_review_map(changed)
+    assert before["fingerprint"] != after["fingerprint"]
+    assert before["source_fingerprint"] == after["source_fingerprint"]
+    assert before["review_fingerprint"] == after["review_fingerprint"]
 
 
 def assert_invalid_scope_variants(
@@ -148,6 +199,7 @@ def assert_invalid_scope_variants(
         ("stale current_sha256", stale_scope(manifests)),
         ("invalid or duplicate scope lens", duplicate_lens_scope(manifests)),
         ("authored content is metadata-only", metadata_only_scope(manifests)),
+        ("UI/UX scope mismatch", manifests[:-1]),
     )
     for expected_error, invalid in variants:
         assert_validation_error(review_map, invalid, expected_error)
@@ -159,7 +211,7 @@ def clone_manifests(manifests: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def missing_scope(manifests: list[dict[str, Any]]) -> list[dict[str, Any]]:
     broken = clone_manifests(manifests)
-    broken[-1]["entries"] = broken[-1]["entries"][:-1]
+    broken[2]["entries"] = broken[2]["entries"][:-1]
     return broken
 
 
@@ -187,11 +239,15 @@ def metadata_only_scope(manifests: list[dict[str, Any]]) -> list[dict[str, Any]]
 def main() -> None:
     review_map, files, manifests, lenses, evidence = fixture()
     assert_map_classification(review_map, files, evidence)
+    assert_workflow_output_does_not_invalidate_source(evidence)
     receipt = validate_scopes(review_map, manifests)
     assert receipt == {
         "review_map_fingerprint": review_map["fingerprint"],
+        "source_fingerprint": review_map["source_fingerprint"],
+        "review_fingerprint": review_map["review_fingerprint"],
         "lenses": sorted(lenses),
-        "paths": len(files),
+        "accounted_paths": len(files),
+        "reviewable_paths": sum(entry["review_class"] == "reviewable" for entry in files.values()),
         "status": "valid",
     }
     assert_rejects_tampered_map(review_map, manifests)
@@ -200,15 +256,20 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         evidence_path = directory / "evidence.json"
+        policy_path = directory / "review-policy.json"
         map_path = directory / "review-map.json"
         manifest_paths = [directory / f"{lens}.json" for lens in lenses]
-        evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+        cli_evidence = json.loads(json.dumps(evidence))
+        policy_path.write_text(json.dumps(cli_evidence.pop("review_policy")), encoding="utf-8")
+        evidence_path.write_text(json.dumps(cli_evidence), encoding="utf-8")
         build = subprocess.run(
             [
                 str(ROOT / "shared" / "review-evidence" / "review-map.sh"),
                 "build",
                 "--evidence",
                 str(evidence_path),
+                "--policy",
+                str(policy_path),
                 "--output",
                 str(map_path),
             ],

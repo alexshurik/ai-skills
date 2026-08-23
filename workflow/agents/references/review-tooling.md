@@ -41,6 +41,33 @@ authorization.
 
 Record exact command, version when available, exit code, scope, and result.
 
+## Gate receipts and reuse
+
+Require the full safe/applicable battery to have one green immutable receipt before
+the first review. The review root validates and may reuse a Developer-produced row
+when it used the pinned repository runner and its full input closure matches; run
+only missing, stale, or untrusted rows. Persist one immutable
+receipt row per gate with:
+
+- exact command and runner/tool version;
+- relevant configuration and lockfile hashes;
+- environment class (OS/runtime/container/service dependencies, not secrets);
+- covered path list and content hashes;
+- exit code, summary, timestamp, and full-log path.
+
+Reuse a green row only when that entire input closure is identical. A documentation
+edit outside a gate's closure does not invalidate it; a changed covered source,
+test, command, config, lockfile, or environment class does. After remediation, run
+fresh focused tests and every impacted gate for changed inputs, and carry forward
+only exact-match rows. Never use an old receipt as proof for changed content.
+
+Acceptance consumes the green receipt for the exact current source fingerprint. It
+runs the full safe suite again only when no trusted exact-fingerprint receipt exists,
+repository/release policy mandates an independent run, or the change is high-risk
+(auth/authz, payments, destructive data, migration/public contract,
+concurrency/idempotency, or complex external side effects). This rule changes test
+execution, not criteria verification.
+
 ## Run deep analysis
 
 Run the canonical battery once before lens dispatch:

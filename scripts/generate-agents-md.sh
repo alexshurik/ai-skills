@@ -62,9 +62,12 @@ cat >> "$OUTPUT" << 'ORCHESTRATION'
   only work proven within the approved design goes directly to the developer.
 - Optional/rejected proposals stage in change-local `DEFERRED.md`. Promote only
   user-selected items to the repository tracker or `openspec/backlog/` fallback.
-- Full review uses a deterministic lossless review map and exactly three independent
-  lenses in one wave: architecture-design, correctness-safety, and engineering-quality.
-  Root runs gates once per snapshot; validated scope-manifest union covers every path.
+- Full review uses a deterministic lossless Git map, three independent core lenses
+  (architecture-design, correctness-safety, engineering-quality), and a conditional
+  rendered UI/UX lens for user-visible frontend impact. Core scope manifests cover
+  every reviewable path while output/baseline classes remain fully accounted. Root
+  establishes one green full receipt before first review, then uses targeted gates
+  plus exact-input receipt reuse after remediation.
 - Launch a full wave before waiting. Keep required children in a foreground join and
   use the longest event-driven mailbox wait permitted by the host and higher-priority
   policy. Record one semantic foreground attempt join; transport-only timeouts are

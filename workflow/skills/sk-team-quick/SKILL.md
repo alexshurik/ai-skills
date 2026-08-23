@@ -65,7 +65,7 @@ openspec/changes/<fix-name>/
   implementation.md
   REVIEW.md
   VERIFICATION.md
-  SUMMARY.md
+  SUMMARY.md       # only for a named consumer/repository requirement
   DEFERRED.md      # only when proposals are staged/deferred/rejected/promoted
 ```
 
@@ -146,6 +146,9 @@ each owner dimension PASS, FINDINGS, or NOT APPLICABLE:
    concurrency/idempotency, trust/security, compatibility, tests, instructions;
 3. engineering-quality — root-produced provenance, stack idioms, readability,
    complexity, duplication, dead code, error handling, test-code quality.
+4. ui-ux — only when the snapshot has user-visible frontend impact; independently
+   open the exact-source app or screenshots and inspect the changed journey at one
+   desktop and one 320–390 px mobile width. Source inspection alone is UNVERIFIED.
 
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.
@@ -158,16 +161,18 @@ remediation.
 Write:
 - REVIEW.md with dimension-by-dimension evidence and findings;
 - VERIFICATION.md with ACCEPTED or NEEDS WORK and behavior evidence;
-- SUMMARY.md only when accepted.
+- SUMMARY.md only for a named consumer or repository requirement, not merely because
+  the fix was accepted.
 
 Return FINAL with verdict, artifact paths, blocking findings, exact verification
 statuses, skipped/UNVERIFIED checks, and snapshot fingerprint. Keep the return to
 50 lines / 2500 tokens; full evidence stays in artifacts.
 ```
 
-This combines execution, not judgment: every dimension remains explicit. If any
+This combines execution, not judgment: every required dimension remains explicit. If any
 dimension requires specialist parallel analysis, the change is no longer quick;
-escalate to the full workflow and its three independent clean reviewers.
+escalate to the full workflow and its three independent core reviewers plus
+conditional UI/UX.
 
 ## Remediation and finality
 
@@ -179,18 +184,19 @@ pass “fix all findings”. Send Developer only `within_approved_design` items.
 architecture, scope, or investigation route exits quick mode before source edits and
 continues through the full workflow's owning gate.
 
-Targeted Round 2 uses a fresh snapshot, root gates once, valid parent review,
+Targeted Round 2 uses a fresh snapshot, fresh targeted gates for changed inputs plus
+exact-input receipt reuse, valid parent review,
 immutable pre/post fingerprints, complete remediation delta, verified unchanged
 hashes, no expansion, and every impacted dimension. Old evidence never proves
 changed content. A material expansion or unprovable delta exits quick mode to the
 full workflow while consuming the round.
 
 A normative design/ADR amendment is never a targeted quick review: exit quick mode
-and run a full three-lens review against the new authority fingerprint.
+and run a full core-lens review plus conditional UI/UX against the new authority fingerprint.
 
 Exceptional Round 3 is allowed only for an unresolved allowlisted defect,
 remediation regression, or newly proven critical correctness/security defect. Run
-root gates once on the new snapshot and all impacted dimensions. New non-critical
+fresh targeted gates plus exact-input receipt reuse and all impacted dimensions. New non-critical
 findings after frozen triage go to `DEFERRED.md`; they cannot open another loop.
 
 Quick mode obeys the same three-round cap. There is no automatic Round 4: return
