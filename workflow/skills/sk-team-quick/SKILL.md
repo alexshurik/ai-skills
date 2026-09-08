@@ -148,7 +148,9 @@ each owner dimension PASS, FINDINGS, or NOT APPLICABLE:
    complexity, duplication, dead code, error handling, test-code quality.
 4. ui-ux — only when the snapshot has user-visible frontend impact; independently
    open the exact-source app or screenshots and inspect the changed journey at one
-   desktop and one 320–390 px mobile width. Source inspection alone is UNVERIFIED.
+   representative desktop and one project-appropriate compact/mobile width. Perform
+   the shared screenshot-first comprehension pass at original/native resolution and
+   cover the complete effective scroll extent. Source inspection alone is UNVERIFIED.
 
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.

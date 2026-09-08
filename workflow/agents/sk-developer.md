@@ -114,6 +114,8 @@ Follow `developer-prewrite-gate.md` before the first source edit:
 - inventory planned abstractions;
 - collect file-size/responsibility evidence;
 - inventory local/dynamic imports;
+- for user-visible UI composition, map edits to the approved composition owners and
+  confirm there is no competing shell/page/component ownership;
 - for remediation, compare the intended fix with the approved design fingerprint
   and record the per-finding route.
 
@@ -158,11 +160,20 @@ or project guidance even when a narrow test omits it.
 
 For meaningful user-visible UI work, start the app as soon as the first coherent
 screen is Green. Compare it with the design's visual intent/reference at one
-representative desktop and one 320–390 px mobile width. Correct hierarchy,
-competing titles/CTAs, irrelevant controls, alignment/rhythm, excessive whitespace,
-responsive reflow, and empty/loading/error composition before polishing. Capture
-roughly 4–6 exact-source screenshots across only the representative changed states;
-do not build a screenshot gallery or persistent report generator.
+representative desktop and one compact/mobile width appropriate to the project.
+Follow the shared UI composition and rendered-evidence contracts loaded through the
+profile resolver. Correct hierarchy, competing titles/actions, inappropriate action
+absence, irrelevant controls, alignment/rhythm, excessive whitespace, responsive
+reflow, state/copy composition, and realistic long-content or extreme-value pressure
+before polishing. Capture roughly 4–6 exact-source screenshots across only the
+representative changed states and the complete effective scroll extent; do not build
+a screenshot gallery or persistent report generator.
+
+When the approved design adds or changes a maintained visual/geometry contract,
+control the applicable render inputs and combine rendered judgment with semantic/
+geometry assertions. Give each new custom static guard paired rejecting/accepted
+fixtures and each reusable geometry assertion a rejected mutation plus an accepted
+boundary case. Do not update a golden merely to make a changed render pass.
 
 ## 6. Refactor while green
 
@@ -200,8 +211,10 @@ configuration and lockfile hashes, environment class, covered path hashes, exit
 code, summary, and full-log path. Review may reuse a green row only when this entire
 input closure still matches.
 
-For user-visible UI, also record the runnable URL, state/setup, viewports, screenshot
-paths, and exact source fingerprint. Static anti-slop checks are supporting evidence,
+For user-visible UI, also record the runnable URL, state/setup, viewports, effective
+scroll owner/covered extent, screenshot paths, and exact source fingerprint. For
+maintained visual evidence, include the applicable deterministic render inputs and
+unexpected console/network failures. Static anti-slop checks are supporting evidence,
 not proof that the rendered composition works.
 
 Compare before/after:

@@ -15,11 +15,15 @@ Read the snapshot manifest, UI/UX scope manifest, exact source fingerprint,
 approved acceptance criteria, the design's visual intent/reference, project UI
 guidance, `~/.claude/agents/best-practices/ui/reviewer.md` or source fallback
 `shared/best-practices/ui/reviewer.md`, and
+`~/.claude/agents/best-practices/ui/composition-contract.md` plus
+`~/.claude/agents/best-practices/ui/rendered-evidence.md`, or their source fallbacks
+under `shared/best-practices/ui/`, and
 `~/.claude/agents/shared/scope-governance.md` or the source fallback
-`workflow/agents/shared/scope-governance.md`. Read assigned current/base
-content to establish the changed experience, then inspect source only
-to locate and operate the affected experience. Do not substitute code inspection,
-grep, lint, or an anti-slop script for rendered inspection.
+`workflow/agents/shared/scope-governance.md`. Use source only as needed to locate and
+operate the affected experience, and perform the screenshot-first pass below before
+reading assigned implementation details or test output. Then read assigned
+current/base content to establish context and complete the review. Do not substitute code
+inspection, grep, lint, or an anti-slop script for rendered inspection.
 
 ## Required rendered evidence
 
@@ -29,20 +33,29 @@ the smallest representative set of changed states:
 
 - the primary user journey and its populated/default state;
 - empty/loading/error/disabled states only when changed or behaviorally relevant;
-- one representative desktop width and one 320–390 px mobile width for responsive
-  work.
+- one representative desktop width and one compact/mobile width appropriate to the
+  project's supported range for responsive work;
+- long-content, localization-expansion, or extreme-value pressure cases when the
+  changed layout constrains text or numeric tracks.
 
-Record URL or image paths, viewport, state/setup, and source fingerprint. A normal
-UI change needs roughly 4–6 useful screenshots, not a generated gallery or HTML
-report. Missing runnable/rendered evidence is `UNVERIFIED`; never approve visual
-composition from source alone.
+Inspect at original/native resolution and cover the complete effective scroll extent,
+whether the document or an application-owned region scrolls. Before reading source or
+test output, record: what screen/task this is, what information is most important,
+what the primary action is or why none is appropriate, and what appears redundant,
+detached, or better moved.
+
+Record URL or image paths, viewport, state/setup, effective scroll owner/extent,
+source fingerprint, and applicable deterministic render inputs from the rendered-
+evidence contract. A normal UI change needs roughly 4–6 useful screenshots, not a
+generated gallery or HTML report. Missing runnable, original-resolution, or complete-
+extent evidence is `UNVERIFIED`; never approve visual composition from source alone.
 
 ## Ownership
 
 UI/UX owns:
 
-- first-viewport hierarchy, task clarity, one clear page title, and the dominant
-  action;
+- first-viewport hierarchy, task clarity, one accessible page title, and at most one
+  visible primary action or an appropriate absence;
 - duplicate or competing CTAs, irrelevant controls, misleading affordances, and
   empty-state next actions;
 - layout axes, alignment, proximity, density, whitespace, section rhythm, and
@@ -51,6 +64,8 @@ UI/UX owns:
   content at representative widths;
 - consistency with the product's existing screens/components and the approved
   visual intent/reference;
+- same-entity domain-canon reuse, copy that answers the user's immediate question,
+  quiet success, origin-appropriate error/recovery placement, and skeleton geometry;
 - anti-slop composition: unnecessary cards, generic template structure, accent
   competition, sterile defaults, filler copy/media, and decoration without purpose.
 
@@ -58,6 +73,12 @@ Architecture-design owns component boundaries, reuse ownership, and packaging.
 Correctness-safety owns data/state semantics and security. Engineering-quality owns
 tokens, lint, source readability, test quality, and static anti-slop candidates.
 Do not duplicate those findings.
+
+Use maintained pixel goldens only as one evidence type. Confirm applicable semantic/
+ARIA and geometry contracts independently. A screenshot-baseline update cannot
+approve itself: inspect the updated exact-source render afresh. When a changed custom
+guard or geometry helper lacks paired rejecting/accepted evidence, route the test-
+quality defect to engineering-quality rather than treating the passing guard as proof.
 
 ## Finding calibration
 
@@ -89,7 +110,7 @@ findings.
   risk_if_deferred: concrete user consequence
   blocks_release: true | false
   recommendation: smallest sufficient action
-  evidence: rendered state, viewport, reference, and screenshot/URL
+  evidence: rendered state, viewport, effective scroll extent, reference, and screenshot/URL
 ```
 
 Return `FINAL` or `BLOCKED`, `OK | FINDINGS | UNVERIFIED`, artifact path/fingerprint,

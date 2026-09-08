@@ -158,8 +158,11 @@ handoff evidence.
 
 When no separate Tester was risk-routed, write the approved tests with the code.
 For meaningful UI work, perform an early rendered loop against the visual intent at
-desktop and 320–390 px mobile widths, then capture roughly 4–6 representative
-exact-source screenshots. Do not build a persistent report generator.
+one representative desktop and one project-appropriate compact/mobile width, then
+capture roughly 4–6 representative exact-source screenshots covering the complete
+effective scroll extent. Include realistic long-content or extreme-value pressure
+when the layout constrains text or numeric tracks. Do not build a persistent report
+generator.
 
 For remediation, also receive an explicit finding-ID allowlist. Implement only
 `required_fix` plus user-approved addition IDs that are routed

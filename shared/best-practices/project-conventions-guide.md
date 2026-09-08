@@ -42,9 +42,13 @@ Read actual configuration and authoritative commands:
 - formatter, linter, type checker, build, test, pre-commit, and CI config;
 - package manager and locked runner;
 - language/framework manifests.
+- for UI repositories, required static design guards, component/browser tests,
+  maintained visual-regression commands, and their CI/pre-commit/workflow invocation.
 
 Record the exact config path, selected setting/rule, command, scope, and exception.
 Do not claim a tool enforces architecture or vocabulary it cannot inspect.
+The existence of a guard script or screenshot suite is not itself proof that the
+repository requires it; distinguish an available command from an enforced gate.
 
 ### Approved candidates
 
@@ -53,6 +57,9 @@ Read current:
 - `AGENTS.md`, `CLAUDE.md`, contribution/convention docs;
 - accepted ADRs and approved active specifications;
 - project-level rule files.
+- for UI repositories, current design-system guidance, approved composition owners,
+  domain presentation canons, responsive/state contracts, vocabulary decisions, and
+  registered visual exceptions.
 
 Resolve contradictions. A newer or explicitly superseding decision wins only when
 the repository says so. Otherwise request clarification.
@@ -67,6 +74,12 @@ Sample 8–15 representative, non-generated files across:
 - data models;
 - tests;
 - shared modules.
+
+For a UI component, include the application shell/scroll owner, representative page
+frames and headers, the same recurring domain entity in more than one context, one
+specialized interaction, responsive/state tests, and maintained rendered evidence
+when present. Treat all source-only patterns as Observed until an Enforced or
+Approved source authorizes them.
 
 Count patterns and counterexamples. Sampling can describe naming, docstrings,
 imports/layout, typing, error handling, tests, framework idioms, and file grouping.
@@ -94,6 +107,9 @@ Instruction/check: only for Enforced or Approved
 ```
 
 Use stable IDs so `coder.md` and `reviewer.md` cannot drift independently.
+For an applicable approved UI composition rule, also record the concern's primary
+owner, forbidden competing locations, and any exception ID with exact scope,
+rationale, authority owner/source, and expiry or review trigger.
 
 ## `coder.md` template
 

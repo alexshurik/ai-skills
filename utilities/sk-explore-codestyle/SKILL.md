@@ -43,6 +43,8 @@ Inspect manifests, lockfiles, source extensions, and monorepo layout. Record:
 - independently deployable components;
 - package/build runners;
 - test locations.
+- for UI components, route/layout roots, application chrome and scroll containers,
+  design-system/token locations, and rendered/visual test locations.
 
 Analyze active components separately when their tooling or conventions differ.
 
@@ -50,6 +52,11 @@ Analyze active components separately when their tooling or conventions differ.
 
 Read formatter, linter, type checker, build, test, pre-commit, and CI configuration.
 Record exact settings and commands through the pinned project runner.
+
+For UI components, inspect project design guards, component/browser suites,
+maintained visual-regression commands, and where they are invoked. A script or
+snapshot directory is only an available mechanism until repository authority or a
+required workflow/CI command makes it an Enforced rule.
 
 Classify a rule as Enforced only when the tool actually checks it. Do not claim
 tool authority over architecture, ownership, business vocabulary, or abstraction
@@ -63,6 +70,9 @@ Read current repository authority:
 - accepted ADRs;
 - approved active specifications;
 - existing project profiles.
+- UI/design-system guidance, approved composition owners, domain presentation
+  canons, vocabulary decisions, and registered exceptions when the component is
+  user-visible.
 
 Record source paths and sections. Detect contradictions or stale/superseded rules.
 Ask the user to resolve material conflicts; do not choose by sample frequency.
@@ -72,6 +82,11 @@ Ask the user to resolve material conflicts; do not choose by sample frequency.
 Select 8–15 representative, non-generated files across transport/entry points,
 business/application logic, persistence/integrations, models, tests, and shared
 modules.
+
+For UI components, include the application shell/effective scroll owner,
+representative page frames and title/action regions, the same recurring domain
+entity in more than one context, one specialized interaction, responsive/state
+tests, and maintained rendered evidence when present.
 
 Count patterns and counterexamples for:
 
@@ -119,6 +134,11 @@ Each normative item must include:
 - scope;
 - verification command when mechanically enforced.
 
+For approved UI composition items, also record the concern's project-native primary
+owner, forbidden competing locations, and any exception ID with exact scope,
+rationale, authority owner/source, and expiry or review trigger. Do not copy
+component names, measurements, or vocabulary from another project.
+
 Each non-normative item must include:
 
 - `OBS-*` or `LEG-*` ID;
@@ -145,6 +165,8 @@ Before returning, verify:
 - every normative ID has an authoritative source;
 - every sample-only pattern remains in `evidence.md`;
 - exact safe format/lint/type/test commands are present;
+- UI guard/visual commands are correctly classified as required or merely available,
+  and every approved composition concern has one owner or justified `N/A`;
 - contradictions and promotion questions are visible.
 
 Return:

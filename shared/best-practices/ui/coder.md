@@ -5,24 +5,31 @@ Applies on top of any framework/language profile whenever the work touches UI
 (React, Vue, Svelte, Angular, Solid, Tailwind, or plain HTML/CSS). Detection and
 audit detail live in [`catalog.md`](catalog.md); these are the rules you build TO.
 
+For a new or materially reworked page, layout, navigation, responsive flow, or
+cross-state composition, also read [`composition-contract.md`](composition-contract.md).
+When the work needs maintained screenshots, visual regression, or a composition
+gate, also read [`rendered-evidence.md`](rendered-evidence.md).
+
 ## Rendered composition gate
 
 For a new/reworked page, layout, navigation, hierarchy, responsive flow, or UI state,
 do not start from isolated components. Load the visual intent/reference from the
 approved design and identify:
 
-- the one primary user task, one page title, and dominant action;
+- the one primary user task, one accessible page title, and dominant action when
+  the screen has one;
 - primary → secondary → meta reading order and a small set of alignment axes;
 - existing product screens/components that are the canon;
 - desktop/mobile reflow and relevant populated/empty/loading/error states.
 
-Use one primary CTA per viewport unless separate stages or responsive replacement
-justify another. Render controls only when their action is available (for example,
-no pagination for one page and no inert refresh/navigation around an empty list).
-An empty state is one short reason plus one useful next action. Separate regions with
-space/background before adding cards; desktop must not be a stretched mobile column.
-Static anti-slop checks can catch token/pattern defects but cannot pass hierarchy or
-composition.
+Use at most one visible primary action in the relevant composition at a viewport;
+zero is correct for a read-only or inspection surface. Separate stages or responsive
+replacements must not render as simultaneous duplicates. Render controls only when
+their action is available (for example, no pagination for one page and no inert
+refresh/navigation around an empty list). An empty state is one short reason plus at
+most one useful next action when one exists. Separate regions with space/background
+before adding cards; desktop must not be a stretched mobile column. Static anti-slop
+checks can catch token/pattern defects but cannot pass hierarchy or composition.
 
 ## Why AI UI looks generic (read this first)
 
@@ -257,6 +264,10 @@ canonical one already exists.
 - **Before writing a new UI block, check for an existing one** (component library,
   shared styles, the design system). If a toggle/checkbox/card/number treatment exists,
   use it — don't roll your own with a different border token.
+- **Find the nearest representation of the same domain entity**, not only the nearest
+  generic primitive. Preserve its information priority, vocabulary, value/meta tracks,
+  interactions, and state treatment across routes; make a context-specific variant
+  explicit instead of inventing a second visual language.
 - **Numbers use the number primitive**, never hand-assembled per site.
 - **Missing a variant** (e.g. a `danger` button)? **Add the variant to the component**,
   don't override the base component at the usage site.
@@ -297,18 +308,19 @@ and anti-slop pull in the same direction.
 - **Labels & motion.** Every input has a programmatic label; icon-only buttons have an
   accessible name; motion respects `prefers-reduced-motion` (§10).
 
-## 16. Clean ≠ character (the 80/20 rule)
+## 16. Clean ≠ character
 
 Removing slop is only half. The core complaint about AI design is holistic — "they all
-look the same." A sterile-but-neutral screen still reads as generated. So after cleanup:
+look the same." Use the 80/20 idea as a design prompt, not a quota: keep most of the
+screen restrained and, when the brief calls for expressive identity, spend boldness in
+one intentional place such as type, proportion, accent, motion, or product voice. A
+neutral utilitarian screen may be correct; do not invent decoration or motion merely to
+satisfy a character checklist.
 
-- **~80%** proven, restrained patterns (everything above).
-- **~20% — one bold decision per screen:** a characterful type pairing, an unusual
-  proportion, one deliberate accent move — chosen, not reflexive.
-- **+ one memorable micro-interaction** and **a voice in the microcopy** (§8).
-
-This profile removes the typical; it does not supply taste. Where cleanup leaves a screen
-empty and sterile, that is the place for a bold decision — not one more neutral default.
+This profile removes the typical; it does not supply taste. Distinctive decisions must
+trace to the brief or product system and remain non-blocking matters of taste unless
+their absence causes a concrete usability, product-consistency, or approved-reference
+failure.
 
 **Swapping one default for another is not de-slopping.** The old tell was the purple
 gradient; the current one is cream + serif + sage (the "tasteful AI" look). A screen that
@@ -348,7 +360,8 @@ quick copy — if they ever disagree, catalog wins.*
 - [ ] Canon checked before writing a new block; numbers via the number primitive
 - [ ] Regions separated by space + bg shift, not nested boxes; layout from content
 - [ ] Semantic HTML, visible focus, 4.5:1 contrast, adequate target size
-- [ ] One deliberate bold decision left on the screen (80/20)
+- [ ] Any distinctive type/color/proportion/motion choice traces to the brief; no
+      decorative quota was invented
 
 Full tell-by-tell detection and fixes: [`catalog.md`](catalog.md). Review-side checks:
 [`reviewer.md`](reviewer.md).

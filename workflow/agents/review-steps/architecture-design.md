@@ -19,6 +19,12 @@ content, owners, callers, and import neighbors; deepen when the decision needs m
 context. Unchanged content may be reused only when its recorded hash is verified.
 An omitted assignment, stale hash, or unavailable required content is UNVERIFIED.
 
+When the assigned scope includes a new or materially changed user-visible
+composition, also read
+`~/.claude/agents/best-practices/ui/composition-contract.md` or the source fallback
+`shared/best-practices/ui/composition-contract.md`, plus the approved design's UI
+composition ownership matrix.
+
 ## Ownership
 
 Architecture-design owns:
@@ -38,6 +44,10 @@ Architecture-design owns:
   coordinated invariants;
 - compliance with approved boundary matrices, vocabulary, infrastructure scope,
   non-goals, and ADRs.
+- for materially changed UI composition, ownership of application chrome/effective
+  scroll, outer frame, title/action region, surfaces, navigation, recurring domain
+  representations, and specialized interactions; detect competing shell/page/
+  component ownership without judging visual taste.
 
 Do not decide whether behavior is correct, secure, recoverable, concurrent, or
 idempotent; correctness-safety owns semantics and risk. Do not review language
@@ -57,6 +67,9 @@ Return complete inventories for the assigned scope, including clean items:
 6. for every new/material operational mechanism, the invariant it serves, simplest
    viable alternative, permanent complexity, boundedness/lifecycle, and keep/remove
    rationale.
+7. when UI composition materially changes, every applicable composition concern's
+   project-native owner or justified `N/A`, nearest domain canon/variant decision,
+   effective scroll owner, and any scoped exception.
 
 One-use abstractions and files over 300 lines are review leads, not automatic
 findings. Require an approved reason for boundary violations, competing owners,

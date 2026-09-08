@@ -58,6 +58,10 @@ or workflow/agents/shared/scope-governance.md from the skills repo
 Use the full-feature gate unless the caller explicitly declares quick-fix mode.
 Use the compact gate for a genuine quick fix and escalate if a high-cost decision
 or new boundary appears.
+
+For meaningful user-visible UI work, the architecture-gates reference routes to the
+shared UI composition contract. Read that contract completely before designing the
+screen-level change.
 </required_reference>
 
 <workflow>
@@ -99,7 +103,8 @@ Produce the items defined in `architecture-gates.md`:
 - mechanism budget when operational machinery changes;
 - state/coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
-- for meaningful user-visible UI work, a visual-composition brief and reference;
+- for meaningful user-visible UI work, a visual-composition brief, composition
+  ownership matrix, rendered-evidence strategy, and reference;
 - infrastructure authority and non-goals.
 
 Do not hardcode a particular layered architecture. Adapt owner names to the target
@@ -118,6 +123,8 @@ Apply `scope-governance.md` and return the Scope Delta Gate before final artifac
 - explicit non-goals;
 - component/owner summary;
 - important data flows;
+- applicable UI composition owners, action/title budget, domain canon, responsive
+  pressure states, and rendered-evidence route;
 - public contract/model changes;
 - planned files and structural decisions;
 - reuse/custom-build decisions;
@@ -146,11 +153,15 @@ Create `openspec/changes/<name>/design.md` with:
 11. Cross-cutting reuse decisions and dependencies.
 12. Module-growth forecast.
 13. For a new/reworked page, layout, navigation, hierarchy, responsive flow, or UI
-    state composition: one primary user task, one page title, dominant action,
-    content regions/alignment axes, existing product screens/components used as the
-    canon, desktop/mobile reflow, and populated/empty/loading/error intent. Link a
-    user reference or exact baseline screenshots when available; do not create a
-    separate visual-spec document. Omit this section for proven non-rendered work.
+    state composition: the project-native owners of application chrome/effective
+    scroll, outer frame, accessible page title/action region, major surfaces,
+    navigation, recurring domain representations, and specialized interactions;
+    one primary user task; at most one visible primary action per relevant viewport
+    or why none is appropriate; content regions/alignment axes; the nearest domain
+    canon and intentional variants; desktop/compact reflow; relevant normal/state/
+    content-pressure cases; and the rendered-evidence strategy. Link a user reference
+    or exact baseline screenshots when available; do not create a separate visual-
+    spec document. Omit this section for proven non-rendered work.
 14. Security threat model and authorization.
 15. Reliability, observability, and performance.
 16. Error handling.
@@ -200,6 +211,8 @@ Confirm:
 
 - every acceptance criterion traces to design and tasks;
 - every material concern has exactly one owner;
+- every applicable UI composition concern has one project-native owner or a justified
+  `N/A`, with no shell/page/component competing ownership;
 - names express business capability at the appropriate level;
 - trust-boundary data has a precise model;
 - custom cross-cutting infrastructure has reuse evidence;

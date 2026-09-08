@@ -45,6 +45,37 @@ The design is incomplete while a key/codec/TTL, middleware/policy hook, external
 payload, transaction, or configuration rule has no owner or multiple competing
 owners.
 
+## UI composition ownership
+
+Apply this gate only to a new or materially reworked page, layout, navigation,
+responsive flow, or cross-state composition. Read
+`~/.claude/agents/best-practices/ui/composition-contract.md` or the source fallback
+`shared/best-practices/ui/composition-contract.md`.
+
+Extend the boundary matrix with each applicable composition concern: application
+chrome/effective scroll, outer page frame, page title/action region, major surface,
+route/local navigation, recurring domain representation, and specialized
+interaction. Name one project-native owner or `N/A` with a reason. Do not create a
+component merely to fill the matrix.
+
+The visual-composition brief must also state:
+
+- one primary task and one accessible page title;
+- at most one visible primary action per relevant composition/viewport, including
+  whether no primary action is appropriate;
+- primary → secondary → metadata order and the intended alignment axes;
+- the nearest existing representation of the same domain entity and any deliberate
+  variant;
+- desktop/compact reflow and relevant populated, empty, loading, error, disabled,
+  long-content, or extreme-value pressure states;
+- the rendered evidence strategy, including the effective scroll owner and any
+  maintained semantic/geometry or visual-regression contract.
+
+An intentional exception to a project UI rule needs a stable ID, exact scope,
+rationale, authority owner/source, and expiry or review trigger. Keep project names,
+measurements, routes, and vocabulary in the project design/profile rather than this
+shared gate.
+
 ## Business vocabulary
 
 Check public API, service, command, event, and module names:
@@ -158,6 +189,8 @@ Before task breakdown, confirm the design contains:
 - mechanism budget when an operational mechanism changes;
 - state and coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
+- UI composition ownership and rendered-evidence strategy when materially
+  user-visible composition changes;
 - infrastructure authority and non-goals.
 
 If a material decision is missing, return `## NEEDS USER INPUT` or request upstream
@@ -173,6 +206,8 @@ For a genuinely small fix, keep the design brief but still answer:
 - whether the touched file gains a second responsibility;
 - what is explicitly out of scope.
 - whether `Scope Delta` is `None`; otherwise stop and escalate before editing.
+- for user-visible UI, whether the change preserves the approved composition owner,
+  action/title budget, domain canon, responsive behavior, and evidence route.
 
 Escalate to the full workflow if any answer requires a new high-cost design choice
 or materially different mechanism/state alternative.

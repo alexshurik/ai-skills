@@ -5,6 +5,11 @@ Applied on top of any framework/language reviewer profile when the change touche
 (React, Vue, Svelte, Angular, Solid, Tailwind, or plain HTML/CSS). Full tell-by-tell
 detection, fixes, and sources: [`catalog.md`](catalog.md).
 
+For a new or materially reworked page, layout, navigation, responsive flow, or
+cross-state composition, also read [`composition-contract.md`](composition-contract.md).
+For rendered review or any maintained screenshot, visual-regression, or geometry
+change, read [`rendered-evidence.md`](rendered-evidence.md).
+
 ## What this pass does
 
 Flags **design slop** — the patterns that make generated UI read as machine-made — in
@@ -14,17 +19,25 @@ out where a screen is left sterile.
 
 For source-quality review, use the checks below. For the conditional `ui-ux` lens,
 rendered inspection is mandatory: open the exact-source app or inspect
-exact-fingerprint screenshots for the primary changed journey, representative
-desktop/mobile widths, and only relevant changed states. Source/grep alone yields
-`UNVERIFIED`, not a visual pass.
+exact-fingerprint screenshots at original/native resolution for the primary changed
+journey, representative desktop/mobile widths, the complete effective scroll extent,
+and only relevant changed states. Source/grep alone yields `UNVERIFIED`, not a visual
+pass.
 
-Rendered review checks one primary task/title/action, primary → secondary → meta
-hierarchy, shared alignment axes and section rhythm, control relevance, honest empty
-states, desktop/mobile reflow, product-canon reuse, excessive whitespace, competing
-CTAs, and whether the first viewport reads as one composition. A normal change needs
-roughly 4–6 useful screenshots, not a generated gallery. Taste alternatives stay
-non-blocking unless they expose an approved-reference, usability, accessibility, or
-product-consistency violation.
+Begin with the screenshot-first comprehension pass from `rendered-evidence.md` before
+reading implementation or test output. Rendered review then checks one primary task,
+one accessible page title, at most one visible primary action or an appropriate absence,
+primary → secondary → meta hierarchy, shared alignment axes and section rhythm,
+control relevance, honest states/copy, desktop/mobile reflow, domain-canon reuse,
+excessive whitespace, and whether the first viewport reads as one composition. A
+normal change needs roughly 4–6 useful screenshots, not a generated gallery. Taste
+alternatives stay non-blocking unless they expose an approved-reference, usability,
+accessibility, or product-consistency violation.
+
+Do not accept a screenshot-baseline update as its own proof. The updated exact-source
+render still needs fresh visual review, and any custom static or geometry guard needs
+paired rejecting/accepted evidence showing that it can fail without rejecting a valid
+boundary case.
 
 **Severity:** `ban` (always wrong — fix) · `system` (systemic check — align to tokens) ·
 `flag` (raise as a question, don't hard-fail).
@@ -165,9 +178,10 @@ System:   <T#> <where> → <fix>
 Flags:    <T#> <where> → <question / suggestion>
 Copy:     <T21 findings>
 Clean on: <checked groups with no findings>
-Character: <1–2 sentences — where to add one deliberate bold decision (80/20)>
+Character: <brief-grounded voice opportunity, or N/A for an intentionally restrained screen>
 ```
 
 The final line is always honest: **the typical slop is removed; taste and bold decisions
-stay with the designer.** A cleanup that adds no character does not fully answer the "they
-all look the same" complaint — so name one place to add voice.
+stay with the designer.** When the result is generic or conflicts with a product brief,
+name one grounded place to add voice. Do not invent a mandatory decorative move for a
+correct restrained or utilitarian screen.

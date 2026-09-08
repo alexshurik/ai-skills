@@ -153,7 +153,8 @@ Dispatch `sk-developer`. Require the pre-write architecture gate and full handof
 evidence. Show files, boundary/abstraction/structure decisions, and exact
 verification; request approval.
 For meaningful user-visible UI work, require the early rendered visual loop and
-exact-source desktop/mobile evidence from Developer before review.
+exact-source desktop/compact evidence covering the complete effective scroll extent
+from Developer before review.
 
 ### 5. Code Review
 

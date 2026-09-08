@@ -36,6 +36,10 @@ scope, or a public contract.
    allowlisted `required_fix` finding.
 9. For remediation, load each finding's `required_outcome` and `remedy_authority`,
    then compare the intended fix with the approved design fingerprint.
+10. For user-visible UI composition, map each planned edit to the approved owner of
+    application chrome/effective scroll, outer frame, title/action region, surfaces,
+    navigation, recurring domain representation, or specialized interaction. Confirm
+    that shell/page/component layers do not independently own the same decision.
 
 If the approved design lacks an owner for a material concern, return
 `## NEEDS USER INPUT` or request Planning rework. Do not invent the owner while
@@ -103,6 +107,8 @@ new responsibility in the handoff.
 Report:
 
 - boundary ownership applied;
+- applicable UI composition ownership, action/title budget, domain canon, effective
+  scroll owner, and scoped exceptions;
 - reuse decision for any cross-cutting integration;
 - trust-boundary models introduced or reused;
 - new-abstraction inventory with keep/inline reasons;

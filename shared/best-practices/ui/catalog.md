@@ -372,10 +372,12 @@ restating them; if a value changes, change it here.*
 - Metadata and captions lifted out of the table, not overloading the rows.
 - Object interactions (SSH, endpoint) given their own zone.
 - Sticky position for the total row/card; filters and alternate views.
-- The 80/20 formula: ~80% proven patterns + ~20% one bold move (type, color, or
-  proportion) + one memorable micro-interaction + a voice in the microcopy.
-- The main complaint about AI design is holistic ("they all look the same") — so cleanup
-  without added character doesn't close it. A final "where to add your own" is mandatory.
+- The 80/20 heuristic: mostly proven patterns, with boldness spent in one grounded
+  place when the brief calls for expressive identity. It is a prompt, not a quota;
+  restrained utilitarian screens need no invented decoration.
+- The main complaint about AI design is holistic ("they all look the same") — so when
+  cleanup leaves an ungrounded generic result, identify where product voice belongs.
+  Do not turn that prompt into a blocking aesthetic requirement.
 
 ---
 

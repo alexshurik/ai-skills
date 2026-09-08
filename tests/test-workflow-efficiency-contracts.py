@@ -89,12 +89,65 @@ def main() -> None:
 
     ui_coder = read("shared/best-practices/ui/coder.md")
     ui_reviewer = read("shared/best-practices/ui/reviewer.md")
-    require(ui_coder, "rendered composition gate", "one primary user task", "one primary cta")
+    composition = read("shared/best-practices/ui/composition-contract.md")
+    rendered_evidence = read("shared/best-practices/ui/rendered-evidence.md")
+    ui_lens = read("workflow/agents/review-steps/ui-ux.md")
+    architect = read("workflow/agents/sk-architect.md")
+    codestyle = read("utilities/sk-explore-codestyle/SKILL.md")
+    require(
+        ui_coder,
+        "rendered composition gate",
+        "one primary user task",
+        "at most one visible primary action",
+        "zero is correct",
+        "composition-contract.md",
+        "rendered-evidence.md",
+    )
     require(
         ui_reviewer,
         "rendered inspection is mandatory",
         "source/grep alone yields `unverified`",
         "useful screenshots",
+        "complete effective scroll extent",
+        "screenshot-first comprehension pass",
+    )
+    require(
+        composition,
+        "application chrome and effective scroll",
+        "nearest domain canon",
+        "at most one visible primary action",
+        "zero is correct",
+        "stable id",
+        "long labels",
+        "large or negative values",
+    )
+    require(
+        rendered_evidence,
+        "screenshot-first pass",
+        "effective scroll extent",
+        "semantic and geometry assertions",
+        "rejecting fixture",
+        "deliberate dom/style mutation",
+        "changed screenshot baseline is not evidence",
+    )
+    require(
+        ui_lens,
+        "composition-contract.md",
+        "rendered-evidence.md",
+        "original/native resolution",
+        "effective scroll owner/extent",
+    )
+    require(
+        architect,
+        "composition ownership matrix",
+        "at most one visible primary action",
+        "nearest domain canon",
+    )
+    require(
+        codestyle,
+        "application shell/effective scroll owner",
+        "merely available",
+        "forbidden competing locations",
     )
 
 
