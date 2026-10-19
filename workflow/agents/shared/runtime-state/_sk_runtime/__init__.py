@@ -1,6 +1,11 @@
 from .cli import build_parser, main
 from .events import EVENT_SPECS, EVENT_TYPES, validate_event
-from .migration import MigrationOptions, normalized_legacy_state, safe_legacy_name
+from .migration import (
+    MigrationOptions,
+    normalized_legacy_state,
+    normalized_v2_state,
+    safe_legacy_name,
+)
 from .model import (
     EVENT_SCHEMA_VERSION,
     STATE_SCHEMA_VERSION,
@@ -44,6 +49,7 @@ __all__ = [
     "main",
     "make_event",
     "normalized_legacy_state",
+    "normalized_v2_state",
     "read_events",
     "replay",
     "runtime_paths",

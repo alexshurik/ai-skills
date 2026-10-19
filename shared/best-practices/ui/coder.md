@@ -21,6 +21,9 @@ approved design and identify:
 - primary → secondary → meta reading order and a small set of alignment axes;
 - existing product screens/components that are the canon;
 - desktop/mobile reflow and relevant populated/empty/loading/error states.
+- literal user constraints/reference traits and explicit forbidden alternatives;
+- the screen-level entity grouping and intended density before decomposing it into
+  rows, cards, cells, or reusable components.
 
 Use at most one visible primary action in the relevant composition at a viewport;
 zero is correct for a read-only or inspection surface. Separate stages or responsive
@@ -30,6 +33,10 @@ refresh/navigation around an empty list). An empty state is one short reason plu
 most one useful next action when one exists. Separate regions with space/background
 before adding cards; desktop must not be a stretched mobile column. Static anti-slop
 checks can catch token/pattern defects but cannot pass hierarchy or composition.
+Do not mechanically translate each field or acceptance criterion into its own
+visual block. Build and judge the whole first viewport as one product composition;
+a structurally correct table/card/list is still wrong when grouping, density,
+alignment, or rhythm makes it hard to scan.
 
 ## Why AI UI looks generic (read this first)
 

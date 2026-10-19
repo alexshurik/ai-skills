@@ -4,10 +4,15 @@ import copy
 from collections.abc import Callable
 
 from .model import (
+    STATE_SCHEMA_VERSION,
     TERMINAL_ATTEMPTS,
     TERMINAL_STAGES,
     JsonObject,
     StateError,
+    attempt_count,
+    batch_count,
+    default_budgets,
+    default_charter,
     find_attempt,
     initial_state,
     require_active_stage,
@@ -35,7 +40,11 @@ LEASE_LINEAGE_FIELD = "lease_holder_attempt_id"
 
 def apply_event(previous: JsonObject | None, event: JsonObject) -> JsonObject:
     event_type = event["type"]
-    if event_type in {"workflow.started", "workflow.migrated_from_v1"}:
+    if event_type in {
+        "workflow.started",
+        "workflow.migrated_from_v1",
+        "workflow.migrated_from_v2",
+    }:
         state = reduce_first_event(previous, event)
     else:
         if previous is None:
@@ -59,13 +68,33 @@ def reduce_first_event(previous: JsonObject | None, event: JsonObject) -> JsonOb
         raise StateError(f"{event['type']} must be the first event")
     data = event["data"]
     if event["type"] == "workflow.started":
+        run = require_object(data["run"], "workflow.started run")
+        charter = require_object(
+            data.get("charter", default_charter(run)), "workflow.started charter"
+        )
         return initial_state(
-            require_object(data["run"], "workflow.started run"),
+            run,
             require_object(data["repositories"], "workflow.started repositories"),
+            charter,
         )
     state = copy.deepcopy(require_object(data["state"], "migration state"))
+    state["schema_version"] = STATE_SCHEMA_VERSION
+    state.setdefault("charter", default_charter(state["run"]))
+    state.setdefault("delivery", {"status": "pending"})
     state.setdefault("writer_lease", None)
+    upgrade_legacy_records(state)
     return state
+
+
+def upgrade_legacy_records(state: JsonObject) -> None:
+    for stage in state["workflow"]["stages"].values():
+        for gate in stage["gates"].values():
+            gate.setdefault("kind", "authority_decision")
+            gate.setdefault("reason_code", "approval.required")
+            if gate["status"] != "pending":
+                gate.setdefault("decision_source", "user")
+    for blocker in state["blockers"].values():
+        blocker.setdefault("reason_code", "evidence.unverifiable")
 
 
 def authorize_writer(state: JsonObject, event: JsonObject) -> None:
@@ -78,7 +107,12 @@ def authorize_writer(state: JsonObject, event: JsonObject) -> None:
     if event["type"] not in LEASED_EVENT_TYPES:
         raise StateError("only nested attempt events are allowed while a writer lease is active")
     expected_actor = {"kind": "review-orchestrator", "id": lease["holder_actor_id"]}
-    if actor != expected_actor:
+    root_recovery = (
+        event["type"] == "review.lease.released"
+        and actor["kind"] == "orchestrator"
+        and "reason" in event["data"]
+    )
+    if actor != expected_actor and not root_recovery:
         raise StateError("event actor does not hold the active writer lease")
     if event["type"] != "review.lease.released":
         event_stage = nested_event_stage(state, event)
@@ -183,12 +217,27 @@ def reduce_gate_requested(state: JsonObject, event: JsonObject) -> None:
         raise StateError("a gate may be requested only while control is ready")
     if data["gate"] in stage["gates"]:
         raise StateError(f"gate {data['stage']}/{data['gate']} already exists")
-    stage["gates"][data["gate"]] = {
-        "status": "pending",
+    kind = data.get("kind", "authority_decision")
+    authorization = state["charter"]["authorization"]
+    auto_decide = kind == "ceremony" and authorization in {"checkpoints", "yolo"}
+    gate = {
+        "status": "approved" if auto_decide else "pending",
         "reason": data["reason"],
+        "kind": kind,
+        "reason_code": data.get("reason_code", "approval.required"),
         "entry": stage["entries"],
         "requested_event": event["seq"],
     }
+    if auto_decide:
+        gate.update(
+            {
+                "decided_by": f"policy:{authorization}",
+                "decision_source": "policy",
+                "decision_event": event["seq"],
+                "decision_reason": "ceremony gate auto-approved by run authorization",
+            }
+        )
+    stage["gates"][data["gate"]] = gate
 
 
 def reduce_gate_decided(state: JsonObject, event: JsonObject) -> None:
@@ -202,10 +251,16 @@ def reduce_gate_decided(state: JsonObject, event: JsonObject) -> None:
         raise StateError(f"unknown gate {data['stage']}/{data['gate']}") from error
     if gate["status"] != "pending" or gate["entry"] != stage["entries"]:
         raise StateError("only a pending gate from the current entry may be decided")
+    if data.get("decision_source", "user") == "policy":
+        if gate.get("kind") != "ceremony":
+            raise StateError("policy may decide ceremony gates only")
+        if state["charter"]["authorization"] == "manual":
+            raise StateError("manual authorization requires a user ceremony decision")
     gate.update(
         {
             "status": data["decision"],
             "decided_by": data["decided_by"],
+            "decision_source": data.get("decision_source", "user"),
             "decision_event": event["seq"],
         }
     )
@@ -232,17 +287,30 @@ def reduce_task_created(state: JsonObject, event: JsonObject) -> None:
         raise StateError("a task may be created only from ready or waiting_agents")
     if data["task"] in stage["tasks"]:
         raise StateError(f"task {data['stage']}/{data['task']} already exists")
+    members = data.get("members", [])
+    if members:
+        enforce_attempt_budget(state, len(members))
+        enforce_purpose_budget(state, data["purpose"])
+        for member in members:
+            require_unique_attempt(state, member["id"])
     task = {
         "role": data["role"],
         "required": data.get("required", True),
-        "status": "pending",
+        "status": "running" if members else "pending",
         "created_entry": stage["entries"],
         "created_event": event["seq"],
         "attempts": [],
     }
+    if "purpose" in data:
+        task["purpose"] = data["purpose"]
     if event["actor"]["kind"] == "review-orchestrator":
         task[LEASE_LINEAGE_FIELD] = state["writer_lease"]["holder_attempt_id"]
+    for member in members:
+        task["attempts"].append(new_batch_member_attempt(task, stage, member, event["seq"]))
     stage["tasks"][data["task"]] = task
+    if members and state["control"]["kind"] == "waiting_agents":
+        state["control"]["attempt_ids"].extend(member["id"] for member in members)
+        state["control"]["attempt_ids"].sort()
 
 
 def reduce_attempt_started(state: JsonObject, event: JsonObject) -> None:
@@ -251,6 +319,8 @@ def reduce_attempt_started(state: JsonObject, event: JsonObject) -> None:
     if state["control"]["kind"] not in {"ready", "waiting_agents"}:
         raise StateError("an attempt may be started only from ready or waiting_agents")
     task = task_for(state, data["stage"], data["task"])
+    if event["event_schema_version"] >= 2:
+        enforce_attempt_budget(state, 1)
     require_unique_attempt(state, data["attempt_id"])
     if any(item["status"] == "running" for item in task["attempts"]):
         raise StateError(f"task {data['stage']}/{data['task']} already has a running attempt")
@@ -258,7 +328,7 @@ def reduce_attempt_started(state: JsonObject, event: JsonObject) -> None:
     task["attempts"].append(attempt)
     task["status"] = "running"
     if state["control"]["kind"] == "waiting_agents":
-        state["control"]["attempt_ids"].append(data["attempt_id"])
+        state["control"].setdefault("attempt_ids", []).append(data["attempt_id"])
         state["control"]["attempt_ids"].sort()
 
 
@@ -287,6 +357,42 @@ def new_attempt(task: JsonObject, stage: JsonObject, data: JsonObject, seq: int)
     return attempt
 
 
+def new_batch_member_attempt(
+    task: JsonObject, stage: JsonObject, data: JsonObject, seq: int
+) -> JsonObject:
+    attempt = {
+        "id": data["id"],
+        "ordinal": len(task["attempts"]) + 1,
+        "status": "running",
+        "required": data.get("required", True),
+        "agent": {"role": data["role"], "host_thread_id": data["host_thread_id"]},
+        "input_fingerprint": data["input_fingerprint"],
+        "stage_entry": stage["entries"],
+        "started_event": seq,
+        "late_results": [],
+    }
+    if LEASE_LINEAGE_FIELD in task:
+        attempt[LEASE_LINEAGE_FIELD] = task[LEASE_LINEAGE_FIELD]
+    return attempt
+
+
+def enforce_attempt_budget(state: JsonObject, requested: int) -> None:
+    budget = state["charter"]["budgets"]["attempts"]
+    if attempt_count(state) + requested > budget:
+        raise StateError(
+            f"attempt budget exhausted: used={attempt_count(state)}, "
+            f"requested={requested}, limit={budget}"
+        )
+
+
+def enforce_purpose_budget(state: JsonObject, purpose: str) -> None:
+    if purpose in {"review", "remediation"}:
+        budget_name = "review_rounds" if purpose == "review" else "remediations"
+        limit = state["charter"]["budgets"][budget_name]
+        if batch_count(state, purpose) >= limit:
+            raise StateError(f"{budget_name} budget exhausted: limit={limit}")
+
+
 def reduce_result_recorded(state: JsonObject, event: JsonObject) -> None:
     data = event["data"]
     stage_name, task_name, attempt = find_attempt(state, data["attempt_id"])
@@ -294,11 +400,29 @@ def reduce_result_recorded(state: JsonObject, event: JsonObject) -> None:
         raise StateError("attempt does not belong to the named stage/task")
     if attempt["status"] != "running":
         raise StateError(f"attempt {data['attempt_id']!r} is already terminal")
+    if "input_fingerprint" in data and data["input_fingerprint"] != attempt.get(
+        "input_fingerprint"
+    ):
+        raise StateError("result input fingerprint does not match dispatched attempt")
     result = {"outcome": data["outcome"], "recorded_event": event["seq"]}
     copy_result_fields(result, data)
+    if "input_fingerprint" in data:
+        result["input_fingerprint"] = data["input_fingerprint"]
     attempt["status"] = data["outcome"]
     attempt["result"] = result
-    task_for(state, stage_name, task_name)["status"] = data["outcome"]
+    task = task_for(state, stage_name, task_name)
+    if "purpose" in task:
+        if any(item["status"] == "running" for item in task["attempts"]):
+            task["status"] = "running"
+        else:
+            required_attempts = [item for item in task["attempts"] if item.get("required", True)]
+            task["status"] = (
+                "succeeded"
+                if all(item["status"] == "succeeded" for item in required_attempts)
+                else "failed"
+            )
+    else:
+        task["status"] = data["outcome"]
     remove_waited_attempt(state, data["attempt_id"])
 
 
@@ -375,9 +499,9 @@ def reduce_waiting_for_agents(state: JsonObject, event: JsonObject) -> None:
     control = {
         "kind": "waiting_agents",
         "join": data["join"],
-        "attempt_ids": sorted(data["attempt_ids"]),
         "reason_code": data["reason_code"],
     }
+    control["attempt_ids"] = sorted(data["attempt_ids"])
     if "detach_reason" in data:
         control["detach_reason"] = data["detach_reason"]
     state["control"] = control
@@ -426,6 +550,7 @@ def reduce_blocked(state: JsonObject, event: JsonObject) -> None:
         raise StateError("record agent results before blocking the workflow")
     data = event["data"]
     state["blockers"][data["blocker_id"]] = {
+        "reason_code": data.get("reason_code", "evidence.unverifiable"),
         "reason": data["reason"],
         "required_action": data["required_action"],
         "recorded_event": event["seq"],
@@ -450,14 +575,129 @@ def reduce_workflow_completed(state: JsonObject, event: JsonObject) -> None:
     if state["control"]["kind"] == "complete":
         raise StateError("workflow is already complete")
     if running_attempt_ids(state):
-        raise StateError("workflow still has running attempts")
+        raise StateError("workflow still has running agent work")
     if event["data"]["outcome"] == "completed":
         current = state["workflow"]["current_stage"]
         if current is None or stage_for(state, current)["status"] != "succeeded":
             raise StateError("workflow completion requires a successful current stage")
         if state["blockers"]:
             raise StateError("workflow still has unresolved blockers")
+        if event["event_schema_version"] >= 2 and state["delivery"]["status"] != "succeeded":
+            raise StateError("workflow completion requires a successful terminal action")
     state["control"] = {"kind": "complete", "outcome": event["data"]["outcome"]}
+
+
+def reduce_authorization_changed(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    current = state["charter"]["authorization"]
+    requested = event["data"]["authorization"]
+    autonomy = {"manual": 0, "checkpoints": 1, "yolo": 2}
+    if event["data"]["source"] != "user" and autonomy[requested] > autonomy[current]:
+        raise StateError("only the user may increase workflow autonomy")
+    state["charter"]["authorization"] = requested
+    touch_charter(state, event)
+    if event["data"]["authorization"] in {"checkpoints", "yolo"}:
+        approve_pending_ceremony_gates(state, event)
+
+
+def require_mutable_charter(state: JsonObject) -> None:
+    if state["control"]["kind"] == "complete":
+        raise StateError("completed workflow charter is immutable")
+
+
+def touch_charter(state: JsonObject, event: JsonObject) -> None:
+    state["charter"]["revision"] += 1
+    state["charter"]["updated_event"] = event["seq"]
+
+
+def approve_pending_ceremony_gates(state: JsonObject, event: JsonObject) -> None:
+    authorization = event["data"]["authorization"]
+    approved_refs: list[str] = []
+    for stage_name, stage in state["workflow"]["stages"].items():
+        for gate_name, gate in stage["gates"].items():
+            if gate["status"] != "pending" or gate.get("kind") != "ceremony":
+                continue
+            gate.update(
+                {
+                    "status": "approved",
+                    "decided_by": f"policy:{authorization}",
+                    "decision_source": "policy",
+                    "decision_event": event["seq"],
+                    "decision_reason": "run authorization applies to remaining ceremony gates",
+                }
+            )
+            approved_refs.append(f"{stage_name}/{gate_name}")
+    for gate_ref in approved_refs:
+        release_decided_gate(state, gate_ref)
+
+
+def reduce_route_escalated(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    order = {"micro": 0, "quick": 1, "full": 2}
+    current = state["charter"]["route"]
+    requested = event["data"]["route"]
+    if order[requested] <= order[current]:
+        raise StateError("route changes must escalate micro to quick to full")
+    if state["charter"]["assurance"] == "elevated" and event["data"]["assurance"] != "elevated":
+        raise StateError("route escalation cannot lower assurance")
+    state["charter"]["route"] = requested
+    state["charter"]["assurance"] = event["data"]["assurance"]
+    target_budgets = default_budgets(requested)
+    for name, minimum in target_budgets.items():
+        state["charter"]["budgets"][name] = max(state["charter"]["budgets"][name], minimum)
+    touch_charter(state, event)
+
+
+def reduce_scope_changed(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    state["charter"]["scope_sha256"] = event["data"]["scope_sha256"]
+    state["charter"]["scope_authority"] = event["data"]["authority_ref"]
+    touch_charter(state, event)
+
+
+def reduce_workspace_resolved(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    workspace = state["charter"]["workspace"]
+    requested = workspace["requested"]
+    resolved = event["data"]["resolved"]
+    if workspace["resolved"] != "pending":
+        raise StateError("workspace has already been resolved for this run")
+    if requested not in ("auto", resolved):
+        raise StateError("workspace resolution conflicts with the requested policy")
+    workspace["resolved"] = resolved
+    workspace.pop("path", None)
+    if "path" in event["data"]:
+        workspace["path"] = event["data"]["path"]
+    touch_charter(state, event)
+
+
+def reduce_destination_changed(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    if event["data"]["source"] != "user":
+        raise StateError("only the user may change the workflow destination")
+    destination = {"kind": event["data"]["kind"]}
+    if "target" in event["data"]:
+        destination["target"] = event["data"]["target"]
+    state["charter"]["destination"] = destination
+    state["delivery"] = {"status": "pending"}
+    touch_charter(state, event)
+
+
+def reduce_terminal_recorded(state: JsonObject, event: JsonObject) -> None:
+    require_mutable_charter(state)
+    data = event["data"]
+    destination = state["charter"]["destination"]
+    if data["kind"] != destination["kind"] or data.get("target") != destination.get("target"):
+        raise StateError("terminal action does not match the charter destination")
+    delivery = {
+        "status": data["outcome"],
+        "kind": data["kind"],
+        "recorded_event": event["seq"],
+    }
+    for field in ("target", "evidence"):
+        if field in data:
+            delivery[field] = data[field]
+    state["delivery"] = delivery
 
 
 def reduce_lease_granted(state: JsonObject, event: JsonObject) -> None:
@@ -466,8 +706,8 @@ def reduce_lease_granted(state: JsonObject, event: JsonObject) -> None:
         raise StateError("only the global orchestrator may grant a writer lease")
     if state["writer_lease"] is not None:
         raise StateError("a writer lease is already active")
-    if state["control"].get("join") != "foreground":
-        raise StateError("review writer lease requires a foreground join")
+    if state["charter"]["route"] != "full" or data["stage"] != "review":
+        raise StateError("writer leases are limited to nested Full review")
     stage_name, task_name, attempt = find_attempt(state, data["holder_attempt_id"])
     task = task_for(state, stage_name, task_name)
     if stage_name != data["stage"] or attempt["status"] != "running":
@@ -491,6 +731,11 @@ def reduce_lease_released(state: JsonObject, event: JsonObject) -> None:
 
 
 REDUCERS: dict[str, Reducer] = {
+    "charter.authorization_changed": reduce_authorization_changed,
+    "charter.route_escalated": reduce_route_escalated,
+    "charter.scope_changed": reduce_scope_changed,
+    "charter.workspace_resolved": reduce_workspace_resolved,
+    "charter.destination_changed": reduce_destination_changed,
     "stage.entered": reduce_stage_entered,
     "stage.completed": reduce_stage_completed,
     "gate.requested": reduce_gate_requested,
@@ -506,6 +751,7 @@ REDUCERS: dict[str, Reducer] = {
     "workflow.blocked": reduce_blocked,
     "workflow.blocker_resolved": reduce_blocker_resolved,
     "workflow.completed": reduce_workflow_completed,
+    "terminal.recorded": reduce_terminal_recorded,
     "review.lease.granted": reduce_lease_granted,
     "review.lease.released": reduce_lease_released,
 }

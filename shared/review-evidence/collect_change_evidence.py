@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -20,6 +21,16 @@ from pathlib import Path, PurePosixPath
 HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(?P<start>\d+)(?:,(?P<count>\d+))? @@")
 PY_LOCAL_IMPORT_RE = re.compile(r"^(?P<indent>[ \t]+)(?:from\s+\S+\s+import|import\s+\S+)")
 JS_DYNAMIC_IMPORT_RE = re.compile(r"\b(?:import|require)\s*\(")
+HTTP_METHODS = {
+    "delete",
+    "get",
+    "head",
+    "options",
+    "patch",
+    "post",
+    "put",
+    "trace",
+}
 MAX_EVIDENCE_FILE_BYTES = 4 * 1024 * 1024
 # Even when both file sides are individually bounded, diff syntax adds bytes.
 # Stream at most this many bytes and discard intervals if Git exceeds the cap.
@@ -458,6 +469,112 @@ def local_imports(
     return findings
 
 
+def dotted_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        owner = dotted_name(node.value)
+        return f"{owner}.{node.attr}" if owner else None
+    return None
+
+
+def route_decorator_owner(decorator: ast.expr) -> str | None:
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    if not isinstance(target, ast.Attribute) or target.attr.lower() not in HTTP_METHODS:
+        return None
+    return dotted_name(target.value)
+
+
+def cbv_decorator_owner(decorator: ast.expr) -> str | None:
+    if not isinstance(decorator, ast.Call) or not decorator.args:
+        return None
+    target = dotted_name(decorator.func)
+    if target is None or target.rsplit(".", 1)[-1] != "cbv":
+        return None
+    return dotted_name(decorator.args[0])
+
+
+def module_route_owners(tree: ast.Module) -> dict[str, list[dict[str, object]]]:
+    routes: dict[str, list[dict[str, object]]] = {}
+    declarations = (
+        item for item in tree.body if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef)
+    )
+    for declaration in declarations:
+        for decorator in declaration.decorator_list:
+            owner = route_decorator_owner(decorator)
+            if owner:
+                routes.setdefault(owner, []).append(
+                    {"name": declaration.name, "line": declaration.lineno}
+                )
+    return routes
+
+
+def cbv_route_owners(tree: ast.Module) -> dict[str, list[dict[str, object]]]:
+    routes: dict[str, list[dict[str, object]]] = {}
+    for declaration in tree.body:
+        if not isinstance(declaration, ast.ClassDef):
+            continue
+        owners = {
+            owner
+            for decorator in declaration.decorator_list
+            if (owner := cbv_decorator_owner(decorator)) is not None
+        }
+        for owner in owners:
+            methods = [
+                {"name": member.name, "line": member.lineno}
+                for member in declaration.body
+                if isinstance(member, ast.FunctionDef | ast.AsyncFunctionDef)
+                and any(
+                    route_decorator_owner(decorator) == owner for decorator in member.decorator_list
+                )
+            ]
+            if methods:
+                routes.setdefault(owner, []).append(
+                    {
+                        "class": declaration.name,
+                        "line": declaration.lineno,
+                        "methods": methods,
+                    }
+                )
+    return routes
+
+
+def route_ownership_observations(
+    relative_path: str,
+    content: bytes | None,
+) -> list[dict[str, object]]:
+    """Describe competing route owners without deciding whether they violate policy."""
+    if Path(relative_path).suffix.lower() != ".py" or content is None:
+        return []
+    try:
+        tree = ast.parse(content.decode("utf-8"))
+    except (SyntaxError, UnicodeDecodeError):
+        return []
+
+    module_routes = module_route_owners(tree)
+    cbv_routes = cbv_route_owners(tree)
+
+    return [
+        {
+            "kind": "competing_route_owners",
+            "framework": "fastapi",
+            "router": owner,
+            "owners": [
+                {
+                    "kind": "module_functions",
+                    "handlers": module_routes[owner],
+                },
+                {
+                    "kind": "decorated_classes",
+                    "decorator": "cbv",
+                    "classes": cbv_routes[owner],
+                },
+            ],
+        }
+        for owner in sorted(set(module_routes) & set(cbv_routes))
+    ]
+
+
 def unique_paths(groups: Iterable[list[dict[str, str]]], untracked: list[str]) -> list[str]:
     paths = {entry["path"] for group in groups for entry in group}
     paths.update(untracked)
@@ -533,6 +650,9 @@ def file_evidence(
         "changed_intervals": intervals,
         "interval_status": interval_status,
         "local_imports": local_imports(relative_path, current.content),
+        "route_ownership_observations": route_ownership_observations(
+            relative_path, current.content
+        ),
     }
 
 
@@ -626,8 +746,8 @@ def markdown(data: dict[str, object]) -> str:
             "",
             "## File evidence",
             "",
-            "| File | Base → current | >300 | Crossed | Micro-file lead | Local imports |",
-            "|---|---:|:---:|:---:|:---:|---:|",
+            "| File | Base → current | >300 | Crossed | Micro-file lead | Route-owner signal | Local imports |",
+            "|---|---:|:---:|:---:|:---:|:---:|---:|",
         ]
     )
     for entry in files:
@@ -639,6 +759,7 @@ def markdown(data: dict[str, object]) -> str:
             f"{'yes' if entry['over_300'] else 'no'} | "
             f"{'yes' if entry['crossed_300'] else 'no'} | "
             f"{'yes' if entry['micro_file_candidate'] else 'no'} | "
+            f"{'yes' if entry['route_ownership_observations'] else 'no'} | "
             f"{len(entry['local_imports'])} |"
         )
     lines.extend(incomplete_interval_lines(files))

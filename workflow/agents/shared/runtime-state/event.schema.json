@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sk-skills.local/runtime-state/event.schema.json",
-  "title": "SK workflow semantic event v1",
+  "title": "SK workflow semantic event v2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,13 +15,19 @@
     "data"
   ],
   "properties": {
-    "event_schema_version": { "const": 1 },
+    "event_schema_version": { "const": 2 },
     "seq": { "type": "integer", "minimum": 1 },
     "id": { "$ref": "#/$defs/identifier" },
     "type": {
       "enum": [
         "workflow.started",
         "workflow.migrated_from_v1",
+        "workflow.migrated_from_v2",
+        "charter.authorization_changed",
+        "charter.route_escalated",
+        "charter.scope_changed",
+        "charter.workspace_resolved",
+        "charter.destination_changed",
         "stage.entered",
         "stage.completed",
         "gate.requested",
@@ -37,6 +43,7 @@
         "workflow.blocked",
         "workflow.blocker_resolved",
         "workflow.completed",
+        "terminal.recorded",
         "review.lease.granted",
         "review.lease.released"
       ]
@@ -58,6 +65,12 @@
   "allOf": [
     { "$ref": "#/$defs/workflowStarted" },
     { "$ref": "#/$defs/workflowMigrated" },
+    { "$ref": "#/$defs/workflowMigratedV2" },
+    { "$ref": "#/$defs/authorizationChanged" },
+    { "$ref": "#/$defs/routeEscalated" },
+    { "$ref": "#/$defs/scopeChanged" },
+    { "$ref": "#/$defs/workspaceResolved" },
+    { "$ref": "#/$defs/destinationChanged" },
     { "$ref": "#/$defs/stageEntered" },
     { "$ref": "#/$defs/stageCompleted" },
     { "$ref": "#/$defs/gateRequested" },
@@ -72,7 +85,8 @@
     { "$ref": "#/$defs/waitingForUser" },
     { "$ref": "#/$defs/workflowBlocked" },
     { "$ref": "#/$defs/blockerResolved" },
-    { "$ref": "#/$defs/workflowCompleted" }
+    { "$ref": "#/$defs/workflowCompleted" },
+    { "$ref": "#/$defs/terminalRecorded" }
     ,{ "$ref": "#/$defs/reviewLeaseGranted" }
     ,{ "$ref": "#/$defs/reviewLeaseReleased" }
   ],
@@ -91,10 +105,11 @@
     "workflowStartedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["run", "repositories"],
+      "required": ["run", "repositories", "charter"],
       "properties": {
         "run": { "type": "object" },
-        "repositories": { "type": "object" }
+        "repositories": { "type": "object" },
+        "charter": { "type": "object" }
       }
     },
     "workflowMigratedData": {
@@ -104,6 +119,57 @@
       "properties": {
         "source_sha256": { "$ref": "#/$defs/sha256" },
         "state": { "type": "object" }
+      }
+    },
+    "authorizationChangedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorization", "source"],
+      "properties": {
+        "authorization": { "enum": ["manual", "checkpoints", "yolo"] },
+        "source": { "enum": ["user", "policy", "repository"] },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "routeEscalatedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "assurance", "reason"],
+      "properties": {
+        "route": { "enum": ["quick", "full"] },
+        "assurance": { "enum": ["standard", "elevated"] },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "scopeChangedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope_sha256", "authority_ref", "reason"],
+      "properties": {
+        "scope_sha256": { "$ref": "#/$defs/sha256" },
+        "authority_ref": { "$ref": "#/$defs/nonemptyString" },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "workspaceResolvedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved"],
+      "properties": {
+        "resolved": { "enum": ["current", "worktree"] },
+        "path": { "$ref": "#/$defs/nonemptyString" },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
+    "destinationChangedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source"],
+      "properties": {
+        "kind": { "enum": ["local", "commit", "pr", "merge", "deploy"] },
+        "target": { "$ref": "#/$defs/nonemptyString" },
+        "source": { "enum": ["user", "policy", "repository"] },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
       }
     },
     "stageEnteredData": {
@@ -124,22 +190,27 @@
     "gateRequestedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stage", "gate", "reason"],
+      "required": ["stage", "gate", "reason", "kind", "reason_code"],
       "properties": {
         "stage": { "$ref": "#/$defs/identifier" },
         "gate": { "$ref": "#/$defs/identifier" },
-        "reason": { "$ref": "#/$defs/nonemptyString" }
+        "reason": { "$ref": "#/$defs/nonemptyString" },
+        "kind": {
+          "enum": ["authority_decision", "sensitive_action", "terminal_action", "ceremony"]
+        },
+        "reason_code": { "$ref": "#/$defs/identifier" }
       }
     },
     "gateDecidedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stage", "gate", "decision", "decided_by"],
+      "required": ["stage", "gate", "decision", "decided_by", "decision_source"],
       "properties": {
         "stage": { "$ref": "#/$defs/identifier" },
         "gate": { "$ref": "#/$defs/identifier" },
         "decision": { "enum": ["approved", "rejected", "waived"] },
         "decided_by": { "$ref": "#/$defs/nonemptyString" },
+        "decision_source": { "enum": ["user", "policy", "repository"] },
         "reason": { "$ref": "#/$defs/nonemptyString" }
       }
     },
@@ -151,13 +222,26 @@
         "stage": { "$ref": "#/$defs/identifier" },
         "task": { "$ref": "#/$defs/identifier" },
         "role": { "$ref": "#/$defs/identifier" },
-        "required": { "type": "boolean" }
-      }
+        "required": { "type": "boolean" },
+        "purpose": { "enum": ["implementation", "review", "remediation", "acceptance"] },
+        "members": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/batchMember" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["purpose"] },
+          "then": { "required": ["members"] },
+          "else": { "not": { "required": ["members"] } }
+        }
+      ]
     },
     "attemptStartedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stage", "task", "attempt_id", "host_thread_id"],
+      "required": ["stage", "task", "attempt_id", "host_thread_id", "input_fingerprint"],
       "properties": {
         "stage": { "$ref": "#/$defs/identifier" },
         "task": { "$ref": "#/$defs/identifier" },
@@ -169,16 +253,23 @@
     "resultRecordedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stage", "task", "attempt_id", "outcome"],
+      "required": ["stage", "task", "attempt_id", "outcome", "input_fingerprint"],
       "properties": {
         "stage": { "$ref": "#/$defs/identifier" },
         "task": { "$ref": "#/$defs/identifier" },
         "attempt_id": { "$ref": "#/$defs/identifier" },
         "outcome": { "enum": ["succeeded", "failed", "blocked", "cancelled"] },
+        "input_fingerprint": { "$ref": "#/$defs/sha256" },
         "verdict": { "$ref": "#/$defs/nonemptyString" },
         "artifact": { "$ref": "#/$defs/nonemptyString" },
         "sha256": { "$ref": "#/$defs/sha256" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "outcome": { "const": "succeeded" } }, "required": ["outcome"] },
+          "then": { "required": ["sha256"] }
+        }
+      ]
     },
     "lateResultRecordedData": {
       "type": "object",
@@ -189,6 +280,18 @@
         "verdict": { "$ref": "#/$defs/nonemptyString" },
         "artifact": { "$ref": "#/$defs/nonemptyString" },
         "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "batchMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "host_thread_id", "input_fingerprint"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "role": { "$ref": "#/$defs/identifier" },
+        "host_thread_id": { "$ref": "#/$defs/nonemptyString" },
+        "input_fingerprint": { "$ref": "#/$defs/sha256" },
+        "required": { "type": "boolean" }
       }
     },
     "checkRecordedData": {
@@ -256,9 +359,22 @@
     "workflowBlockedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["blocker_id", "reason", "required_action"],
+      "required": ["blocker_id", "reason_code", "reason", "required_action"],
       "properties": {
         "blocker_id": { "$ref": "#/$defs/identifier" },
+        "reason_code": {
+          "enum": [
+            "decision.material_product",
+            "decision.material_scope",
+            "boundary.external_access",
+            "boundary.destructive_or_irreversible",
+            "boundary.live_cost_or_value",
+            "boundary.terminal_not_authorized",
+            "evidence.unverifiable",
+            "budget.exhausted",
+            "control.user_reset"
+          ]
+        },
         "reason": { "$ref": "#/$defs/nonemptyString" },
         "required_action": { "$ref": "#/$defs/nonemptyString" }
       }
@@ -275,6 +391,17 @@
       "required": ["outcome"],
       "properties": { "outcome": { "enum": ["completed", "aborted"] } }
     },
+    "terminalRecordedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "outcome"],
+      "properties": {
+        "kind": { "enum": ["local", "commit", "pr", "merge", "deploy"] },
+        "target": { "$ref": "#/$defs/nonemptyString" },
+        "outcome": { "enum": ["succeeded", "failed", "skipped"] },
+        "evidence": { "$ref": "#/$defs/nonemptyString" }
+      }
+    },
     "reviewLeaseGrantedData": {
       "type": "object",
       "additionalProperties": false,
@@ -290,7 +417,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["lease_id"],
-      "properties": { "lease_id": { "$ref": "#/$defs/identifier" } }
+      "properties": {
+        "lease_id": { "$ref": "#/$defs/identifier" },
+        "reason": { "$ref": "#/$defs/nonemptyString" }
+      }
     },
     "workflowStarted": {
       "if": { "properties": { "type": { "const": "workflow.started" } } },
@@ -299,6 +429,30 @@
     "workflowMigrated": {
       "if": { "properties": { "type": { "const": "workflow.migrated_from_v1" } } },
       "then": { "properties": { "data": { "$ref": "#/$defs/workflowMigratedData" } } }
+    },
+    "workflowMigratedV2": {
+      "if": { "properties": { "type": { "const": "workflow.migrated_from_v2" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workflowMigratedData" } } }
+    },
+    "authorizationChanged": {
+      "if": { "properties": { "type": { "const": "charter.authorization_changed" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/authorizationChangedData" } } }
+    },
+    "routeEscalated": {
+      "if": { "properties": { "type": { "const": "charter.route_escalated" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/routeEscalatedData" } } }
+    },
+    "scopeChanged": {
+      "if": { "properties": { "type": { "const": "charter.scope_changed" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/scopeChangedData" } } }
+    },
+    "workspaceResolved": {
+      "if": { "properties": { "type": { "const": "charter.workspace_resolved" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/workspaceResolvedData" } } }
+    },
+    "destinationChanged": {
+      "if": { "properties": { "type": { "const": "charter.destination_changed" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/destinationChangedData" } } }
     },
     "stageEntered": {
       "if": { "properties": { "type": { "const": "stage.entered" } } },
@@ -359,6 +513,10 @@
     "workflowCompleted": {
       "if": { "properties": { "type": { "const": "workflow.completed" } } },
       "then": { "properties": { "data": { "$ref": "#/$defs/workflowCompletedData" } } }
+    },
+    "terminalRecorded": {
+      "if": { "properties": { "type": { "const": "terminal.recorded" } } },
+      "then": { "properties": { "data": { "$ref": "#/$defs/terminalRecordedData" } } }
     },
     "reviewLeaseGranted": {
       "if": { "properties": { "type": { "const": "review.lease.granted" } } },

@@ -219,6 +219,8 @@ def projection_schema_status(snapshot: JsonObject) -> str | None:
     version = snapshot.get("schema_version")
     if version == 1:
         return "legacy_v1"
+    if version == 2:
+        return "legacy_v2"
     if (
         isinstance(version, int)
         and not isinstance(version, bool)

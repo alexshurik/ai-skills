@@ -19,7 +19,11 @@ implementation or test output. Record concise answers:
 3. What is the primary action, or why is no primary action appropriate?
 4. What appears redundant, detached, or better moved?
 
-Then read the approved intent and implementation context and perform the full review.
+Record the first-pass conclusion before reading the approved intent, component
+implementation, or test output. Keep that conclusion immutable in the evidence
+record, then read the approved intent and implementation context and perform the
+full review. This prevents a plausible specification from explaining away an
+obviously weak render.
 For a major composition redesign, an independent reviewer may receive unlabeled or
 opaque frames for the first pass; ordinary changes do not require that ceremony.
 
@@ -90,6 +94,15 @@ states that the product does not have merely to fill a matrix.
 Static guards and passing screenshots are supporting evidence. Missing runnable or
 complete rendered evidence remains `UNVERIFIED`; source inspection cannot convert it
 to a visual pass.
+
+## Verify platform-sensitive mobile behavior
+
+When the change affects browser chrome, safe-area insets, fixed/sticky bottom
+navigation, dynamic viewport units, keyboard resizing, or `visualViewport`, prefer
+the actual target browser/device. If that is unavailable, run the closest
+project-appropriate WebKit/mobile approximation and record the residual gap. A
+static Chromium screenshot may support composition review but cannot by itself
+prove Safari/WebKit viewport or safe-area behavior.
 
 ## Compact evidence record
 

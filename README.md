@@ -14,6 +14,18 @@ A collection of AI coding agent skills for multi-agent development workflows.
 - Repository development uses [uv](https://docs.astral.sh/uv/): run `uv sync --dev`
   once, then `./scripts/check-python.sh` for format, lint, and type checks.
 
+## Testing the skills
+
+Run `./tests/run.sh` for deterministic packaging, policy, runtime, and fixture
+contracts. Behavioral routing is covered by the hidden-golden suite in
+`evals/workflow-routing/`: it launches isolated fresh-context sessions and scores
+structured decisions rather than wording. Implementation and rendered quality need
+separate product fixtures; routing goldens alone cannot prove that a UI is good.
+
+The release signals to compare over time are route accuracy, unnecessary user stops,
+agent attempts per route, broad-suite executions, remediation rounds, and visual/
+acceptance pass rate per completed objective.
+
 ## Quick Start
 
 ### Claude Code
@@ -24,6 +36,7 @@ A collection of AI coding agent skills for multi-agent development workflows.
 
 ```
 /sk-team-help       # Show documentation
+/sk-team            # Recommend and run the right-sized workflow
 /sk-team-feature    # Start full feature workflow
 /sk-team-quick      # Quick fix workflow
 /sk-onboard         # Project onboarding
@@ -35,7 +48,8 @@ A collection of AI coding agent skills for multi-agent development workflows.
 ./scripts/install-codex.sh
 ```
 
-Use `$sk-team-help`, `$sk-team-feature`, `$sk-team-quick`, or `$sk-onboard`.
+Use `$sk-team`, `$sk-team-help`, `$sk-team-feature`, `$sk-team-quick`, or
+`$sk-onboard`.
 
 ### Cursor
 
@@ -55,8 +69,35 @@ kimi --agent-file ~/.kimi-code/agents/sk-team.md
 ## Multi-Agent Workflow
 
 ```
-sk-team-feature "Add user authentication"
+sk-team "Add user authentication"
 ```
+
+`sk-team` is the recommended entry point. If the request does not already specify
+the workflow, it recommends one compact charter and asks once:
+
+| Choice | Options |
+|---|---|
+| Path | Pick for me · Super-short · Short · Full |
+| Control | Every phase · Important checkpoints · YOLO |
+| Workspace | Current · Separate · Choose safely |
+| Finish | Diagnose only · Leave changes · Commit · PR · Merge · Deploy |
+| Checks | Standard · Elevated |
+
+Super-short keeps a tiny change in the root context; Short uses one implementation
+thread plus one fresh review/acceptance thread; Full uses the phase workflow below.
+Route selection follows product/boundary risk, not bullet, file, acceptance-criteria,
+or screenshot count. A coherent multi-screen UI polish pass is normally Short when
+its behavior and owners are already clear.
+YOLO skips ceremony and carries reversible in-scope work through verification and
+authorized remediation. It still stops for a new material product/scope decision,
+missing external access, destructive or live-value action, unverifiable evidence,
+budget exhaustion, or an action beyond the selected finish. It lasts for one
+objective and is never inherited by the next task.
+
+Visual quality is mandatory whenever a route changes rendered UI; it is not another
+startup option. Micro gets root inspection, Quick gets early/final renders plus its
+fresh combined reviewer, and Full adds an independent rendered UI/UX lens. YOLO
+removes ceremony, not visual verification.
 
 ```
 Discovery → [Research] → Planning → [Doc Review] → [Risk-routed Tester] → Implementation → Code Review → Acceptance → Retrospective → Archive
@@ -73,9 +114,11 @@ Discovery → [Research] → Planning → [Doc Review] → [Risk-routed Tester] 
 | Code Review | Review Orchestrator | `CODE_REVIEW.md` | Three independent core lenses plus conditional rendered UI/UX for user-visible frontend impact |
 | Acceptance | Acceptance Reviewer | `VERIFICATION.md` | Final quality gate |
 | Retrospective | Orchestrator | `RETROSPECTIVE.md` | Records escaped signals and routes lessons to repo guidance, a named skill proposal, or no promotion |
-| Archive | Orchestrator | `openspec/completed/<feature-name>/` | Moves the approved artifact set after final user approval |
+| Archive | Orchestrator | `openspec/completed/<feature-name>/` | Archives after the selected control mode's retrospective gate |
 
-Every phase requires **explicit user approval** before proceeding to the next one.
+Phase gates follow the charter: Manual asks at every phase, Checkpoints asks at
+Scope Lock and Execution, and YOLO continues across ceremony. Genuine authority and
+safety boundaries still stop in every mode.
 
 ## Quick Fix Workflow
 
@@ -85,20 +128,21 @@ sk-team-quick "Fix null pointer in login handler"
 
 The quick workflow uses two bounded threads:
 
-1. A developer diagnoses the issue, writes a short design for approval, then
-   implements and tests the approved fix.
+1. A developer diagnoses the issue, records a short execution checkpoint when the
+   charter requires it, then implements and tests the approved fix.
 2. A fresh reviewer checks architecture-design, correctness-safety, engineering-
    quality, and conditional rendered UI/UX, then verifies acceptance.
 
-It keeps the design approval and independent-review gates without running the full
-feature workflow.
+It keeps independent review without running the full feature workflow. Review uses
+one full pass and, only when needed, one targeted remediation verification.
 
 ## All Commands
 
 | Skill | Description |
 |---------|-------------|
+| `sk-team` | Adaptive entry point for Super-short, Short, and Full workflows |
 | `sk-team-feature` | Full feature workflow with multi-agent team |
-| `sk-team-quick` | Quick workflow for bugfixes and small changes |
+| `sk-team-quick` | Quick workflow for bounded fixes, features, and coherent UI polish |
 | `sk-team-status` | Show status of active workflows |
 | `sk-team-help` | Team workflow documentation |
 | `sk-onboard` | Full project onboarding |
@@ -185,7 +229,7 @@ runtime data under `<runtime-root>/<feature-name>/`:
 ```text
 <runtime-root>/<feature-name>/
 ├── events.jsonl                  # authoritative semantic transition history
-├── state.json                    # derived schema-v2 stage/task/attempt projection
+├── state.json                    # derived schema-v3 charter/stage/task/delivery projection
 ├── checkpoints/                  # compact resumable phase state
 ├── logs/                         # large test/tool output
 └── review/<snapshot>/
@@ -198,9 +242,10 @@ runtime data under `<runtime-root>/<feature-name>/`:
 ```
 
 `events.jsonl` records only semantic transitions and is authoritative. `state.json`
-is a derived projection: stages own gates/checks/tasks, tasks preserve all attempts,
-and `control` records the current foreground/detached wait, user gate, blocker, or
-terminal outcome. The global root owns state; a named nested review orchestrator may
+is a derived projection: the charter preserves route/control/workspace/finish,
+stages own gates/checks/tasks, tasks preserve all attempts, `delivery` stores the
+terminal receipt, and `control` records the current foreground/detached wait, user
+gate, blocker, or terminal outcome. The global root owns state; a named nested review orchestrator may
 receive the policy's bounded attempt-only writer lease. All writes use the shared
 helper with revision checks, idempotent command IDs, durable append, and atomic
 projection replacement. Exact host
@@ -225,7 +270,8 @@ Python 3.10+ interpreter used by the workflow, then run:
 If `snapshot_status` is `valid`, run `validate` before resuming. Otherwise follow
 `recommended_action` exactly: `repair` rebuilds only the derived projection from a
 valid journal; `migrate-v1` converts a legacy v1 projection while preserving its
-backup; `recover-journal-or-reinitialize` means authoritative history is unavailable
+backup; `migrate-v2` adds the charter/delivery model to a journal-less v2 projection;
+`recover-journal-or-reinitialize` means authoritative history is unavailable
 and must be recovered or explicitly reconstructed; `require-compatible-helper`
 means the journal or projection is newer and must remain untouched until a compatible
 helper is available. Never hand-edit `events.jsonl` or `state.json`.
@@ -274,14 +320,18 @@ not an unapproved remedy design. `CHANGES REQUESTED` means required work or
 verification is missing; `TRIAGE REQUIRED` means a scope decision is pending;
 `APPROVED` means the approved scope passes.
 
-Round 1 runs all three core lenses plus conditional UI/UX and freezes exhaustive findings. Targeted Round 2
-verifies a fresh remediation snapshot when the parent, fingerprints, delta,
-unchanged hashes, scope, and impact routing are proven. It reruns targeted gates for
-changed inputs and reuses green receipts only for identical input closure. Round 3 is exceptional for
-unresolved allowlisted defects, remediation regressions, or newly proven critical
-defects. A normative design/ADR amendment invalidates targeted mode and requires a
-full review against the new authority fingerprint within the remaining budget.
-There is no automatic Round 4.
+One full review runs all three core lenses plus conditional UI/UX and freezes
+exhaustive findings. One targeted remediation verification checks a fresh snapshot
+when the parent, fingerprints, delta, unchanged hashes, scope, and impact routing
+are proven. It reruns targeted gates for changed inputs and reuses green receipts
+only for identical input closure. A bounded focused recovery may handle an
+unresolved allowlisted or newly critical defect without restarting full review. A
+normative design/ADR amendment invalidates targeted mode, exits the current cycle,
+and returns to its authority gate.
+
+Rendered UI review reports `CONTRACT` and `VISUAL` separately. Both must pass: a
+screen can implement the selected table/card/list structure correctly and still fail
+for poor hierarchy, grouping, density, rhythm, alignment, or product fit.
 
 ## Best-Practice Profiles & Project Conventions
 

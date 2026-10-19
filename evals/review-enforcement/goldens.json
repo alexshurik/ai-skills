@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "suite": "review-enforcement",
+  "goldens": {
+    "re-001": {"verdict": "changes_requested", "gate_reason": "route_owner_conflict", "required_action": "move_routes_to_approved_owner"},
+    "re-002": {"verdict": "unverified", "gate_reason": "source_fingerprint_drift", "required_action": "capture_and_review_current_source"},
+    "re-003": {"verdict": "unverified", "gate_reason": "required_lens_missing", "required_action": "run_or_restore_current_lens"},
+    "re-004": {"verdict": "changes_requested", "gate_reason": "static_output_findings", "required_action": "record_and_disposition_findings"},
+    "re-005": {"verdict": "unverified", "gate_reason": "structural_leads_undispositioned", "required_action": "record_keep_split_or_fix_decisions"},
+    "re-006": {"verdict": "unverified", "gate_reason": "tasks_undispositioned", "required_action": "complete_or_authoritatively_defer_tasks"},
+    "re-007": {"verdict": "approved", "gate_reason": "current", "required_action": "none"},
+    "re-008": {"verdict": "approved", "gate_reason": "no_route_owner_conflict", "required_action": "none"},
+    "re-009": {"verdict": "unverified", "gate_reason": "scale_exception_missing", "required_action": "record_authority_backed_scale_decision"},
+    "re-010": {"verdict": "approved", "gate_reason": "project_authority_permits_multiple_owners", "required_action": "none"}
+  }
+}

@@ -67,15 +67,20 @@ def assert_full_review_contract() -> None:
         "required outcome",
         "remedy authority",
         "send only `within_approved_design` ids",
-        "targeted round 2",
+        "one targeted remediation verification",
         "immutable pre/post fingerprints",
         "unchanged hashes",
-        "exceptional round 3",
-        "no automatic round 4",
-        "needs user decision",
+        "bounded recovery",
+        "budget.exhausted",
         "parent full review",
         "zero required unverified dimensions",
-        "design/adr amendment always invalidates targeted mode",
+        "review-evidence/review-gate.sh",
+        "review-approval-gate.md",
+        "current-review-map.json",
+        "undispositioned structural/tool/task/scale lead",
+        "design/adr amendment invalidates targeted mode",
+        "contract: pass",
+        "visual: pass",
     )
     reject(
         orchestrator,
@@ -90,14 +95,15 @@ def assert_full_review_contract() -> None:
     verdict = read("workflow/agents/references/review-verdict-policy.md")
     require(
         verdict,
-        "round 1",
-        "targeted round 2",
-        "exceptional round 3",
-        "no automatic round 4",
+        "one full review round",
+        "one targeted remediation verification",
+        "bounded recovery",
+        "budget.exhausted",
         "mode",
         "parent",
         "complete routing",
         "zero required unverified dimensions",
+        "visual: pass",
     )
 
     scope = read("workflow/agents/shared/scope-governance.md")
@@ -122,6 +128,9 @@ def assert_lens_ownership() -> None:
         "abstraction/navigation cost",
         "api/schema/model shape",
         "packaging",
+        "collector output as an observation",
+        "competing-owner defect",
+        "nearest semantic analogue",
         "simplest viable alternative",
         "permanent complexity",
     )
@@ -142,6 +151,7 @@ def assert_lens_ownership() -> None:
         "owns implementation and tool evidence",
         "root-produced provenance",
         "must not rerun the full suite",
+        "read analyzer results, not just process exit codes",
         "test-code quality",
     )
     require(
@@ -174,7 +184,12 @@ def assert_consumers() -> None:
     phase = read("workflow/skills/sk-team-feature/references/phase-prompts.md")
     quick = read("workflow/skills/sk-team-quick/SKILL.md")
     require(code_review, "three independent core lenses", "conditional ui/ux")
-    require(feature, "targeted round 2", "exceptional round 3", "no automatic round 4")
+    require(
+        feature,
+        "one full review round",
+        "one targeted remediation verification",
+        "bounded recovery",
+    )
     require(
         phase,
         "complete finding set",
@@ -189,7 +204,8 @@ def assert_consumers() -> None:
         "architecture-design",
         "correctness-safety",
         "engineering-quality",
-        "same three-round cap",
+        "one full review round",
+        "one targeted remediation verification",
     )
 
     active = "\n".join((code_review, feature, phase, quick))

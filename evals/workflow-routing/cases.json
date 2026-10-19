@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "suite": "workflow-routing",
+  "cases": [
+    {
+      "id": "wr-001",
+      "name": "typo-compact-charter",
+      "phase": "setup",
+      "input": "Fix the misspelling 'recieve' in one README sentence. The repository is clean. Use the Super-short path, YOLO, Standard checks, and the current checkout. I did not choose a finish destination; the repository's documented recommendation for this kind of edit is to leave verified changes local.",
+      "coverage": ["route.micro", "authorization.yolo", "assurance.standard", "workspace.current", "destination.local", "approval.compact-charter", "agent.root-only", "verification.focused"]
+    },
+    {
+      "id": "wr-002",
+      "name": "localized-bug-independent-review",
+      "phase": "readiness",
+      "input": "A bounded TTL conversion bug in one cache adapter has a clear seconds-to-milliseconds contract and owner. The charter selected the smallest route that includes fresh independent review, Important checkpoints, Standard checks, the current clean checkout, and a Commit destination. The Execution checkpoint was approved, implementation and focused checks are green, and no broad applicable receipt exists yet.",
+      "coverage": ["route.quick", "authorization.checkpoints", "assurance.standard", "workspace.current", "destination.commit", "approval.policy-continue", "agent.quick-pair", "verification.broad-once"]
+    },
+    {
+      "id": "wr-003",
+      "name": "deli-check-multi-screen-polish",
+      "phase": "setup",
+      "input": "Deli Check has an established responsive design system and clear screen owners. Polish browse, item-detail, cart, and checkout as one coherent journey: repair hierarchy, responsive priority, action placement, and specified empty states. There is no new product behavior, contract, migration, ownership change, or unresolved product decision. Choose the shortest safe route automatically; use Important checkpoints, Standard checks, the current clean checkout, and leave verified changes local.",
+      "coverage": ["route.quick", "authorization.checkpoints", "assurance.standard", "workspace.current", "destination.local", "visual.quick", "agent.quick-pair"]
+    },
+    {
+      "id": "wr-004",
+      "name": "public-api-migration",
+      "phase": "planning",
+      "input": "Migrate a public API response from a legacy field to a versioned replacement across the gateway, service, SDK, and migration documentation. Backward-compatibility requirements and the rollout window are already approved. Choose the route automatically, use YOLO with Elevated checks, create a separate worktree, and finish by opening a PR against main.",
+      "coverage": ["route.full", "authorization.yolo", "assurance.elevated", "workspace.worktree", "destination.pr", "approval.policy-continue", "agent.full-core"]
+    },
+    {
+      "id": "wr-005",
+      "name": "yolo-merge-no-reapproval",
+      "phase": "finish",
+      "input": "A Quick workflow with Standard checks fixed a localized parser regression in the current checkout. YOLO is selected, independent review and acceptance passed, and the green broad-suite receipt exactly matches the final input closure. The recorded destination is Merge into main. Decide the next action.",
+      "coverage": ["route.quick", "authorization.yolo", "assurance.standard", "workspace.current", "destination.merge", "approval.no-terminal-reapproval", "agent.quick-pair", "verification.receipt-reuse"]
+    },
+    {
+      "id": "wr-006",
+      "name": "dirty-overlap-worktree",
+      "phase": "workspace_resolution",
+      "input": "Implement a bounded Quick bugfix with YOLO and Standard checks, then leave changes local. Workspace selection is Auto. The current checkout has unattributed uncommitted edits in the same files the fix will touch, and those edits must be preserved.",
+      "coverage": ["route.quick", "authorization.yolo", "assurance.standard", "workspace.worktree", "destination.local", "agent.quick-pair"]
+    },
+    {
+      "id": "wr-007",
+      "name": "mid-run-scope-delta",
+      "phase": "execution",
+      "input": "A Quick YOLO run with Standard checks is already using the current checkout and a Local destination. During diagnosis, the developer proves that the requested reliability outcome would require adding a persistent outbox, a worker, and recovery lifecycle that are absent from the approved acceptance criteria and explicit non-goals. No Scope Delta has been approved and no source edit has started.",
+      "coverage": ["route.full", "authorization.yolo", "assurance.standard", "workspace.current", "destination.local", "scope.upward-escalation", "scope.material-delta-stop", "stop.material-scope"]
+    },
+    {
+      "id": "wr-008",
+      "name": "ui-regression-macro-fail",
+      "phase": "macro_visual_preflight",
+      "input": "A Quick YOLO fix with Standard checks changes a customer settings screen in the current checkout and will stay local. Unit and browser behavior tests are green, but the exact-source compact render clips the primary action and the desktop render has visibly broken grouping. The broad safe/applicable suite has not run yet.",
+      "coverage": ["route.quick", "authorization.yolo", "assurance.standard", "workspace.current", "destination.local", "visual.quick", "agent.quick-pair", "verification.visual-before-broad"]
+    },
+    {
+      "id": "wr-009",
+      "name": "manual-execution-gate",
+      "phase": "execution_gate",
+      "input": "A Quick bugfix uses Manual control, Standard checks, the current clean checkout, and a Commit destination. The developer's read-only diagnosis and design checkpoint are complete, there is no Scope Delta or safety question, and implementation has not begun.",
+      "coverage": ["route.quick", "authorization.manual", "assurance.standard", "workspace.current", "destination.commit", "approval.execution-gate", "agent.quick-pair"]
+    },
+    {
+      "id": "wr-010",
+      "name": "full-ui-remediation-receipt-reuse",
+      "phase": "remediation_verification",
+      "input": "A Full YOLO UI workflow with Elevated checks in a worktree targets a PR. Its first full review had one green broad-suite receipt. Approved remediation changed only CSS and a component test for one allowlisted visual defect; the complete delta and unchanged hashes are proven, authority is unchanged, and the old receipt rows still exactly match every unchanged input. Decide the verification scope and agent wave.",
+      "coverage": ["route.full", "authorization.yolo", "assurance.elevated", "workspace.worktree", "destination.pr", "approval.policy-continue", "visual.full", "agent.conditional-ui", "agent.impacted-only", "verification.receipt-reuse"]
+    },
+    {
+      "id": "wr-011",
+      "name": "yolo-recovery-budget-exhausted",
+      "phase": "bounded_recovery",
+      "input": "A Quick YOLO workflow with Standard checks in the current checkout will leave changes local. Its one allowlisted within-design fix failed targeted verification, the single narrow successor recovery ran focused gates and the owning verification, and the same required defect remains unresolved. Transport waits did not consume any budget.",
+      "coverage": ["route.quick", "authorization.yolo", "assurance.standard", "workspace.current", "destination.local", "verification.receipt-reuse", "stop.budget-exhausted"]
+    },
+    {
+      "id": "wr-012",
+      "name": "deploy-missing-credentials",
+      "phase": "finish",
+      "input": "A Full YOLO workflow with Elevated checks in a worktree has green review and acceptance with an exact-input broad-suite receipt. Deploy to the recorded production target is the selected destination, but the required production credentials are unavailable to the run.",
+      "coverage": ["route.full", "authorization.yolo", "assurance.elevated", "workspace.worktree", "destination.deploy", "agent.full-core", "verification.receipt-reuse", "stop.external-access"]
+    },
+    {
+      "id": "wr-013",
+      "name": "unauthorized-pr-after-local",
+      "phase": "finish",
+      "input": "A Quick YOLO workflow with Standard checks in the current checkout is accepted and has an exact-input green receipt. Its recorded destination is Local changes only. Automation now proposes pushing a branch and opening a PR, but the user has not changed the destination.",
+      "coverage": ["route.quick", "authorization.yolo", "assurance.standard", "workspace.current", "destination.local", "agent.quick-pair", "verification.receipt-reuse", "stop.terminal-not-authorized"]
+    },
+    {
+      "id": "wr-014",
+      "name": "read-only-diagnosis",
+      "phase": "setup",
+      "input": "Only investigate why one deterministic unit test fails; do not modify source. Use the Super-short path, Important checkpoints, Standard checks, the current checkout, and the read-only finish. The failure is localized and reproducible.",
+      "coverage": ["route.micro", "authorization.checkpoints", "assurance.standard", "workspace.current", "destination.local", "agent.root-only", "verification.focused"]
+    },
+    {
+      "id": "wr-015",
+      "name": "micro-single-view-ui",
+      "phase": "execution",
+      "input": "Change one already-approved color token used by a single static admin badge. There is no responsive or cross-view behavior and no unresolved design choice. Use Super-short, YOLO, Standard checks, the current checkout, and commit the result.",
+      "coverage": ["route.micro", "authorization.yolo", "assurance.standard", "workspace.current", "destination.commit", "visual.micro", "agent.root-only", "verification.focused"]
+    }
+  ]
+}

@@ -63,10 +63,10 @@ only exact-match rows. Never use an old receipt as proof for changed content.
 
 Acceptance consumes the green receipt for the exact current source fingerprint. It
 runs the full safe suite again only when no trusted exact-fingerprint receipt exists,
-repository/release policy mandates an independent run, or the change is high-risk
-(auth/authz, payments, destructive data, migration/public contract,
-concurrency/idempotency, or complex external side effects). This rule changes test
-execution, not criteria verification.
+or repository/release policy explicitly mandates an independent run. High-risk or
+Elevated work adds orthogonal boundary, failure-path, criterion-specific, or manual
+evidence; its risk label alone never invalidates an unchanged exact-input receipt.
+This rule changes test execution, not criteria verification.
 
 ## Run deep analysis
 
@@ -84,6 +84,35 @@ findings against changed-line evidence afterward.
 Persist full tool output under the artifact directory. Capture the compact `STATIC
 ANALYSIS PROVENANCE` table, `SUMMARY`, and log paths in the review provenance
 artifact. Give lenses those artifact paths, not raw scanner output.
+
+The canonical runner classifies semantic output as well as exit status. In
+particular, jscpd clone reports, Lizard warning sections, Radon B-or-worse
+complexity, Radon C-or-worse maintainability, and Vulture unused-code rows are
+`FINDINGS` even if the tool exits zero. Do not rewrite those rows as OK.
+
+## Final approval gate
+
+Before emitting APPROVED, archive, merge, commit-for-finish, or acceptance success,
+recapture evidence with the original base and policy, rebuild a current review map,
+and run `review-gate.sh`. Its dispositions JSON is bound to the reviewed map and
+contains:
+
+- one `structural` decision for every collected `over_300`, `crossed_300`,
+  `micro_file_candidate`, and route-ownership lead;
+- one `static_analysis` decision for every FINDINGS row;
+- one `incomplete_tasks` decision for every unchecked task, when tasks apply;
+- an explicit `scale` exception when the map marks a large change.
+
+Every decision carries a rationale and authority. UNVERIFIED static analysis,
+missing/stale/non-PASS lens reports, missing leads, and source/review fingerprint
+drift fail the executable gate. Quick mode supplies one `combined=<REVIEW.md>`
+report; Full supplies every core report plus conditional UI/UX and the validated
+scope manifests. Targeted review may use a current-source reuse receipt for an
+unrouted lens only when it names the parent report hash and the verified unchanged
+scope proof.
+
+The gate is cheap: it hashes/reads artifacts and current maps; it does not rerun the
+test suite or analyzers.
 
 ## Relevant tools by dimension
 

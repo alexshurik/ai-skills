@@ -15,8 +15,11 @@ Treat these as implementation authority, in order:
    the change.
 
 Existing code, reviewer preference, optional hardening, and an attractive design
-idea are evidence or proposals, not authority. A general `Approved`, `autonomous`, or
-`finish it` instruction does not silently approve an unlisted material scope delta.
+idea are evidence or proposals, not authority. A general `Approved`, `autonomous`,
+YOLO, or `finish it` instruction does not silently approve an unlisted material
+scope delta. Under the workflow charter, YOLO does authorize ceremony and automatic
+remediation only for `required_fix + within_approved_design`; it does not authorize
+`user_decision` findings.
 
 Real defects cannot be hidden by calling them out of scope. A proven auth bypass,
 BOLA/IDOR, secret exposure, arbitrary transaction substitution, uncontrolled repeat
@@ -89,8 +92,9 @@ Disposition rules:
 
 - `required_fix`: violates approved behavior/design/contract, an enforced gate, or
   is a realistic defect/regression caused or materially worsened by the change.
-  `blocks_release` is true. Only this disposition enters remediation automatically
-  after the workflow's review approval gate.
+  `blocks_release` is true. This disposition enters remediation automatically only
+  when its remedy authority is `within_approved_design`; other routes return to
+  their decision owner first.
 - `user_decision`: a credible recommendation that changes architecture, threat
   model, infrastructure, persistence, public contract, neighboring subsystems, or
   material effort. It cannot enter remediation without an approved ID.
@@ -179,19 +183,20 @@ repeat review. Any implementation requires a fresh snapshot, root readiness gate
 once, a provable remediation delta, and every finding-owning/impact-routed lens.
 Old evidence never proves changed content.
 
-Round 2 is targeted when the parent full review, immutable pre/post fingerprints,
+The targeted remediation verification is valid when the parent full review, immutable pre/post fingerprints,
 complete delta, unchanged hashes, no scope expansion, and routing are all proven.
 A material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, unexplained path, invalid parent artifact, or unprovable delta forces all
-three core lenses plus conditional UI/UX but consumes the same round budget. Round 3 is exceptional and only
-for unresolved allowlisted defects, remediation regressions, or newly proven
-critical correctness/security defects. There is no automatic Round 4; return
-`NEEDS USER DECISION`. Transport-only waits do not consume or reset rounds.
+three core lenses plus conditional UI/UX but consumes the one targeted remediation
+verification. One bounded recovery may follow only for an unresolved allowlisted
+defect, remediation regression, or newly proven critical correctness/security
+defect; it changes only affected inputs and reruns only owning/impact-routed checks.
+Transport-only waits do not consume review or recovery budgets.
 
 A normative design or ADR amendment invalidates targeted mode: the next review is
-full against the new authority fingerprint and uses the remaining round budget. If
-the budget is exhausted, only explicit user approval may start a new review cycle;
-never disguise it as an automatic Round 4.
+full against the new authority fingerprint after the owning Planning/Scope gate.
+YOLO may start the bounded recovery automatically within approved design, scope,
+safety, and destination; it never turns a material authority change into remediation.
 
 ## 5. Review scope classes
 
@@ -253,7 +258,7 @@ Resolve the root using `git rev-parse --git-path sk-workflow` and store under
 
 - `events.jsonl`: authoritative semantic workflow transitions written only through
   the shared runtime-state helper;
-- `state.json`: derived schema-v2 projection whose stages own gates/checks/tasks and
+- `state.json`: derived schema-v3 projection whose stages own gates/checks/tasks and
   whose tasks preserve agent attempts; `control` records current wait/block/terminal
   state;
 - checkpoints and large test/static-analysis logs;

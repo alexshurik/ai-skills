@@ -32,11 +32,12 @@ when `snapshot_status` is `valid`, also run `validate` before using the projecti
 Use `~/.claude/agents/shared/runtime-state-policy.md` or the source
 `workflow/agents/shared/runtime-state-policy.md`, and its colocated installed/source
 `runtime-state/sk_state.py` helper. Report the complete status vocabulary:
-valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema.
+valid | stale | diverged | missing | orphaned | legacy_v1 | legacy_v2 | unsupported_schema.
 Validate valid; repair stale/diverged/missing only with a valid non-empty journal;
-migrate legacy_v1 without history (repair it when valid history exists); fail closed
-with `recover-journal-or-reinitialize` for orphaned or missing/diverged without
-history; and fail closed with `require-compatible-helper` for unsupported_schema.
+migrate legacy_v1 or legacy_v2 without history (repair it when valid history
+exists); fail closed with `recover-journal-or-reinitialize` for orphaned or missing/
+diverged without history; and fail closed with `require-compatible-helper` for
+unsupported_schema.
 Do not mutate state during copy.
 
 Include only the current goal, approvals/constraints, current phase/status, runtime

@@ -15,6 +15,17 @@ import jsonschema
 from runtime_state.support import ROOT, SK_STATE, TOOL_PATH, RuntimeCase
 
 DIGEST = "a" * 64
+CHARTER = {
+    "revision": 1,
+    "route": "quick",
+    "assurance": "standard",
+    "authorization": "checkpoints",
+    "scope_sha256": DIGEST,
+    "workspace": {"requested": "auto", "resolved": "pending"},
+    "destination": {"kind": "local"},
+    "budgets": {"attempts": 4, "review_rounds": 2, "remediations": 1},
+    "updated_event": 1,
+}
 VALID_DATA: dict[str, dict[str, object]] = {
     "workflow.started": {
         "run": {
@@ -25,16 +36,51 @@ VALID_DATA: dict[str, dict[str, object]] = {
             "created_at": "2026-01-01T00:00:00Z",
         },
         "repositories": {},
+        "charter": CHARTER,
     },
     "workflow.migrated_from_v1": {"source_sha256": DIGEST, "state": {}},
+    "workflow.migrated_from_v2": {"source_sha256": DIGEST, "state": {}},
+    "charter.authorization_changed": {
+        "authorization": "yolo",
+        "source": "user",
+        "reason": "finish this run",
+    },
+    "charter.route_escalated": {
+        "route": "full",
+        "assurance": "elevated",
+        "reason": "migration discovered",
+    },
+    "charter.scope_changed": {
+        "scope_sha256": DIGEST,
+        "authority_ref": "proposal.md",
+        "reason": "scope approved",
+    },
+    "charter.workspace_resolved": {
+        "resolved": "worktree",
+        "path": "/tmp/worktree",
+        "reason": "dirty checkout",
+    },
+    "charter.destination_changed": {
+        "kind": "merge",
+        "target": "main",
+        "source": "user",
+        "reason": "requested finish",
+    },
     "stage.entered": {"stage": "review"},
     "stage.completed": {"stage": "review", "outcome": "succeeded"},
-    "gate.requested": {"stage": "review", "gate": "approval", "reason": "needed"},
+    "gate.requested": {
+        "stage": "review",
+        "gate": "approval",
+        "reason": "needed",
+        "kind": "authority_decision",
+        "reason_code": "decision.material_scope",
+    },
     "gate.decided": {
         "stage": "review",
         "gate": "approval",
         "decision": "approved",
         "decided_by": "user",
+        "decision_source": "user",
         "reason": "approved",
     },
     "task.created": {
@@ -42,6 +88,16 @@ VALID_DATA: dict[str, dict[str, object]] = {
         "task": "security",
         "role": "reviewer",
         "required": True,
+        "purpose": "review",
+        "members": [
+            {
+                "id": "correctness",
+                "role": "reviewer",
+                "host_thread_id": "/root/review/correctness",
+                "input_fingerprint": DIGEST,
+                "required": True,
+            }
+        ],
     },
     "agent.attempt.started": {
         "stage": "review",
@@ -55,6 +111,7 @@ VALID_DATA: dict[str, dict[str, object]] = {
         "task": "security",
         "attempt_id": "security-1",
         "outcome": "succeeded",
+        "input_fingerprint": DIGEST,
         "verdict": "clean",
         "artifact": "review.md",
         "sha256": DIGEST,
@@ -86,9 +143,20 @@ VALID_DATA: dict[str, dict[str, object]] = {
         "reason_code": "review",
     },
     "workflow.waiting_for_user": {"gate_ids": ["review/approval"], "reason_code": "approval"},
-    "workflow.blocked": {"blocker_id": "external", "reason": "blocked", "required_action": "wait"},
+    "workflow.blocked": {
+        "blocker_id": "external",
+        "reason_code": "boundary.external_access",
+        "reason": "blocked",
+        "required_action": "wait",
+    },
     "workflow.blocker_resolved": {"blocker_id": "external"},
     "workflow.completed": {"outcome": "completed"},
+    "terminal.recorded": {
+        "kind": "merge",
+        "target": "main",
+        "outcome": "succeeded",
+        "evidence": "merge commit",
+    },
     "review.lease.granted": {
         "lease_id": "review-lease-1",
         "stage": "review",
@@ -110,7 +178,7 @@ class EventContractTests(RuntimeCase):
 
     def event(self, event_type: str, data: dict[str, object]) -> dict[str, object]:
         return {
-            "event_schema_version": 1,
+            "event_schema_version": 2,
             "seq": 1,
             "id": "event-1",
             "type": event_type,

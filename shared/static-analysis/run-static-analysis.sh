@@ -130,6 +130,38 @@ _probe() {
   return 1
 }
 
+_result_matches() {
+  local pattern="$1"
+  if [ -n "$ARTIFACT_DIR" ]; then
+    sed -n '6,$p' "$log" | grep -qE "$pattern"
+  else
+    printf '%s\n' "$out" | grep -qE "$pattern"
+  fi
+}
+
+_tool_reports_findings() {
+  case "$tool:$dim" in
+    jscpd:duplication)
+      _result_matches 'Clone found|Exact clone|duplication[^0-9]*[1-9][0-9]*(\.[0-9]+)?%'
+      ;;
+    lizard:cyclomatic+length)
+      _result_matches '!!!![[:space:]]+Warnings|warning:[[:space:]]|cyclomatic_complexity[[:space:]]*>'
+      ;;
+    radon:cyclomatic)
+      _result_matches '[[:space:]]-[[:space:]][B-F][[:space:]]*\('
+      ;;
+    radon:maintainability)
+      _result_matches '[[:space:]]-[[:space:]][C-F][[:space:]]*\('
+      ;;
+    vulture:dead-code)
+      _result_matches ':[0-9]+:[[:space:]]+unused[[:space:]]'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 # run_tool <dimension> <tool> <gate|info> -- <cmd...>
 # <cmd...> is the analysis command WITHOUT the runner prefix (added here).
 run_tool() {
@@ -172,6 +204,8 @@ run_tool() {
   elif { [ -n "$ARTIFACT_DIR" ] && grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown' "$log"; } \
     || { [ -z "$ARTIFACT_DIR" ] && echo "$out" | grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown'; }; then
     status="UNVERIFIED (failed to execute)"; N_UNVERIFIED=$((N_UNVERIFIED+1))
+  elif [ "$rc" -eq 0 ] && _tool_reports_findings; then
+    status="FINDINGS (reported with exit 0)"; N_FIND=$((N_FIND+1))
   elif [ "$rc" -eq 0 ]; then
     status="OK"; N_OK=$((N_OK+1))
   else

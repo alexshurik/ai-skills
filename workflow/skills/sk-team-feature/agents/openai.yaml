@@ -1,4 +1,4 @@
 interface:
   display_name: "Team Feature"
-  short_description: "Run the full gated feature workflow"
-  default_prompt: "Use $sk-team-feature to develop this feature through discovery, design, testing, review, acceptance, and retrospective."
+  short_description: "Run the Full workflow under a selected charter"
+  default_prompt: "Use $sk-team-feature for the Full discovery, design, implementation, independent review, acceptance, and retrospective workflow. Resolve control, workspace, and finish once before starting."

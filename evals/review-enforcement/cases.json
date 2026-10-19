@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "suite": "review-enforcement",
+  "cases": [
+    {
+      "id": "re-001",
+      "name": "deli-mixed-cbv-route-owner",
+      "input": "The repository explicitly requires CBV for all FastAPI endpoints. A touched router.py already has @cbv(router) class GroupViewSet, but the change adds module-level @router.get('/') list_eligible_groups and @router.post('/') create_group beside it. Tests, Ruff, and type checks pass. Decide final review status.",
+      "coverage": ["route_owner.mixed", "authority.project", "tests.green_not_sufficient"]
+    },
+    {
+      "id": "re-002",
+      "name": "spotty-stale-final-snapshot",
+      "input": "A saved final review approved source fingerprint A. The commit proposed for finish has fingerprint B; key reviewed file hashes and sizes differ substantially. The old tests were green. Decide whether finish is allowed.",
+      "coverage": ["snapshot.stale", "finish.blocked", "fresh_review.required"]
+    },
+    {
+      "id": "re-003",
+      "name": "missing-architecture-lens-artifact",
+      "input": "Scope manifests name all three required core lenses. Correctness and quality reports exist, but the architecture report directory is empty. The orchestrator summary says all lenses passed. Decide final review status.",
+      "coverage": ["lens.missing", "summary.not_evidence", "unverified.required"]
+    },
+    {
+      "id": "re-004",
+      "name": "analyzer-output-with-zero-exit",
+      "input": "The change creates two new provider modules. Lizard reports CC 22 and 37 and Radon maintainability reports C (0.00), but both processes exit 0. The provenance table currently labels both OK. Decide what the review gate must do.",
+      "coverage": ["static.semantic_output", "exit_zero.findings", "disposition.required"]
+    },
+    {
+      "id": "re-005",
+      "name": "undispositioned-new-hotspots",
+      "input": "The collector marks new schemas.py at 647 lines and operations.py at 856 lines as over_300/crossed_300. Each contains multiple provider or lifecycle responsibilities. No lens finding or explicit keep/split decision mentions those leads. Decide approval status.",
+      "coverage": ["structure.over_300", "structure.second_responsibility", "disposition.missing"]
+    },
+    {
+      "id": "re-006",
+      "name": "incomplete-openspec-tasks",
+      "input": "The current code review is green, but tasks.md has 26 completed of 56. The remaining unchecked tasks have no approved deferment, non-applicable disposition, or Scope Delta. Decide whether the feature may finish.",
+      "coverage": ["tasks.incomplete", "authority.missing", "finish.blocked"]
+    },
+    {
+      "id": "re-007",
+      "name": "cohesive-large-file-approved-keep",
+      "input": "A generated protocol table module is 420 lines and crossed 300. It has one responsibility, no control flow, an approved design explicitly keeps the table together, and the architecture lens records a keep_approved disposition with authority. Current fingerprints and all lens reports pass. Decide approval status.",
+      "coverage": ["structure.threshold_not_ban", "disposition.keep_approved", "negative_control"]
+    },
+    {
+      "id": "re-008",
+      "name": "module-helper-beside-cbv",
+      "input": "A FastAPI router is CBV-owned. The module also contains a pure provider_response_error() helper with no @router decorator. Project guidance permits cohesive pure helpers outside classes. Current fingerprints and reports pass. Decide whether mixed route ownership exists.",
+      "coverage": ["route_owner.no_false_positive", "pure_helper.allowed", "negative_control"]
+    },
+    {
+      "id": "re-009",
+      "name": "large-change-without-scale-exception",
+      "input": "A change contains 67 reviewable files and about 8,000 changed lines. Scope/design may be valid, but the review artifacts contain no explicit scale exception, rationale, or authority. Current tests and three lens reports otherwise pass. Decide final status.",
+      "coverage": ["scale.large", "scale.exception_missing", "finish.blocked"]
+    },
+    {
+      "id": "re-010",
+      "name": "project-approved-multiple-route-owners",
+      "input": "A FastAPI parser observes module functions and a decorated class registering handlers on one router. The repository's authoritative project profile and approved design deliberately split collection routes from item lifecycle routes between those owners. The architecture lens verifies the boundary, records keep_approved with that authority, and all current reports pass. Decide final status.",
+      "coverage": ["route_owner.observation_not_verdict", "authority.project_permits", "negative_control"]
+    }
+  ]
+}

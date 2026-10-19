@@ -331,10 +331,25 @@ def risk_tags(entry: dict[str, Any], classification: str) -> list[str]:
             any(entry.get(flag) for flag in ("over_300", "crossed_300", "micro_file_candidate")),
             "structure-lead",
         ),
+        (bool(entry.get("route_ownership_observations")), "route-ownership-signal"),
         (classification in metadata_classes, classification),
     )
     tags = {"changed-path", *(tag for matches, tag in conditions if matches)}
     return sorted(tags)
+
+
+def structure_leads(entry: dict[str, Any]) -> list[dict[str, Any]]:
+    leads = [
+        {"kind": flag}
+        for flag in ("over_300", "crossed_300", "micro_file_candidate")
+        if entry.get(flag)
+    ]
+    leads.extend(
+        lead
+        for lead in entry.get("route_ownership_observations", [])
+        if isinstance(lead, dict) and isinstance(lead.get("kind"), str)
+    )
+    return leads
 
 
 def canonical_fingerprint(value: dict[str, Any]) -> str:
@@ -356,6 +371,24 @@ def verified_review_map_fingerprint(review_map: dict[str, Any]) -> str:
     del canonical_map["fingerprint"]
     if canonical_fingerprint(canonical_map) != claimed:
         raise ValueError("review map fingerprint mismatch")
+    reviewable_files = [
+        item
+        for item in review_map.get("files", [])
+        if item.get("review_class", "reviewable") == "reviewable"
+    ]
+    expected_source = canonical_fingerprint(
+        {"base": review_map.get("base"), "files": reviewable_files}
+    )
+    if review_map.get("source_fingerprint") != expected_source:
+        raise ValueError("review map source fingerprint mismatch")
+    expected_review = canonical_fingerprint(
+        {
+            "source_fingerprint": expected_source,
+            "review_policy": review_map.get("review_policy"),
+        }
+    )
+    if review_map.get("review_fingerprint") != expected_review:
+        raise ValueError("review map review fingerprint mismatch")
     return claimed
 
 
@@ -440,6 +473,33 @@ def validated_ui_policy(raw: dict[str, Any]) -> tuple[bool | None, str | None, l
     return ui_required, ui_reason, ui_impact_paths
 
 
+def validated_additional_structure_leads(raw: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
+    items = raw.get("additional_structure_leads", [])
+    if not isinstance(items, list) or any(not isinstance(item, dict) for item in items):
+        raise ValueError("review_policy.additional_structure_leads must be a list of objects")
+    result: dict[str, list[dict[str, str]]] = {}
+    seen: set[tuple[str, str]] = set()
+    for item in items:
+        path = item.get("path")
+        kind = item.get("kind")
+        reason = item.get("reason")
+        authority = item.get("authority")
+        if not all(
+            isinstance(value, str) and value.strip() for value in (path, kind, reason, authority)
+        ):
+            raise ValueError("each additional structure lead needs path/kind/reason/authority")
+        assert isinstance(path, str) and isinstance(kind, str)
+        safe_parts(path)
+        key = (path, kind)
+        if key in seen:
+            raise ValueError(f"duplicate additional structure lead: {key}")
+        seen.add(key)
+        result.setdefault(path, []).append(
+            {"kind": kind, "reason": str(reason), "authority": str(authority)}
+        )
+    return result
+
+
 def classification_policy(evidence: dict[str, Any]) -> dict[str, Any]:
     raw = evidence.get("review_policy", {})
     if not isinstance(raw, dict):
@@ -448,6 +508,7 @@ def classification_policy(evidence: dict[str, Any]) -> dict[str, Any]:
     preserved_hashes = validated_preserved_hashes(raw, path_classes)
     classification_reasons = validated_classification_reasons(raw, path_classes)
     ui_required, ui_reason, ui_impact_paths = validated_ui_policy(raw)
+    additional_structure_leads = validated_additional_structure_leads(raw)
     return {
         "path_classes": path_classes,
         "preserved_baseline_hashes": preserved_hashes,
@@ -455,6 +516,7 @@ def classification_policy(evidence: dict[str, Any]) -> dict[str, Any]:
         "ui_ux_required": ui_required,
         "ui_ux_reason": ui_reason,
         "ui_impact_paths": ui_impact_paths,
+        "additional_structure_leads": additional_structure_leads,
     }
 
 
@@ -494,6 +556,10 @@ def mapped_evidence_entry(raw_entry: dict[str, Any], policy: dict[str, Any]) -> 
         "changed_intervals": raw_entry.get("changed_intervals", []),
         "interval_status": raw_entry.get("interval_status"),
         "local_imports": raw_entry.get("local_imports", []),
+        "structure_leads": [
+            *structure_leads(raw_entry),
+            *policy["additional_structure_leads"].get(path, []),
+        ],
         "risk_tags": risk_tags(raw_entry, classification),
         "ui_impact_candidate": is_ui_candidate(path, review_class),
     }
@@ -540,6 +606,51 @@ def resolved_ui_review(
     return ui_required, ui_reason, ui_candidates, ui_impact_paths
 
 
+def require_known_policy_paths(policy: dict[str, Any], seen: set[str]) -> None:
+    referenced = (
+        set(policy["path_classes"])
+        | set(policy["ui_impact_paths"] or [])
+        | set(policy["additional_structure_leads"])
+    )
+    if unknown := sorted(referenced - seen):
+        raise ValueError(f"review policy paths are not in evidence: {unknown}")
+
+
+def resolved_review_policy(
+    policy: dict[str, Any], ui_review: tuple[bool, str, list[str], list[str]]
+) -> dict[str, Any]:
+    ui_required, ui_reason, ui_candidates, ui_impact_paths = ui_review
+    additional_leads = (
+        {"path": path, **lead}
+        for path, leads in policy["additional_structure_leads"].items()
+        for lead in leads
+    )
+    return {
+        "ui_ux_required": ui_required,
+        "ui_ux_reason": ui_reason,
+        "ui_candidates": ui_candidates,
+        "ui_impact_paths": sorted(set(ui_impact_paths)),
+        "additional_structure_leads": sorted(
+            additional_leads, key=lambda item: (item["path"], item["kind"])
+        ),
+    }
+
+
+def change_scale(reviewable_files: list[dict[str, Any]]) -> dict[str, Any]:
+    changed_line_span = sum(
+        end - start + 1
+        for item in reviewable_files
+        for start, end in item.get("changed_intervals", [])
+        if isinstance(start, int) and isinstance(end, int) and end >= start
+    )
+    return {
+        "reviewable_paths": len(reviewable_files),
+        "changed_line_span": changed_line_span,
+        "large_change": len(reviewable_files) >= 50 or changed_line_span >= 5000,
+        "thresholds": {"reviewable_paths": 50, "changed_line_span": 5000},
+    }
+
+
 def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
     files = evidence.get("files")
     if not isinstance(files, list):
@@ -549,30 +660,17 @@ def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
 
     policy = classification_policy(evidence)
     mapped, seen = map_evidence_files(files, policy)
-
-    unknown_policy_paths = sorted(
-        (set(policy["path_classes"]) | set(policy["ui_impact_paths"] or [])) - seen
-    )
-    if unknown_policy_paths:
-        raise ValueError(f"review policy paths are not in evidence: {unknown_policy_paths}")
+    require_known_policy_paths(policy, seen)
 
     sorted_files = sorted(mapped, key=lambda item: item["path"])
     reviewable_files = [item for item in sorted_files if item["review_class"] == "reviewable"]
-    ui_required, ui_reason, ui_candidates, ui_impact_paths = resolved_ui_review(
-        policy, reviewable_files
-    )
+    resolved_policy = resolved_review_policy(policy, resolved_ui_review(policy, reviewable_files))
 
     source_identity = {
         "base": evidence.get("base"),
         "files": reviewable_files,
     }
     source_fingerprint = canonical_fingerprint(source_identity)
-    resolved_policy = {
-        "ui_ux_required": ui_required,
-        "ui_ux_reason": ui_reason,
-        "ui_candidates": ui_candidates,
-        "ui_impact_paths": sorted(set(ui_impact_paths)),
-    }
 
     review_map: dict[str, Any] = {
         "schema_version": 2,
@@ -586,6 +684,7 @@ def build_review_map(evidence: dict[str, Any]) -> dict[str, Any]:
             {"source_fingerprint": source_fingerprint, "review_policy": resolved_policy}
         ),
         "review_policy": resolved_policy,
+        "change_scale": change_scale(reviewable_files),
         "note": (
             "Lossless deterministic Git inventory. Lens coverage applies only to reviewable "
             "paths; risk tags and UI candidates are leads, not verdicts."
@@ -761,6 +860,27 @@ def command_validate_scopes(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_compare_current(args: argparse.Namespace) -> int:
+    approved = read_json(args.approved_map)
+    current = read_json(args.current_map)
+    verified_review_map_fingerprint(approved)
+    verified_review_map_fingerprint(current)
+    for field in ("source_fingerprint", "review_fingerprint"):
+        if approved.get(field) != current.get(field):
+            raise ValueError(f"current {field} differs from the reviewed snapshot")
+    print(
+        json.dumps(
+            {
+                "status": "current",
+                "source_fingerprint": current.get("source_fingerprint"),
+                "review_fingerprint": current.get("review_fingerprint"),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -782,6 +902,14 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--review-map", type=Path, required=True)
     validate.add_argument("--manifest", type=Path, action="append", required=True)
     validate.set_defaults(handler=command_validate_scopes)
+
+    compare = commands.add_parser(
+        "compare-current",
+        help="fail when current source/review identity differs from an approved map",
+    )
+    compare.add_argument("--approved-map", type=Path, required=True)
+    compare.add_argument("--current-map", type=Path, required=True)
+    compare.set_defaults(handler=command_compare_current)
     return parser
 
 

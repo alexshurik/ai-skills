@@ -50,6 +50,19 @@ printf 'value_301 = 301\nvalue_302 = 302\n' >> "$FIXTURE_DIR/src/threshold.py"
 } > "$FIXTURE_DIR/src/large module.py"
 printf 'export async function load() {\n  return import("./lazy.js");\n}\n' \
     > "$FIXTURE_DIR/src/lazy.ts"
+printf '%s\n' \
+    'from fastapi import APIRouter' \
+    'from fastapi_utils.cbv import cbv' \
+    'router = APIRouter()' \
+    '@router.get("/")' \
+    'async def list_items():' \
+    '    return []' \
+    '@cbv(router)' \
+    'class ItemViewSet:' \
+    '    @router.get("/{item_id}")' \
+    '    async def get_item(self, item_id: int):' \
+    '        return item_id' \
+    > "$FIXTURE_DIR/src/mixed_routes.py"
 {
     printf 'from outside import secret\n'
     for number in $(seq 1 301); do
@@ -85,6 +98,12 @@ assert files["src/large module.py"]["over_300"]
 assert files["src/large module.py"]["local_imports"][0]["kind"] == "python-local-import"
 assert files["src/lazy.ts"]["micro_file_candidate"]
 assert files["src/lazy.ts"]["local_imports"][0]["kind"] == "dynamic-import"
+route_signal = files["src/mixed_routes.py"]["route_ownership_observations"][0]
+assert route_signal["kind"] == "competing_route_owners"
+assert route_signal["framework"] == "fastapi"
+assert route_signal["router"] == "router"
+assert route_signal["owners"][0]["handlers"][0]["name"] == "list_items"
+assert route_signal["owners"][1]["classes"][0]["class"] == "ItemViewSet"
 assert files["src/stable.py"]["changed_intervals"]
 assert files["src/renamed.py"]["base_path"] == "src/rename_me.py"
 assert files["src/renamed.py"]["base_lines"] == 2

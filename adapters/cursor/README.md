@@ -59,6 +59,7 @@ Open Cursor's slash menu and select a skill such as:
 
 ```text
 /sk-team-help
+/sk-team
 /sk-team-feature
 /sk-team-quick
 /sk-onboard

@@ -11,18 +11,20 @@ Run as one clean, non-delegating conditional lens. This lens runs only when the
 review map says `ui_ux_required: true`. It owns the rendered experience, not
 frontend architecture or source-code style.
 
-Read the snapshot manifest, UI/UX scope manifest, exact source fingerprint,
-approved acceptance criteria, the design's visual intent/reference, project UI
-guidance, `~/.claude/agents/best-practices/ui/reviewer.md` or source fallback
+First read only the snapshot manifest, UI/UX scope manifest, exact source
+fingerprint, and the minimum launch/capture instructions. Perform the screenshot-
+first pass and record its immutable first-pass conclusion before reading approved
+acceptance criteria, the design's visual intent/reference, implementation details,
+or test output. Then read project UI guidance,
+`~/.claude/agents/best-practices/ui/reviewer.md` or source fallback
 `shared/best-practices/ui/reviewer.md`, and
 `~/.claude/agents/best-practices/ui/composition-contract.md` plus
 `~/.claude/agents/best-practices/ui/rendered-evidence.md`, or their source fallbacks
 under `shared/best-practices/ui/`, and
 `~/.claude/agents/shared/scope-governance.md` or the source fallback
-`workflow/agents/shared/scope-governance.md`. Use source only as needed to locate and
-operate the affected experience, and perform the screenshot-first pass below before
-reading assigned implementation details or test output. Then read assigned
-current/base content to establish context and complete the review. Do not substitute code
+`workflow/agents/shared/scope-governance.md`. After the first-pass record, read the
+approved intent/reference and assigned current/base content to establish context and
+complete the contract pass. Do not substitute code
 inspection, grep, lint, or an anti-slop script for rendered inspection.
 
 ## Required rendered evidence
@@ -49,6 +51,12 @@ source fingerprint, and applicable deterministic render inputs from the rendered
 evidence contract. A normal UI change needs roughly 4–6 useful screenshots, not a
 generated gallery or HTML report. Missing runnable, original-resolution, or complete-
 extent evidence is `UNVERIFIED`; never approve visual composition from source alone.
+
+For browser-chrome, safe-area, fixed/sticky navigation, dynamic viewport, keyboard,
+or `visualViewport` changes, use the actual target browser/device when available or
+the closest project-appropriate WebKit/mobile approximation. Record any remaining
+platform gap; static Chromium evidence alone is `UNVERIFIED` for Safari/WebKit
+viewport behavior.
 
 ## Ownership
 
@@ -82,10 +90,15 @@ quality defect to engineering-quality rather than treating the passing guard as 
 
 ## Finding calibration
 
-Block only a violation of approved criteria/reference, a concrete usability or
-accessibility defect, a misleading control/state, or a material product-consistency
-regression. A preference or alternative aesthetic is `backlog`/`user_decision`, not
-a blocker. Compare against the project, not a generic design trend.
+Block a violation of approved criteria/reference, a concrete usability or
+accessibility defect, a misleading control/state, a material product-consistency
+regression, or a macro composition failure that makes the screen materially hard to
+scan or understand. Macro failures include broken hierarchy, ambiguous entity
+grouping, unusable density, unstable alignment, fragmented rhythm, or a desktop/
+compact layout that loses information priority. A correct implementation of a weak
+composition can still fail. Pure aesthetic preference remains `backlog`/
+`user_decision`; compare against the product and objective composition principles,
+not a generic trend.
 
 Write the complete finding set to the assigned Git-local runtime artifact in one
 pass. Use IDs `UIUX-001`, `UIUX-002`, and the canonical finding schema from
@@ -113,6 +126,21 @@ findings.
   evidence: rendered state, viewport, effective scroll extent, reference, and screenshot/URL
 ```
 
-Return `FINAL` or `BLOCKED`, `OK | FINDINGS | UNVERIFIED`, artifact path/fingerprint,
-screens/states inspected, and at most five top findings in no more than 30 lines.
-The runtime artifact is authoritative; do not create a durable `UI_REVIEW.md`.
+Every artifact and return contains two independent verdicts:
+
+```text
+Review map: <review-map fingerprint>
+Source fingerprint: <source fingerprint>
+Status: PASS | FINDINGS | UNVERIFIED
+CONTRACT: PASS | FAIL | UNVERIFIED
+VISUAL: PASS | FAIL | UNVERIFIED
+```
+
+`CONTRACT` judges the approved constraints/reference. `VISUAL` judges the rendered
+composition itself. Overall approval requires both PASS; contract conformance can
+never convert a VISUAL failure into approval.
+Use `Status: PASS` only when both verdicts pass for the assigned snapshot.
+
+Return `FINAL` or `BLOCKED`, both verdicts, artifact path/fingerprint, screens/states
+inspected, and at most five top findings in no more than 30 lines. The runtime
+artifact is authoritative; do not create a durable `UI_REVIEW.md`.

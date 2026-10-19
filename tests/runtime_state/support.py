@@ -106,6 +106,19 @@ class RuntimeCase(unittest.TestCase):
         return runtime, state
 
     def mutate(self, runtime: Path, revision: int, command: str, *arguments: str) -> JsonObject:
+        normalized = list(arguments)
+        if (
+            command in {"start-attempt", "finish-attempt"}
+            and "--input-fingerprint" not in normalized
+        ):
+            normalized.extend(("--input-fingerprint", "d" * 64))
+        if (
+            command == "finish-attempt"
+            and "--outcome" in normalized
+            and normalized[normalized.index("--outcome") + 1] == "succeeded"
+            and "--sha256" not in normalized
+        ):
+            normalized.extend(("--sha256", "d" * 64))
         result = self.expect_ok(
             command,
             "--runtime-dir",
@@ -114,7 +127,7 @@ class RuntimeCase(unittest.TestCase):
             str(revision),
             "--command-id",
             f"command-{revision + 1}",
-            *arguments,
+            *normalized,
         )
         assert result is not None
         return result

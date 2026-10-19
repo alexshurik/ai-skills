@@ -4,6 +4,19 @@ FastAPI-specific coding rules. Applied on top of the Python language profile.
 
 ## Endpoint Definitions
 
+### Preserve project-approved route ownership
+
+Before adding an endpoint to an existing router module, identify its ownership
+model: module-level functions, a decorated class, multiple deliberately separated
+owners, or another project-approved controller. Follow repository guidance and the
+nearest approved analogue. Do not infer a universal function-versus-class rule from
+FastAPI itself.
+
+When the repository requires one owner per router, do not create a competing owner
+without an explicit design decision. When it deliberately permits multiple owners,
+preserve their documented responsibility boundary. Pure parsers or factories are
+not route owners merely because they remain module-level.
+
 ### Prefer async def
 
 Prefer `async def` for endpoints performing async I/O. Sync `def` endpoints are safe (FastAPI runs them in a threadpool) but consume a thread per request, limiting concurrency under high load. Use `async def` with async libraries (httpx, asyncpg, aiofiles) for best throughput.

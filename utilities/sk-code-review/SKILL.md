@@ -49,6 +49,13 @@ exact-input receipt reuse. A red required gate means review does
 not start. Store full output in Git-local logs and pass only compact provenance plus
 paths. Engineering-quality must not rerun the full suite/tool battery.
 
+For user-visible frontend impact, perform a fail-fast macro visual preflight before
+that broad gate battery: the root personally opens exact-source compact and desktop
+renders at the current fingerprint and rejects materially weak hierarchy, grouping,
+density, alignment, rhythm, responsive priority, or product fit. Missing runnable
+evidence is UNVERIFIED. Do not spend the full technical review on a screen that
+already fails this preflight.
+
 Every lens returns its complete finding set in Round 1. Launch all three core leaves before one
 long event-driven foreground wait. Apply shared no-poll semantics: transport-only
 timeouts are not rounds/retries/events; never list, nudge, or chatter between
@@ -67,17 +74,28 @@ or explicitly selected outcomes; it does not authorize a new remedy design.
 
 Use the orchestrator's lifecycle if the caller later authorizes remediation:
 
-- Round 1: full core-lens review plus conditional UI/UX and exhaustive findings;
-- targeted Round 2: fresh snapshot, fresh targeted gates plus exact receipt reuse, valid parent full review,
+- one full review round: core lenses plus conditional UI/UX and exhaustive findings;
+- one targeted remediation verification: fresh snapshot, fresh targeted gates plus exact receipt reuse, valid parent full review,
   immutable pre/post fingerprints, complete delta, verified unchanged hashes, no
   expansion, and every finding-owning/impact-routed lens;
-- exceptional Round 3: only unresolved allowlisted defects, remediation regression,
-  or newly proven critical correctness/security defects;
-- no automatic Round 4: return `NEEDS USER DECISION` with exact blockers/options.
+- one bounded recovery: only for an unresolved allowlisted defect, remediation
+  regression, or newly proven critical correctness/security defect; focused gates
+  and owning/impact-routed lenses only; it does not restart a full review.
 
 Approval requires complete scope/provenance, valid required lenses, no required
 finding, and zero required UNVERIFIED dimensions. A targeted approval additionally
 requires valid parent/routing/delta evidence. Disclose mode, round, and parent.
+When UI/UX is required, report `CONTRACT` and `VISUAL` independently and require
+both PASS; contract conformance cannot override a visual failure.
+
+Before APPROVED, write the fingerprint-bound dispositions artifact, recapture
+current evidence with the same base/policy, rebuild the current map, and run the
+executable Full approval gate described by `review-approval-gate.md`. Supply every
+required lens report and scope manifest, the static summary, and applicable tasks.
+Missing or stale lens output, source/review drift, UNVERIFIED analyzer output,
+undispositioned structural/tool/task/scale leads, or a non-PASS gate makes this
+review incomplete. This validation is read-only for product/feature source and does
+not authorize remediation.
 
 ## Guardrails
 

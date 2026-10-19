@@ -22,10 +22,12 @@ return a `## NEEDS USER INPUT` block and stop without writing final artifacts.
 For each question include why it matters, 2–4 options with trade-offs, and a
 recommendation. Ask at most four questions per round. Never fabricate an answer.
 
-Before writing artifacts, return a concise approach-confirmation round. Continue
-only after the caller supplies the user's confirmation. The caller may use one
-short follow-up for that confirmation; a redesign starts a clean successor from
-the persisted requirements and feedback checkpoint.
+Before writing artifacts, require a concise approach decision. In Manual/
+Checkpoints, return the approach-confirmation round. In YOLO, the caller may provide
+a recorded policy confirmation when the design is the smallest direct realization
+of approved requirements and has no `SD-*` addition or unresolved material
+alternative. A redesign starts a clean successor from the persisted requirements
+and feedback checkpoint. Never policy-decide a genuine architecture/product choice.
 
 Persist the complete design, task graph, matrices, and ADRs in their designated
 artifacts. Return a compact decision handoff (status, artifact paths, architecture
@@ -104,7 +106,8 @@ Produce the items defined in `architecture-gates.md`:
 - state/coordination alignment when durable state or concurrency changes;
 - module-growth forecast;
 - for meaningful user-visible UI work, a visual-composition brief, composition
-  ownership matrix, rendered-evidence strategy, and reference;
+  ownership matrix, first-viewport composition blueprint, rendered-evidence
+  strategy, literal user constraints/reference, and forbidden alternatives;
 - infrastructure authority and non-goals.
 
 Do not hardcode a particular layered architecture. Adapt owner names to the target
@@ -124,16 +127,19 @@ Apply `scope-governance.md` and return the Scope Delta Gate before final artifac
 - component/owner summary;
 - important data flows;
 - applicable UI composition owners, action/title budget, domain canon, responsive
-  pressure states, and rendered-evidence route;
+  pressure states, first-viewport composition blueprint, forbidden alternatives,
+  and rendered-evidence route;
 - public contract/model changes;
 - planned files and structural decisions;
 - reuse/custom-build decisions;
 - mechanism and invariant-alignment decisions when applicable;
 - risks and non-goals.
 
-Ask the user to confirm through the caller. General approach approval covers only
-the listed required work; every material addition needs an explicit ID decision.
-Do not write `design.md` or `tasks.md` until confirmation is present in the prompt.
+Require confirmation through the caller. General approach approval covers only the
+listed required work; every material addition needs an explicit ID decision. In
+YOLO, an exact no-addition approach may use recorded policy confirmation. Do not
+write `design.md` or `tasks.md` until user or valid policy confirmation is present
+in the prompt.
 
 ## 5. Write the design
 
@@ -157,11 +163,20 @@ Create `openspec/changes/<name>/design.md` with:
     scroll, outer frame, accessible page title/action region, major surfaces,
     navigation, recurring domain representations, and specialized interactions;
     one primary user task; at most one visible primary action per relevant viewport
-    or why none is appropriate; content regions/alignment axes; the nearest domain
-    canon and intentional variants; desktop/compact reflow; relevant normal/state/
-    content-pressure cases; and the rendered-evidence strategy. Link a user reference
-    or exact baseline screenshots when available; do not create a separate visual-
-    spec document. Omit this section for proven non-rendered work.
+    or why none is appropriate; a first-viewport composition blueprint stating the
+    primary → secondary → metadata reading order, entity boundaries, grouping,
+    density, alignment axes, and what the user should understand before scrolling;
+    the nearest domain canon and intentional variants; desktop/compact reflow;
+    relevant normal/state/content-pressure cases; literal user constraints and
+    reference traits that must survive implementation; explicit forbidden
+    alternatives or substitutions; and the rendered-evidence strategy. Link a user
+    reference or exact baseline screenshots when available; do not create a separate
+    visual-spec document. Omit this section for proven non-rendered work.
+
+The blueprint is a quality hypothesis, not an excuse for a weak screen. A rendered
+composition that follows the design but has poor hierarchy, grouping, density,
+rhythm, or product fit must be revised; specification conformance cannot override a
+failed visual verdict.
 14. Security threat model and authorization.
 15. Reliability, observability, and performance.
 16. Error handling.
@@ -213,6 +228,8 @@ Confirm:
 - every material concern has exactly one owner;
 - every applicable UI composition concern has one project-native owner or a justified
   `N/A`, with no shell/page/component competing ownership;
+- every meaningful UI change has a first-viewport composition blueprint, preserved
+  literal user constraints, and explicit forbidden alternatives;
 - names express business capability at the appropriate level;
 - trust-boundary data has a precise model;
 - custom cross-cutting infrastructure has reuse evidence;
@@ -247,7 +264,8 @@ Return only the compact decision handoff defined by `<interaction_protocol>`.
 - Do not add speculative abstractions or future features.
 - Do not copy a frequent pattern that conflicts with a higher authority.
 - Do not infer deployment or secret-management authority from application scope.
-- Do not create implementation artifacts before approach confirmation.
+- Do not create implementation artifacts before user or valid YOLO policy approach
+  confirmation.
 - Do not produce tasks for an incomplete boundary matrix.
 
 </guardrails>

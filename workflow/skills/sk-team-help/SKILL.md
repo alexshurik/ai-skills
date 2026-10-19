@@ -20,6 +20,7 @@ A structured workflow system with specialized agents for software development.
 
 | Skill | Description |
 |---------|-------------|
+| `sk-team <description>` | Recommended entry: choose Micro, Quick, or Full and how far to finish |
 | `sk-team-feature <description>` | Full workflow for new features |
 | `sk-team-quick <description>` | Quick workflow for bugfixes |
 | `sk-team-status` | Show status of active workflows |
@@ -32,7 +33,7 @@ Claude invokes skills as `/skill-name`, Codex as `$skill-name` or through
 
 ```
                        ORCHESTRATOR
-     (skill: sk-team-feature / sk-team-quick / sk-team-status)
+     (skill: sk-team / sk-team-feature / sk-team-quick / sk-team-status)
         Routes tasks, controls workflow, tracks state
                               │
    ┌──────────────┬───────────┼──────────────┬───────────────┐
@@ -53,6 +54,32 @@ analyst      researcher                 reviewer       sk-        sk-
 
 Research and Doc Review are **optional** phases — the orchestrator offers them and
 runs them only on request.
+
+## Start Charter
+
+`sk-team` recommends a complete charter and asks once when choices are missing:
+
+1. **Path:** Pick for me | Super-short | Short | Full
+2. **Control:** Every phase | Important checkpoints | YOLO
+3. **Workspace:** Current | Separate | Choose safely
+4. **Finish:** Diagnose only | Leave changes | Commit | PR | Merge | Deploy
+5. **Checks:** Standard | Elevated
+
+The Russian UI labels are: `Подбери сам`, `Суперкороткий`, `Короткий`, `Полный`;
+`Каждый этап`, `Только важное`, `YOLO`; `Текущая`, `Отдельная`,
+`Выбрать безопасно`; `Только разобраться`, `Оставить правки`, `Коммит`, `PR`,
+`Merge`, `Deploy`; `Обычные`, `Усиленные`.
+
+YOLO continues through phase ceremony, in-scope implementation, checks, review, and
+approved-design remediation. It still stops for material product/scope choices,
+missing external access, destructive or live-value actions, unverifiable evidence,
+budget exhaustion, or a finish beyond the selected destination. YOLO lasts for one
+objective only.
+
+Visual quality is mandatory for every route that changes rendered UI; it is not an
+extra mode or another startup question. Micro uses root visual inspection, Quick
+uses an early/final render plus its fresh combined reviewer, and Full adds the
+independent rendered UI/UX lens. YOLO skips ceremony, never the visual gate.
 
 ## Agents (delegated subagent roles)
 
@@ -86,8 +113,9 @@ For new features, significant changes, complex work:
 8. Orchestrator → Archive to openspec/completed/<feature-name>/
 ```
 
-**Approval is required between every phase** — the orchestrator stops after each phase
-and waits for explicit user approval before continuing.
+Phase gates follow the charter: Manual asks after each phase, Checkpoints asks at
+Scope Lock and Execution, and YOLO continues across ceremony. All modes still stop
+at genuine authority or safety boundaries.
 
 **Example:**
 ```
@@ -96,15 +124,16 @@ Invoke sk-team-feature with: Add user authentication with OAuth2
 
 ### Quick Workflow (`sk-team-quick`)
 
-For bugfixes, typos, and small changes, quick mode uses two bounded threads:
+For bugfixes, bounded features, coherent multi-screen UI polish, and small changes,
+quick mode uses two bounded threads:
 
 ```
 1. sk-developer → Diagnosis + brief design gate + implementation/tests
 2. fresh non-delegating reviewer → Three owner dimensions + acceptance verdict
 ```
 
-The root retains the design approval and independent-review gates without launching
-the full feature role sequence.
+The root retains the execution checkpoint when the charter requires it and always
+keeps fresh independent review without launching the full feature role sequence.
 
 **Example:**
 ```
@@ -138,7 +167,7 @@ Heavy runtime data is not committed:
 ```text
 $(git rev-parse --git-path sk-workflow)/<feature-name>/
 ├── events.jsonl                  # authoritative semantic transition history
-├── state.json                    # derived schema-v2 stage/task/attempt projection
+├── state.json                    # derived schema-v3 charter/stage/task/delivery projection
 ├── checkpoints/ and logs/
 └── review/<snapshot>/            # evidence, map, scopes, provenance, lenses, full report
 ```
@@ -188,12 +217,16 @@ new non-critical ideas are deferred instead of starting an unbounded loop.
 scope decision remains; backlog/baseline observations may stay visible under an
 `APPROVED` current-scope verdict.
 
-Review is capped at three rounds: full Round 1, targeted Round 2 after frozen
-triage, and exceptional Round 3 only for an unresolved allowlisted defect,
-remediation regression, or newly proven critical correctness/security defect.
-A normative design/ADR amendment invalidates targeted mode and receives a full
-review against its new authority fingerprint within the remaining budget. There is
-no automatic Round 4; remaining blockers return `NEEDS USER DECISION`.
+Review uses one full round, then at most one targeted remediation verification with
+exact receipt reuse. An unresolved allowlisted or newly critical defect may receive
+one bounded focused recovery without restarting the full review; in YOLO this
+continues automatically when it stays inside approved design, scope, safety, and
+destination. A normative design/ADR amendment exits targeted mode and returns to
+its authority gate. Remaining blockers return the exact IDs and boundary.
+
+For user-visible UI, review reports `CONTRACT` and `VISUAL` separately. Approval
+requires both PASS; a screen can satisfy the written layout contract and still fail
+for weak hierarchy, grouping, density, rhythm, alignment, or product fit.
 
 ## TDD Approach
 
@@ -281,26 +314,34 @@ Each agent runs in isolated context with specific tools.
 ## Best Practices
 
 ### When to Use Full Workflow
-- New features
-- Complex changes
-- Multiple components affected
-- Design decisions needed
+- Material product or architecture decisions
+- Public/data/trust-boundary changes
+- High-risk migrations, concurrency, payments, destructive data, or deployment
+- Multiple components with genuinely non-obvious ownership
+
+### When to Use Super-short Workflow
+- Tiny localized fixes or text/config edits
+- One clear owner and no unresolved design decision
+- Focused checks are sufficient
 
 ### When to Use Quick Workflow
 - Bug fixes
-- Typos
-- Single-file changes
-- Clear, simple tasks
+- Bounded features with clear behavior
+- Related multi-screen UI polish using established owners
+- Changes needing one implementer and one independent combined review
 
 ### Tips
-- Let the Product Analyst ask questions
-- Don't skip phases for "simple" features
-- Trust the TDD process
-- Review code review feedback carefully
+- Route by product and boundary risk, not bullet/file/test count
+- Use focused checks while iterating and one content-addressed broad receipt
+- Reuse unchanged receipts during review, remediation, and acceptance
+- Keep the visual gate mandatory for rendered UI without promoting UI polish to Full
 
 ## Getting Started
 
 ```
+# Recommended: choose a route and settings interactively
+Invoke sk-team with <describe the objective>
+
 # Start a new feature
 Invoke sk-team-feature with <describe your feature>
 

@@ -6,7 +6,9 @@ paths to durable evidence, not a copy of the caller's transcript.
 
 Use `scope-governance.md` for Scope Delta approval, finding/remediation authority,
 OpenSpec documents, and deferred-item lifecycle. Use `runtime-state-policy.md` for
-the semantic event journal, materialized state, transitions, and migration.
+the semantic event journal, materialized state, transitions, and migration. Use
+`workflow-charter-policy.md` for route, authorization, workspace, assurance, and
+finish semantics.
 
 ## Core invariants
 
@@ -17,12 +19,15 @@ the semantic event journal, materialized state, transitions, and migration.
    messages carry compact decisions and artifact paths.
 4. The root owns the global spawn, retry, concurrency budget, and runtime-state
    writes. The exact bounded nested-review writer lease is the only child-writer
-   exception: its holder records only permitted nested attempt events through the
-   helper. No child ever edits the workflow journal or projection directly, and
-   every child outside that lease is read-only with respect to runtime state.
+   exception, is available only in Full review, and records only permitted nested
+   task/attempt events through the helper. No child ever edits the workflow journal
+   or projection directly, and every child outside that lease is read-only with
+   respect to runtime state.
 5. Nesting is limited to **depth 2**. A child may spawn helpers only when its task
    envelope grants a named subgraph and exact child count. Depth 3+ is prohibited.
 6. A leaf agent may not spawn. Review lenses are always leaves.
+7. One runtime run owns one objective and one charter. A new independent objective
+   starts a new run and never inherits YOLO or terminal authority.
 
 ## Required task envelope
 
@@ -112,8 +117,9 @@ root
   transitions. `state.json` is its derived compact projection. The global root owns
   both and mutates them only through `runtime-state/sk_state.py`. The sole exception
   is the bounded nested-review writer lease defined by `runtime-state-policy.md`;
-  it records leaf tasks/attempts inside the root's existing foreground join.
-- Stages own their gates, checks, and tasks; tasks own immutable attempt history.
+  it records Full review leaf attempts inside the bounded lineage.
+- Stages own their gates, checks, and tasks; tasks own immutable attempt history and
+  may compactly materialize a successfully dispatched one-shot batch in one event.
   `control` records `ready`, `waiting_agents`, `waiting_user`, `blocked`, or
   `complete`. Neither file is a raw transcript or duplicate host tool-call log.
 
@@ -122,31 +128,39 @@ root
 1. Resolve the available concurrency budget once.
 2. Fill every available slot from the pending wave before waiting.
 3. Maintain explicit `pending`, `running`, `done`, and `blocked` sets.
-4. When the host exposes an event-driven mailbox wait such as Codex `wait_agent`,
+4. Keep the required wave and its aggregation in the same active parent turn. When
+   a result makes the next required task eligible, dispatch it immediately before
+   optional analysis or status prose. A parked orchestrator is a bootstrap state
+   only: activate it as soon as its lease envelope exists, and treat an unactivated
+   or completed-but-unaggregated required child as a workflow defect, not normal
+   waiting.
+5. When the host exposes an event-driven mailbox wait such as Codex `wait_agent`,
    keep every required child in a **foreground join** with the active parent turn.
-   After successful dispatch, create the logical tasks/attempts and record one
-   `wait-agents --join foreground` transition containing the required attempt IDs.
+   After successful dispatch, record one compact batched task (or a long-lived
+   task attempt). Validate its running IDs with `wait-agents --join foreground`;
+   that command is read-only and does not append a journal event.
    Call the primitive with the **longest timeout** allowed by the active host,
    higher-priority instructions, and communication policy. Never hard-code a short
    polling loop or a universal maximum timeout.
-5. If the wait returns only because of a transport timeout, re-enter the foreground
-   join without writing runtime state. A transport timeout is not a workflow retry,
-   phase transition, budget, or semantic event. Waiting inside one tool call adds no
+6. If the wait returns only because of a transport timeout or partial completion,
+   re-enter the foreground join without writing a wait event. The first foreground
+   wait and all continuations are transport-only: none is a workflow retry, phase
+   transition, budget, or semantic event. Waiting inside one tool call adds no
    periodic transcript entries; only a model-visible wake-up and its compact result
    add parent context.
-6. Do not end the parent turn while a required child is running merely because an
+7. Do not end the parent turn while a required child is running merely because an
    elapsed-time or empty-wakeup threshold was reached. End the join when all required
    results arrive, the user cancels or replaces the work, or the host forces the turn
    to end.
-7. After a wake-up with updates, process every available mailbox result and fill
+8. After a wake-up with updates, process every available mailbox result and fill
    newly freed slots before waiting again. If user input steers the active turn,
    handle it under the host's normal steering rules and resume the join when the
    required work remains in scope.
-8. Do not call `list_agents` after routine transport timeouts. Use it only for
+9. Do not call `list_agents` after routine transport timeouts. Use it only for
    inconsistent state, cancellation, or a suspected missing completion.
-9. On a concurrency-limit error, remember the effective capacity and wait for a slot;
+10. On a concurrency-limit error, remember the effective capacity and wait for a slot;
    do not retry the same spawn repeatedly.
-10. Completed agents are never polled again. Periodic “still running” progress
+11. Completed agents are never polled again. Periodic “still running” progress
     chatter and unsolicited `send_message` nudges are forbidden.
 
 If the host has no event-driven mailbox wait, do not invent an unbounded polling
@@ -164,11 +178,12 @@ observability only: never treat them as a correctness mechanism or assume they w
 start a new parent turn.
 
 On resume, validate the semantic journal and projection before interpreting host
-status. Reconcile running attempt IDs with the mailbox and record observed results
-before new dispatch. Migrate schema-v1 ledgers using `migrate-v1`; it preserves the
-old file, normalizes `phase: background_work_active` and legacy wait-budget state to
-a detached attempt join, and requires mailbox aggregation before any new stage,
-verdict, or approval. Never treat a legacy UI Done state as proof of aggregation.
+status. Reconcile running attempt IDs with the mailbox and record
+observed results before new dispatch. Migrate schema-v1 ledgers using `migrate-v1` and schema-v2
+projections using `migrate-v2`; each preserves the old file. Schema-v1 migration
+normalizes `phase: background_work_active` and legacy wait-budget state to a detached
+attempt join and requires mailbox aggregation before any new stage, verdict, or
+approval. Never treat a legacy UI Done state as proof of aggregation.
 
 ## Result contract
 

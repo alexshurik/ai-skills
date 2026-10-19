@@ -64,13 +64,19 @@ The caller:
 2. surfaces the compact decision, required actions, blockers, and artifact paths;
 3. surfaces `## NEEDS USER INPUT` immediately and never answers it on the user's
    behalf;
-4. records explicit approval and artifact fingerprints in workflow state;
-5. never auto-proceeds through an approval gate;
+4. records user or policy decisions and artifact fingerprints in workflow state;
+5. applies `workflow-charter-policy.md`: it may auto-decide ceremony gates covered
+   by Checkpoints/YOLO, but never fabricates a material authority or safety choice;
 6. starts a clean child for a new phase, redo, remediation, or review cycle.
 7. passes remediation an allowlist of approved finding IDs, never a generic
    instruction to fix every reviewer suggestion.
 8. cites the authority source for every material delegated constraint and keeps its
    own assumptions or implementation preferences explicitly non-binding.
+
+A policy-decided ceremony records `decision_source=policy`. A material product,
+scope, architecture, external-access, destructive/live-value, or unauthorized
+terminal decision remains user-owned even in YOLO. Do not surface questions already
+answered by the current run's charter.
 
 When a child proves that the next valid action belongs to a different decision
 owner, it returns `BLOCKED — REPLAN_REQUIRED` with the affected finding/requirement,

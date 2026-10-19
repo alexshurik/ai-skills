@@ -96,7 +96,7 @@ class LifecycleTests(RuntimeCase):
         )
         state = self.mutate(
             runtime,
-            8,
+            7,
             "finish-attempt",
             "--stage",
             "testing",
@@ -113,9 +113,9 @@ class LifecycleTests(RuntimeCase):
             "--runtime-dir",
             str(runtime),
             "--expected-revision",
-            "8",
+            "7",
             "--command-id",
-            "command-9",
+            "command-8",
             "--stage",
             "testing",
             "--task",
@@ -124,10 +124,14 @@ class LifecycleTests(RuntimeCase):
             "suite-1",
             "--outcome",
             "succeeded",
+            "--input-fingerprint",
+            "d" * 64,
+            "--sha256",
+            "d" * 64,
         )
         assert replayed is not None
-        self.assertEqual(replayed["revision"], 9)
-        self.assertEqual(len((runtime / "events.jsonl").read_text().splitlines()), 9)
+        self.assertEqual(replayed["revision"], 8)
+        self.assertEqual(len((runtime / "events.jsonl").read_text().splitlines()), 8)
 
     def test_repair_rebuilds_stale_projection_and_preserves_partial_tail(self) -> None:
         runtime, stale = self.init_runtime("repair")
@@ -208,7 +212,7 @@ class LifecycleTests(RuntimeCase):
     def test_future_projection_fails_closed_and_is_preserved(self) -> None:
         runtime, _ = self.init_runtime("future-schema")
         future_projection = (
-            b'{\n  "schema_version": 3,\n  "future_contract": {"preserve": true}\n}\n'
+            b'{\n  "schema_version": 4,\n  "future_contract": {"preserve": true}\n}\n'
         )
         state_path = runtime / "state.json"
         state_path.write_bytes(future_projection)
@@ -234,7 +238,7 @@ class LifecycleTests(RuntimeCase):
         journal_path = runtime / "events.jsonl"
         state_path = runtime / "state.json"
         event = json.loads(journal_path.read_text())
-        event["event_schema_version"] = 2
+        event["event_schema_version"] = 3
         future_journal = (json.dumps(event, sort_keys=True) + "\n").encode()
         journal_path.write_bytes(future_journal)
         projection = state_path.read_bytes()
@@ -257,7 +261,7 @@ class LifecycleTests(RuntimeCase):
         self.mutate(runtime, 1, "enter-stage", "--stage", "testing")
         (runtime / "state.json").write_text(json.dumps(initial) + "\n")
         self.assert_status_action(runtime, "stale", "repair")
-        (runtime / "state.json").write_text('{"schema_version": 2}\n')
+        (runtime / "state.json").write_text('{"schema_version": 3}\n')
         self.assert_status_action(runtime, "diverged", "repair")
         (runtime / "state.json").unlink()
         self.assert_status_action(runtime, "missing", "repair")
@@ -269,7 +273,7 @@ class LifecycleTests(RuntimeCase):
         self.assert_status_action(missing, "missing", "recover-journal-or-reinitialize")
         diverged = self.base / "diverged-without-history"
         diverged.mkdir()
-        (diverged / "state.json").write_text('{"schema_version": 2}\n')
+        (diverged / "state.json").write_text('{"schema_version": 3}\n')
         self.assert_status_action(diverged, "diverged", "recover-journal-or-reinitialize")
         legacy = self.base / "legacy"
         legacy.mkdir()
@@ -375,7 +379,18 @@ class LifecycleTests(RuntimeCase):
             "--optional",
         )
         self.mutate(runtime, 9, "complete-stage", "--stage", "testing", "--outcome", "succeeded")
-        completed = self.mutate(runtime, 10, "complete", "--outcome", "completed")
+        self.mutate(
+            runtime,
+            10,
+            "record-terminal",
+            "--kind",
+            "local",
+            "--outcome",
+            "succeeded",
+            "--evidence",
+            "verified local changes",
+        )
+        completed = self.mutate(runtime, 11, "complete", "--outcome", "completed")
         self.assertEqual(completed["control"], {"kind": "complete", "outcome": "completed"})
 
     def finish_required_task(self, runtime: Path) -> None:

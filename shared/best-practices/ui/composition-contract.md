@@ -38,6 +38,27 @@ Record intentional exceptions in project authority with a stable ID, exact scope
 rationale, source/decision owner, and expiry or review trigger. An exception is not
 permission to copy the pattern elsewhere.
 
+## Preserve literal visual authority
+
+Extract literal user constraints and reference traits before choosing a layout:
+named forms such as card, table, list, map, timeline, or dashboard; requested
+density; information order; and any screen/reference the user said to preserve.
+Record them with their authority source. Do not silently replace one named form with
+another because an implementation pattern is easier or more familiar.
+
+For a meaningful screen change, record a compact first-viewport blueprint:
+
+- primary → secondary → metadata reading order;
+- entity boundaries and grouping logic;
+- intended density and dominant alignment axes;
+- what must be understood before scrolling;
+- desktop-to-compact reflow;
+- forbidden alternatives and why they violate the request or product canon.
+
+The blueprint is testable intent, not automatic visual approval. If the exact render
+is mechanically partitioned, poorly grouped, awkwardly sparse/dense, or visually
+unconvincing, revise the composition even when every blueprint item is present.
+
 ## Preserve hierarchy and action truth
 
 - Define one primary user task and one accessible page title. The `h1` may be

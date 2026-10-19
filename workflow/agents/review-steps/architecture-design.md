@@ -70,6 +70,11 @@ Return complete inventories for the assigned scope, including clean items:
 7. when UI composition materially changes, every applicable composition concern's
    project-native owner or justified `N/A`, nearest domain canon/variant decision,
    effective scroll owner, and any scoped exception.
+8. every new or changed entry point's nearest semantic analogue, base/current owner,
+   and governing repository/design rule. Treat collector output as an observation,
+   not a verdict. Report a competing-owner defect only when repository guidance,
+   project profiles, approved design, or representative analogues require one owner
+   or define a responsibility boundary the change violates.
 
 One-use abstractions and files over 300 lines are review leads, not automatic
 findings. Require an approved reason for boundary violations, competing owners,
@@ -84,6 +89,17 @@ protected resource. Correctness-safety owns whether runtime behavior actually
 preserves the invariant.
 
 ## Output
+
+Begin the artifact with machine-checkable lines:
+
+```text
+Review map: <review-map fingerprint>
+Source fingerprint: <source fingerprint>
+Status: PASS | FINDINGS | UNVERIFIED
+```
+
+Use `PASS` only when this lens has no unresolved release-blocking finding and no
+required unverified dimension for the assigned snapshot.
 
 Write the complete finding set to the assigned artifact in one pass. Do not drip
 one finding per round. Every finding uses:

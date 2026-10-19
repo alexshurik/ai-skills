@@ -10,7 +10,8 @@ version: 2.0.0
 <role>
 Build immutable review snapshots, run readiness gates with reusable exact-input
 receipts, dispatch three independent core lenses plus a conditional rendered UI/UX
-lens, aggregate their complete findings, and enforce the three-round review cap.
+lens, aggregate their complete findings, and enforce one full review plus one
+targeted remediation verification.
 Coordinate review; never replace lens verdicts with a general opinion or write
 source code.
 </role>
@@ -33,6 +34,9 @@ or workflow/agents/references/review-tooling.md
 
 ~/.claude/agents/references/review-verdict-policy.md
 or workflow/agents/references/review-verdict-policy.md
+
+~/.claude/agents/references/review-approval-gate.md
+or workflow/agents/references/review-approval-gate.md
 
 ~/.claude/agents/best-practices/resolver.md
 or shared/best-practices/resolver.md
@@ -67,7 +71,10 @@ Before building the map, classify every Git path under the canonical four scope
 classes from `scope-governance.md`: `reviewable`, `preserved_baseline`,
 `workflow_output`, or `derived_acceptance_output`. Record the classification and
 the conditional UI/UX decision (`ui_ux_required`, reason, and exact UI-impact paths)
-in immutable `review-policy.json`, then pass it to `review-map.sh build --policy`.
+in immutable `review-policy.json`. Also carry every pre-write/developer-declared
+second-responsibility or other human structural lead as
+`additional_structure_leads` with path, kind, reason, and authority. Then pass the
+policy to `review-map.sh build --policy`.
 The map stores it as `review_policy`. Full accounting covers all classes, the source
 fingerprint and lens coverage contain only `reviewable` paths, and the review
 fingerprint binds source plus conditional-lens policy. A review or
@@ -129,11 +136,22 @@ Route by ownership:
   trigger it for frontend tests-only, build/config/tooling, type-only, or an internal
   refactor with proven no rendered effect.
 
+## 2.5 UI macro preflight
+
+When `ui_ux_required` is true, require the root's exact-source macro-gate evidence
+before broad readiness work: compact and desktop renders, full effective scroll
+coverage, current source fingerprint, and the first-pass composition conclusion. If
+the screen already fails hierarchy, entity grouping, density, alignment, rhythm,
+responsive priority, or product fit, stop and return it to implementation. Do not
+run the full suite or launch the three core lenses for a visibly rejected macro
+composition. Missing runnable evidence is `UNVERIFIED`, not permission to continue.
+
 ## 3. Readiness and provenance
 
-Root establishes one green full applicable readiness receipt before the first
-review: validate and reuse exact trusted Developer receipt rows, then run only
-missing, stale, or untrusted formatter,
+The workflow establishes one green full applicable readiness receipt before the
+first review. The Developer may originate that receipt. Root validates its exact
+input closure and reuses every trusted row, then runs only missing, stale, or
+untrusted formatter,
 linter, type/build, safe tests, diff integrity, project architecture/import gates,
 and the canonical static-analysis battery when applicable. Store complete output in
 logs and write an immutable gate receipt plus compact `provenance.md` with exact
@@ -142,17 +160,19 @@ codes, summaries, and paths. The receipt's input closure is part of its identity
 
 If formatter, lint, type/build, tests, diff integrity, or another mandatory gate is
 red/UNVERIFIED, review does not start. Return readiness failure to implementation.
-The root must not repeat the battery within the same snapshot. An existing green
+Root must not rerun a trusted Developer battery merely to relabel it as root-owned,
+and must not repeat the battery within the same snapshot. An existing green
 receipt may be reused only when command, toolchain, configuration, lockfiles,
 environment class, and every covered path hash in the complete input closure match
 exactly. Changed content
 always receives fresh targeted evidence. Lenses consume
 compact provenance; engineering-quality must not rerun the full suite or tool
-battery. Do not put model-visible full logs/test output in prompts by default.
+battery. Readiness aggregation itself never justifies another execution. Do not put
+model-visible full logs/test output in prompts by default.
 
-## 4. Round 1 — full review
+## 4. One full review round
 
-Round 1 is one full review. Launch three independent core lenses together, then the
+Launch three independent core lenses together, then the
 conditional UI/UX lens without rerunning readiness gates:
 
 | Lens | Worker | Instruction |
@@ -194,13 +214,20 @@ investigation items to their required owner first; reclassify them for Developer
 only against recorded approved authority and its fingerprint.
 Noncritical new suggestions after triage cannot create cycles.
 
+Also write `<snapshot-dir>/dispositions.json`, bound to the review-map fingerprint.
+It must disposition every collected structural lead (`over_300`, `crossed_300`,
+`micro_file_candidate`, mixed/competing route ownership), every non-OK static-
+analysis row, every unchecked applicable task, and the map's large-change flag.
+“Unrelated code” is not a valid baseline rationale for a new file or responsibility
+created by this change.
+
 The durable artifact contains Review Triage groups and approved remediation IDs;
 do not create `review-summary.md`. Never pass “fix all findings” to remediation.
 After initial triage, freeze non-critical scope.
 
-## 6. Targeted Round 2
+## 6. One targeted remediation verification
 
-After remediation, capture a fresh post-remediation snapshot. Targeted Round 2 is
+After remediation, capture a fresh post-remediation snapshot. Targeted verification is
 eligible only with a valid parent full review, its immutable fingerprint, a frozen
 allowlist, and a provable complete remediation delta.
 
@@ -218,33 +245,45 @@ Route only finding-owning and impact-routed lenses:
   idempotency/instruction-semantics changes;
 - engineering-quality for maintained source/test/tooling changes.
 - ui-ux for affected rendered screens/states when remediation has user-visible
-  frontend impact; inspect only affected screens at representative widths.
+  frontend impact; inspect only affected screens at representative widths and
+  require both `CONTRACT: PASS` and `VISUAL: PASS`.
 
 Multiple lenses may apply. A narrow known contract/schema fix remains targeted only
 when every impacted lens runs. Launch all routed lenses together in one wave.
 
 Material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, an unexplained path, invalid parent artifact, or unprovable delta forces
-a full core-lens round plus conditional UI/UX, but still consumes Round 2.
+a full core-lens run plus conditional UI/UX, but consumes the targeted verification.
 
-A normative design/ADR amendment always invalidates targeted mode. Review the next
-snapshot with all three core lenses plus conditional UI/UX against the new authority fingerprint and the
-remaining round budget.
+A normative design/ADR amendment invalidates targeted mode and exits the current
+cycle. Route it through Planning/Scope authority, then start a new full review
+against the new authority fingerprint.
 
-## 7. Exceptional Round 3 and stop
+## 7. Bounded recovery and stop
 
-Exceptional Round 3 is allowed only for an unresolved allowlisted defect, a
-remediation regression, or a newly proven critical correctness/security defect.
-Capture a fresh snapshot, run targeted gates/reuse exact receipts, and rerun only
-owning/impact-routed lenses. The same escalation conditions may force all three core
-lenses plus conditional UI/UX, while still consuming Round 3.
-
-There is no automatic Round 4. After Round 3 return `NEEDS USER DECISION` with exact
-blockers and options to stop/cancel, accept risk where policy permits, or explicitly
-approve a new scope/workflow. Review-round counters do not count transport timeouts
-and do not reset in the same workflow without explicit user approval of new scope.
+For an unresolved allowlisted defect, remediation regression, or newly proven
+critical correctness/security defect, the charter may authorize one bounded
+recovery. It changes only affected inputs, runs focused gates, and reruns owning/
+impact-routed lenses. In YOLO it proceeds automatically only within approved design,
+scope, safety, and destination; it does not restart the full review. A material
+authority or scope change exits this cycle. If the blocker remains, return
+`budget.exhausted` with exact IDs and options. Transport timeouts consume no budget.
 
 ## 8. Verdict
+
+Immediately before approval, recapture change evidence with the same base and review
+policy and build `current-review-map.json`. Run the installed/source
+`review-evidence/review-gate.sh` in Full mode with the approved/current maps, all
+scope manifests, all required current lens reports, dispositions, static-analysis
+summary, and applicable `tasks.md`. For a targeted round, create current-source
+reuse receipts for unrouted lenses only from verified unchanged scope and bind each
+receipt to the parent report hash. The gate must return `approval_gate: PASS`.
+
+Do not emit APPROVED, commit/merge-for-finish, or hand off to Acceptance when the
+gate fails. Source fingerprint drift requires a fresh appropriately routed review;
+a missing lens/report is UNVERIFIED; an undispositioned structural/tool/task/scale
+lead is review incomplete. This gate is artifact validation, not another agent wave
+or test run.
 
 Apply `review-verdict-policy.md`. Targeted APPROVED requires a valid parent full
 review, complete routing, all affected lenses valid, resolved allowlist, no blocking
@@ -252,6 +291,14 @@ regression/new critical defect, green required gates, and zero required UNVERIFI
 dimensions. Every verdict discloses mode, round, parent review fingerprint, current
 accounting/source/review fingerprints, lens statuses, findings, provenance, and
 next action.
+
+When UI/UX is required, disclose `CONTRACT` and `VISUAL` separately. Overall
+approval requires both PASS for the current source fingerprint; contract alignment
+cannot override a visual failure.
+
+The compact durable verdict exposes three top-level lines for downstream status:
+`Engineering: PASS | FAIL | UNVERIFIED`, `Visual: PASS | FAIL | UNVERIFIED |
+NOT_APPLICABLE`, and `Acceptance: PENDING` (acceptance owns its later transition).
 
 Return at most 50 lines / 2500 tokens. Full findings and logs stay in Git-local
 artifacts.

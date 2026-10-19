@@ -14,8 +14,11 @@ change, read [`rendered-evidence.md`](rendered-evidence.md).
 
 Flags **design slop** — the patterns that make generated UI read as machine-made — in
 the changed files, and points each finding at the fix (to the project's own tokens/
-system). It does **not** invent a brand or grade taste; it removes the generic and calls
-out where a screen is left sterile.
+system). It does not invent a brand or enforce a reviewer's aesthetic preference.
+It does grade objective composition quality: hierarchy, grouping, density, rhythm,
+alignment, affordance, responsive priority, and product fit. Contract alignment
+cannot override a clearly failed composition; a correctly implemented table, card,
+or list can still be visually poor.
 
 For source-quality review, use the checks below. For the conditional `ui-ux` lens,
 rendered inspection is mandatory: open the exact-source app or inspect
@@ -30,9 +33,11 @@ one accessible page title, at most one visible primary action or an appropriate 
 primary → secondary → meta hierarchy, shared alignment axes and section rhythm,
 control relevance, honest states/copy, desktop/mobile reflow, domain-canon reuse,
 excessive whitespace, and whether the first viewport reads as one composition. A
-normal change needs roughly 4–6 useful screenshots, not a generated gallery. Taste
-alternatives stay non-blocking unless they expose an approved-reference, usability,
-accessibility, or product-consistency violation.
+normal change needs roughly 4–6 useful screenshots, not a generated gallery. Pure
+taste alternatives stay non-blocking. Concrete failures in hierarchy, grouping,
+density, rhythm, comprehension, usability, accessibility, reference fidelity, or
+product consistency are visual defects even when the approved design predicted the
+same structure.
 
 Do not accept a screenshot-baseline update as its own proof. The updated exact-source
 render still needs fresh visual review, and any custom static or geometry guard needs

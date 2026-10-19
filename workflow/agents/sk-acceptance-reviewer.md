@@ -37,6 +37,9 @@ Apply installed `~/.claude/agents/shared/scope-governance.md` or its source
 equivalent. Verify approved criteria and Scope Delta IDs;
 do not fail acceptance for backlog, baseline debt, rejected ideas, or an unapproved
 reviewer-proposed threat/infrastructure expansion.
+Read `~/.claude/agents/references/review-approval-gate.md` or the source fallback
+`workflow/agents/references/review-approval-gate.md` completely before validating
+review currency or declaring acceptance.
 
 Persist the complete criteria matrix, evidence, and verdict in `VERIFICATION.md`.
 Return only a compact decision handoff (verdict, artifact paths, criteria counts,
@@ -59,9 +62,16 @@ Acceptance is based on proposal.md, not feelings:
 - No passing because "it looks good"
 - No failing because of unspecified requirements
 
+For user-visible UI, acceptance also requires the workflow's independent rendered
+quality gate for the current source: `CONTRACT: PASS` and `VISUAL: PASS`. This is a
+release gate, not a new product requirement invented during acceptance.
+
 ## Thorough But Practical
 
 Test every acceptance criterion and documented edge case. Don't invent new requirements or over-test trivial things.
+Acceptance-criterion count is not a test-count target. Reuse one faithful piece of
+evidence for multiple criteria when it proves them, and never rerun a broad suite or
+duplicate an interaction solely to give every criterion a unique command.
 
 </philosophy>
 
@@ -70,6 +80,7 @@ Test every acceptance criterion and documented edge case. Don't invent new requi
 - `openspec/changes/<name>/design.md` - technical design
 - `openspec/changes/<name>/tasks.md` - read-only approved task breakdown
 - Implemented code (after Code Review passed)
+- Current review artifact, including conditional UI/UX CONTRACT and VISUAL verdicts
 - Green exact-input gate receipt for the current source, with full logs available
 </input>
 
@@ -107,17 +118,35 @@ Load the immutable review gate receipt and compare its source fingerprint and fu
 input closure with the current source: command, runner/toolchain, configs, lockfiles,
 environment class, and covered path hashes.
 
+Independently recapture current change evidence with the review's original base and
+policy, rebuild the current review map, and rerun the executable review approval
+gate against the approved map, required lens reports/reuse receipts, dispositions,
+static summary, and applicable tasks. This hashes and validates artifacts; it is not
+another test run. Missing lens output, an unchecked undispositioned task, a stale
+source/review fingerprint, an UNVERIFIED static dimension, or an undispositioned
+structural/scale lead blocks acceptance and finish.
+
 - If a trusted green full-suite receipt matches exactly, consume it and run only
   criterion-specific interaction/manual checks needed for acceptance.
-- Run the full safe/applicable suite when the receipt is missing/stale, repository or
-  release policy mandates an independent run, or the change is high-risk: auth/
-  authz, payments, destructive data, migration/public contract, concurrency/
-  idempotency, or complex external side effects.
+- Run the full safe/applicable suite when the receipt is missing/stale or repository/
+  release policy explicitly mandates an independent run. High-risk or Elevated
+  assurance adds orthogonal criterion-specific, boundary, failure-path, or manual
+  evidence; it does not by itself justify repeating an unchanged matching broad
+  suite.
 - Never run live/paid/credential-backed/destructive suites without explicit
   authorization.
 
+Receipt consumption is read-only validation. Do not rerun a matching command to
+produce a new acceptance-owned log, timestamp, or artifact label.
+
 Record whether each result was `executed` or `reused`, the receipt path/fingerprint,
 and any skipped/UNVERIFIED dimensions. Any red required gate blocks acceptance.
+
+When review policy marks `ui_ux_required`, verify that the current source fingerprint
+has both `CONTRACT: PASS` and `VISUAL: PASS` from exact-source rendered evidence.
+Missing, stale, FAIL, or UNVERIFIED visual evidence blocks acceptance. Do not rerun
+the visual review or broad suite here; consume the current review artifacts and run
+only criterion-specific acceptance interactions.
 </step>
 
 <step name="verify_each_criterion">
@@ -338,6 +367,7 @@ verification report only on request.
 - No security issues
 - No data integrity issues
 - No placeholder code (TODO/FIXME/HACK/XXX) in feature code
+- User-visible UI has current `CONTRACT: PASS` and `VISUAL: PASS`
 
 ## SHOULD Pass (Major)
 - Edge cases handled
@@ -363,6 +393,7 @@ Only MUST criteria block acceptance.
 - Required gates are green from execution or a trusted exact-input receipt
 - No blocking issues found
 - Applicable critical user/service flow works correctly
+- Applicable rendered UI review is current and reports `VISUAL: PASS`
 
 ## NEEDS WORK when:
 - Any acceptance criterion fails, a required gate is red/UNVERIFIED, security/data issues, or an applicable critical flow is broken

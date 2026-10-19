@@ -120,7 +120,18 @@ class PublicTransitionTests(RuntimeCase):
         )
         self.assertEqual(len(array_at(attempt, "late_results")), 1)
         self.mutate(runtime, 7, "complete-stage", "--stage", "acceptance", "--outcome", "succeeded")
-        state = self.mutate(runtime, 8, "complete", "--outcome", "completed")
+        self.mutate(
+            runtime,
+            8,
+            "record-terminal",
+            "--kind",
+            "local",
+            "--outcome",
+            "succeeded",
+            "--evidence",
+            "verified local changes",
+        )
+        state = self.mutate(runtime, 9, "complete", "--outcome", "completed")
         self.assertEqual(object_at(state, "control")["outcome"], "completed")
 
     def test_representative_invalid_transitions_do_not_append(self) -> None:
@@ -184,6 +195,10 @@ class PublicTransitionTests(RuntimeCase):
             "missing",
             "--outcome",
             "succeeded",
+            "--input-fingerprint",
+            "d" * 64,
+            "--sha256",
+            "d" * 64,
         )
         self.assertIn("not found uniquely", errors)
         self.assertEqual(len((runtime / "events.jsonl").read_text().splitlines()), 6)
@@ -254,5 +269,7 @@ class ConcurrentWriterTests(RuntimeCase):
             f"{task}-1",
             "--host-thread-id",
             f"/root/{task}",
+            "--input-fingerprint",
+            "d" * 64,
         ]
         return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

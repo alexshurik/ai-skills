@@ -50,7 +50,24 @@ Classify issues on changed lines or newly worsened metrics as change-caused,
 problems materially expanded/relied on as touched-regression, and unchanged debt as
 baseline. Do not require broad cleanup merely because a touched file has old debt.
 
+Read analyzer results, not just process exit codes. `jscpd` clone output, Lizard
+warning sections, Radon B-or-worse complexity output, and Radon C-or-worse
+maintainability output are FINDINGS even when the tool exits zero. Every non-OK
+dimension needs an explicit finding/baseline/approved-exception disposition; an
+execution error or missing tool remains UNVERIFIED.
+
 ## Output
+
+Begin the artifact with machine-checkable lines:
+
+```text
+Review map: <review-map fingerprint>
+Source fingerprint: <source fingerprint>
+Status: PASS | FINDINGS | UNVERIFIED
+```
+
+Use `PASS` only when this lens has no unresolved release-blocking finding and no
+required unverified dimension for the assigned snapshot.
 
 Write the complete finding set to the assigned artifact in one pass. Do not drip
 one finding per round. Every finding uses:

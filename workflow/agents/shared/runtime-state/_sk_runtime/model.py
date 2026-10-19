@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -8,12 +9,32 @@ from typing import Any
 
 JsonObject = dict[str, Any]
 
-STATE_SCHEMA_VERSION = 2
-EVENT_SCHEMA_VERSION = 1
+STATE_SCHEMA_VERSION = 3
+EVENT_SCHEMA_VERSION = 2
+LEGACY_EVENT_SCHEMA_VERSION = 1
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:@+-]*$")
 TERMINAL_ATTEMPTS = frozenset({"succeeded", "failed", "blocked", "cancelled"})
 TERMINAL_STAGES = frozenset({"succeeded", "failed", "skipped"})
+ROUTES = frozenset({"micro", "quick", "full"})
+ASSURANCE_LEVELS = frozenset({"standard", "elevated"})
+AUTHORIZATION_MODES = frozenset({"manual", "checkpoints", "yolo"})
+WORKSPACE_POLICIES = frozenset({"current", "worktree", "auto"})
+WORKSPACE_RESOLUTIONS = frozenset({"pending", "current", "worktree"})
+DESTINATION_KINDS = frozenset({"local", "commit", "pr", "merge", "deploy"})
+STOP_REASON_CODES = frozenset(
+    {
+        "decision.material_product",
+        "decision.material_scope",
+        "boundary.external_access",
+        "boundary.destructive_or_irreversible",
+        "boundary.live_cost_or_value",
+        "boundary.terminal_not_authorized",
+        "evidence.unverifiable",
+        "budget.exhausted",
+        "control.user_reset",
+    }
+)
 
 
 class StateError(ValueError):
@@ -109,14 +130,44 @@ def require_fields(
         raise StateError(f"{name} has missing or unknown fields")
 
 
-def initial_state(run: JsonObject, repositories: JsonObject) -> JsonObject:
+def default_charter(run: JsonObject) -> JsonObject:
+    workflow = run["workflow"]
+    legacy = workflow in {"sk-team-feature", "sk-team-quick"}
+    route = "full" if workflow == "sk-team-feature" else "quick"
+    workspace = "worktree" if workflow == "sk-team-feature" else "auto"
+    resolved = "worktree" if workspace == "worktree" else "pending"
+    scope = hashlib.sha256(run["change"].encode()).hexdigest()
+    return {
+        "revision": 1,
+        "route": route,
+        "assurance": "standard",
+        "authorization": "manual" if legacy else "checkpoints",
+        "scope_sha256": scope,
+        "workspace": {"requested": workspace, "resolved": resolved},
+        "destination": {"kind": "local"},
+        "budgets": default_budgets(route),
+        "updated_event": 1,
+    }
+
+
+def default_budgets(route: str) -> JsonObject:
+    if route == "micro":
+        return {"attempts": 1, "review_rounds": 1, "remediations": 1}
+    if route == "quick":
+        return {"attempts": 6, "review_rounds": 3, "remediations": 2}
+    return {"attempts": 20, "review_rounds": 3, "remediations": 2}
+
+
+def initial_state(run: JsonObject, repositories: JsonObject, charter: JsonObject) -> JsonObject:
     return {
         "schema_version": STATE_SCHEMA_VERSION,
         "revision": 0,
         "run": copy.deepcopy(run),
+        "charter": copy.deepcopy(charter),
         "repositories": copy.deepcopy(repositories),
         "workflow": {"current_stage": None, "stages": {}},
         "control": {"kind": "ready", "reason_code": "workflow_started"},
+        "delivery": {"status": "pending"},
         "writer_lease": None,
         "artifacts": {},
         "blockers": {},
@@ -169,6 +220,22 @@ def running_attempt_ids(state: JsonObject) -> list[str]:
         for task in stage["tasks"].values()
         for attempt in task["attempts"]
         if attempt["status"] == "running"
+    )
+
+
+def attempt_count(state: JsonObject) -> int:
+    return sum(
+        len(task["attempts"])
+        for stage in state["workflow"]["stages"].values()
+        for task in stage["tasks"].values()
+    )
+
+
+def batch_count(state: JsonObject, purpose: str) -> int:
+    return sum(
+        task.get("purpose") == purpose
+        for stage in state["workflow"]["stages"].values()
+        for task in stage["tasks"].values()
     )
 
 

@@ -38,18 +38,21 @@ the shared helper `status`; when the projection reports `valid`, also run `valid
 recorded repository identity, artifact paths, and fingerprints. File presence alone
 is not proof of approval.
 
-Report schema/revision, current stage, stage gates/checks, logical tasks with every
-attempt, and `control`. When `control.kind` is `waiting_agents`, report durable
+Report schema/revision, the complete charter (route, assurance, authorization,
+scope digest, requested/resolved workspace, destination, budgets), delivery receipt,
+current stage, stage gates/checks, logical tasks with every attempt, and `control`.
+When `control.kind` is `waiting_agents`, report durable
 attempt IDs, their host thread IDs, foreground/detached join mode, reason code, and
 any detach reason. Do not wait or poll from a status request. UI status and
 notifications are observability, not proof that the parent aggregated a result.
 
 Report the complete `snapshot_status` vocabulary:
-valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema.
+valid | stale | diverged | missing | orphaned | legacy_v1 | legacy_v2 | unsupported_schema.
 Include `journal_events` and `recommended_action`. Use `validate` for valid; use
 `repair` for stale/diverged/missing only with a valid non-empty journal; use
 `migrate-v1` for legacy_v1 without committed history (or `repair` when
-valid history already exists). For orphaned or missing/diverged without history,
+valid history already exists), and `migrate-v2` for legacy_v2 under the same rule.
+For orphaned or missing/diverged without history,
 fail closed with `recover-journal-or-reinitialize`: require journal recovery or
 explicit reinitialization and reconfirmation. For `unsupported_schema`, fail closed
 with `require-compatible-helper` and preserve the projection byte-for-byte. Never
@@ -105,6 +108,14 @@ status as `UNVERIFIED` instead of assuming `npm test`.
 
 ### 1. <feature-name>
 - **Phase**: <current phase>
+- **Path / assurance**: <Micro | Quick | Full> / <Standard | Elevated>
+- **Control**: <Manual | Checkpoints | YOLO>
+- **Workspace**: <requested> → <resolved path>
+- **Finish**: <Local | Commit | PR | Merge | Deploy and target>
+- **Budgets**: attempts <used>/<limit>; reviews <used>/<limit>; remediations <used>/<limit>
+- **Engineering**: passed | failed | pending | unverified
+- **Visual**: passed | failed | pending | unverified | not_applicable
+- **Acceptance**: accepted | needs_work | blocked | pending
 - **Completed phases**: Discovery, Planning
 - **Current phase**: Testing
 - **Artifacts**:
@@ -120,13 +131,14 @@ status as `UNVERIFIED` instead of assuming `npm test`.
 - **Derived next action**: Classify the test-risk route; invoke sk-tester only for
   high-risk/explicit separate testing, otherwise invoke Developer for integrated
   Red→Green
-- **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema)
-- **Control**: ready | waiting agents/user | blocked | complete
+- **Runtime state**: `<git-local-path>/` (schema/revision; valid | stale | diverged | missing | orphaned | legacy_v1 | legacy_v2 | unsupported_schema)
+- **Run state**: ready | waiting agents/user | blocked with typed reason | complete
 - **Tasks/attempts**: logical task, attempt ordinal, host thread, result/artifact
 - **Gates/checks**: stage-owned decisions and verification evidence
 - **Deferred candidates**: none | <IDs requiring triage>
 - **Snapshot/fingerprints**: <current durable artifact fingerprints>
-- **Resume**: invoke `sk-team-feature` using the current host's skill syntax
+- **Delivery**: pending | succeeded/failed receipt and evidence
+- **Resume**: invoke `sk-team` using the current host's skill syntax
 
 ### 2. <another-feature>
 ...
@@ -146,8 +158,9 @@ status as `UNVERIFIED` instead of assuming `npm test`.
 | **Total Active** | **4** |
 
 ## Quick Actions
-- `sk-team-feature <description>` - Start new feature
-- `sk-team-quick <description>` - Quick fix
+- `sk-team <description>` - Recommend and run the right-sized workflow
+- `sk-team-feature <description>` - Force the Full route
+- `sk-team-quick <description>` - Force the Quick route
 - Continue workflow: describe what to do next
 ```
 
@@ -159,6 +172,12 @@ status as `UNVERIFIED` instead of assuming `npm test`.
 No active workflows found in `openspec/changes/`.
 
 ## Start a Workflow
+
+### Adaptive (recommended)
+```
+sk-team <description>
+```
+Example: `sk-team Add user authentication with OAuth`
 
 ### Full Feature Development
 ```

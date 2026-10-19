@@ -12,6 +12,7 @@ without model or reasoning overrides:
 ```text
 Deliverable: <one bounded phase result>
 Worktree: <absolute path>
+Authorization: <manual | checkpoints | yolo>; policy-confirmed ceremonies: <IDs/none>
 Authority: <approved artifact/guidance paths>
 Scope: <paths and explicit non-goals>
 Scope governance: <scope-governance.md path>; approved Scope Delta IDs: <IDs/none>
@@ -48,7 +49,10 @@ material product questions through a NEEDS USER INPUT return. Then present scope
 and understanding for confirmation. Write proposal.md only after confirmation.
 Include observable acceptance criteria, edge cases, constraints, and explicit
 non-goals. Separate user-required behavior from suggestions that need later Scope
-Delta approval. End with the standard handoff block.
+Delta approval. For user-visible UI, preserve literal visual nouns/constraints and
+references verbatim, record information priority and forbidden alternatives, and
+surface any proposed substitution as a material decision. End with the standard
+handoff block.
 ```
 
 ## Research — `sk-researcher` (optional)
@@ -86,8 +90,10 @@ trust-boundary models, abstraction budget, a conditional mechanism budget,
 state/coordination invariant alignment when applicable, module-growth forecast,
 infrastructure authority, and non-goals. For meaningful user-visible UI work, add a
 short visual-composition intent/reference inside design.md: primary task/title/
-action, hierarchy/axes, existing product canon, responsive reflow, and relevant
-states. Do not create a separate visual-spec artifact. End with the standard handoff block.
+action, a first-viewport composition blueprint, entity grouping/density/alignment,
+existing product canon, responsive reflow, literal user constraints, forbidden
+alternatives, and relevant states. Do not create a separate visual-spec artifact.
+End with the standard handoff block.
 ```
 
 ## Architecture replan after review — `sk-architect`
@@ -133,13 +139,15 @@ Artifacts: proposal.md, design.md, tasks.md, ADRs
 Dispatch this role only for auth/authz, payments, destructive/data-loss behavior,
 migrations/public API/schema, concurrency/idempotency, complex external side
 effects, a new reusable harness, or explicit user request. Otherwise Developer owns
-the approved Red→Green strategy. Read project test/safety guidance. Return a categorized test plan through
-NEEDS USER INPUT and stop. Include unit, integration/service, contract, import/
+the approved Red→Green strategy. Read project test/safety guidance. Build a
+categorized test plan. In Manual return it through NEEDS USER INPUT; in
+Checkpoints/YOLO use the recorded policy decision unless a material scope or
+sensitive/live/destructive boundary requires the user. Include unit, integration/service, contract, import/
 architecture regression, component/browser, and critical user-journey tests only as
 applicable. Do not require a unit test per criterion or duplicate equivalent
 assertions across layers. Separate safe
 default tests from live/paid/credential-backed tests. Write tests only after the
-user approves or modifies the plan. Confirm Red for the intended reason.
+user or charter policy authorizes the plan. Confirm Red for the intended reason.
 ```
 
 ## Implementation — `sk-developer`
@@ -162,7 +170,10 @@ one representative desktop and one project-appropriate compact/mobile width, the
 capture roughly 4–6 representative exact-source screenshots covering the complete
 effective scroll extent. Include realistic long-content or extreme-value pressure
 when the layout constrains text or numeric tracks. Do not build a persistent report
-generator.
+generator. Treat the first coherent render as a macro visual gate: revise weak
+hierarchy, grouping, density, alignment, rhythm, responsive priority, or product fit
+before the broad safe/applicable suite. For browser chrome/safe-area/viewport work,
+use the target browser/device or the closest WebKit approximation and state the gap.
 
 For remediation, also receive an explicit finding-ID allowlist. Implement only
 `required_fix` plus user-approved addition IDs that are routed
@@ -205,16 +216,17 @@ findings artifact/fingerprint, acceptance criteria, non-goals, approved Scope De
 IDs, and only developer-routed allowlisted IDs. Treat the allowlist as authority for
 the required outcome, not for an unapproved remedy design.
 
-Targeted Round 2 uses a fresh snapshot, targeted gates for changed inputs plus exact
+One targeted remediation verification uses a fresh snapshot, targeted gates for changed inputs plus exact
 green-receipt reuse for unchanged inputs, immutable pre/post
 fingerprints, complete delta, verified unchanged hashes, no expansion, and every
 finding-owning/impact-routed lens. Old evidence never proves changed content.
 An approved normative design/ADR amendment invalidates targeted mode: the next
-review is full against the new authority fingerprint and remaining round budget.
-Exceptional Round 3 is only for unresolved allowlisted defects, a remediation
-regression, or newly proven critical correctness/security defect. No automatic
-Round 4: return NEEDS USER DECISION. New non-critical proposals after frozen triage
-go to `DEFERRED.md` and cannot start another cycle.
+review is full against the new authority fingerprint after the owning authority
+gate. One bounded recovery may address an unresolved allowlisted defect,
+remediation regression, or newly proven critical correctness/security defect with
+focused gates and owning lenses only; it does not restart a full review. New
+non-critical proposals after frozen triage go to `DEFERRED.md` and cannot start
+another cycle.
 
 ## Acceptance — `sk-acceptance-reviewer`
 
@@ -232,6 +244,8 @@ suite receipt only for the exact current input closure; otherwise rerun as requi
 by risk/repository policy. Create VERIFICATION.md; create SUMMARY/API_CHANGELOG/
 OPERATIONAL_TASKS only for a real consumer, API change, or manual operations need.
 Treat tasks.md as read-only. Do not accept an incomplete or CHANGES REQUESTED review.
+For user-visible UI, require current `CONTRACT: PASS` and `VISUAL: PASS`; reuse the
+review artifact rather than repeating the rendered review or broad suite.
 ```
 
 ## Retrospective — orchestrator

@@ -31,6 +31,36 @@ fi
 test "$(find "$FIXTURE_DIR/logs" -type f -name '*.log' | wc -l | tr -d ' ')" -eq 8
 grep -q 'FULL RAW OUTPUT' "$FIXTURE_DIR/logs"/*.log
 
+cat > "$FIXTURE_DIR/bin/jscpd" <<'EOF'
+#!/bin/sh
+if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi
+echo "Clone found (2.15% duplication)"
+exit 0
+EOF
+cat > "$FIXTURE_DIR/bin/lizard" <<'EOF'
+#!/bin/sh
+if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi
+echo "!!!! Warnings (cyclomatic_complexity > 15) !!!!"
+exit 0
+EOF
+cat > "$FIXTURE_DIR/bin/radon" <<'EOF'
+#!/bin/sh
+if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi
+echo "src/hotspot.py - C (0.00)"
+exit 0
+EOF
+chmod +x "$FIXTURE_DIR/bin/jscpd" "$FIXTURE_DIR/bin/lizard" "$FIXTURE_DIR/bin/radon"
+
+PATH="$FIXTURE_DIR/bin:$PATH" RUN="" \
+  "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" \
+  --artifact-dir "$FIXTURE_DIR/logs-output-findings" --summary-only . \
+  > "$FIXTURE_DIR/findings-summary.txt"
+
+grep -q 'duplication.*FINDINGS (reported with exit 0)' "$FIXTURE_DIR/findings-summary.txt"
+grep -q 'cyclomatic+length.*FINDINGS (reported with exit 0)' "$FIXTURE_DIR/findings-summary.txt"
+grep -q 'maintainability.*FINDINGS (reported with exit 0)' "$FIXTURE_DIR/findings-summary.txt"
+grep -q 'SUMMARY: 4 OK · 4 FINDINGS · 0 UNVERIFIED' "$FIXTURE_DIR/findings-summary.txt"
+
 if "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" --summary-only . \
     > /dev/null 2>&1; then
   echo "summary-only without artifacts unexpectedly succeeded" >&2

@@ -34,6 +34,7 @@ def evidence_entry(path: str, **overrides: object) -> dict[str, Any]:
         "over_300": False,
         "crossed_300": False,
         "micro_file_candidate": False,
+        "route_ownership_observations": [],
     }
     entry.update(overrides)
     return entry
@@ -176,6 +177,9 @@ def assert_map_classification(
     assert review_map["review_policy"]["ui_ux_required"]
     assert len(review_map["source_fingerprint"]) == 64
     assert len(review_map["review_fingerprint"]) == 64
+    assert review_map["change_scale"]["reviewable_paths"] == sum(
+        entry["review_class"] == "reviewable" for entry in files.values()
+    )
 
 
 def assert_workflow_output_does_not_invalidate_source(evidence: dict[str, Any]) -> None:
@@ -301,6 +305,21 @@ def main() -> None:
             text=True,
         )
         assert json.loads(validate.stdout)["status"] == "valid"
+
+        compare = subprocess.run(
+            [
+                str(ROOT / "shared" / "review-evidence" / "review-map.sh"),
+                "compare-current",
+                "--approved-map",
+                str(map_path),
+                "--current-map",
+                str(map_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert json.loads(compare.stdout)["status"] == "current"
 
 
 if __name__ == "__main__":

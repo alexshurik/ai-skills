@@ -113,6 +113,9 @@ Follow `developer-prewrite-gate.md` before the first source edit:
 - check reuse before custom cross-cutting infrastructure;
 - inventory planned abstractions;
 - collect file-size/responsibility evidence;
+- identify the nearest semantic analogue and project-approved ownership model for
+  every new entry point; do not infer a universal function/class preference from a
+  framework-specific syntax;
 - inventory local/dynamic imports;
 - for user-visible UI composition, map edits to the approved composition owners and
   confirm there is no competing shell/page/component ownership;
@@ -152,6 +155,23 @@ For each task/test:
 4. keep dependencies and data transformations in their approved owners;
 5. continue only when the result is green.
 
+Keep a compact verification ledger keyed by normalized command plus its complete
+input closure. During implementation:
+
+- rerun the smallest failing/focused selection, not the full suite;
+- use one browser scenario/state/viewport while diagnosing and expand only after it
+  is stable;
+- do not run an unfiltered visual, composition, or E2E matrix to discover whether a
+  local edit worked;
+- when a broad run fails, isolate and fix with focused commands before running the
+  broad command again;
+- never repeat a green command for an unchanged input closure merely for confidence,
+  artifact formatting, reviewer handoff, or screenshot collection.
+
+Any repeated broad command must record the invalidating source/config/environment
+change or the specific infrastructure/flakiness reason. A new snapshot filename,
+report, or receipt is not an input change.
+
 Do not add speculative error handling, caching, logging, or abstractions. Do add
 behavior required by the approved contract, security boundary, reliability policy,
 or project guidance even when a narrow test omits it.
@@ -165,9 +185,24 @@ Follow the shared UI composition and rendered-evidence contracts loaded through 
 profile resolver. Correct hierarchy, competing titles/actions, inappropriate action
 absence, irrelevant controls, alignment/rhythm, excessive whitespace, responsive
 reflow, state/copy composition, and realistic long-content or extreme-value pressure
-before polishing. Capture roughly 4–6 exact-source screenshots across only the
-representative changed states and the complete effective scroll extent; do not build
-a screenshot gallery or persistent report generator.
+before polishing. Capture the smallest useful set of exact-source screenshots,
+normally 2–4 across the representative changed states and complete effective scroll
+extent. Add more only when distinct behavior cannot be judged from that set; do not
+build a screenshot gallery or persistent report generator.
+
+Treat this as a **macro visual gate**, not screenshot collection. Before the broad
+safe/applicable suite, judge whether the first viewport forms a coherent product
+screen: clear entity grouping, useful density, stable alignment, deliberate rhythm,
+and an obvious reading order. A specification-conformant but visibly weak,
+mechanical, or generic composition is not Green. Iterate on the screen first; broad
+technical verification must not consume time validating a macro layout that should
+already be rejected.
+
+For changes to mobile browser chrome, safe areas, fixed navigation, viewport units,
+or `visualViewport` behavior, exercise the actual target browser/device when
+available. Otherwise use the project's closest WebKit/mobile emulation and record
+the remaining platform gap explicitly; a static Chromium screenshot cannot prove
+those contracts.
 
 When the approved design adds or changes a maintained visual/geometry contract,
 control the applicable render inputs and combine rendered judgment with semantic/
@@ -206,6 +241,17 @@ Run:
 - import or architecture regression tests required by the design;
 - change evidence again.
 
+Run the broad safe/applicable suite once for the final implementation input closure.
+Focused Red→Green checks may repeat while coding; do not rerun the broad suite after
+unchanged screenshots, documentation-only evidence work, or a reviewer reading the
+same receipt.
+
+For frontend work, “broad suite” does not automatically mean every Playwright
+project and every maintained visual baseline. Select the repository-required broad
+gate once, then add only the critical changed journeys and representative render
+matrix justified by the approved risk. Full E2E, full visual, and full composition
+matrices must each have an explicit requirement; do not stack all three by default.
+
 Persist an immutable gate receipt with the exact command/runner version,
 configuration and lockfile hashes, environment class, covered path hashes, exit
 code, summary, and full-log path. Review may reuse a green row only when this entire
@@ -220,6 +266,7 @@ not proof that the rendered composition works.
 Compare before/after:
 
 - file sizes and responsibility changes;
+- new-entry-point owner/analogue evidence and any authority-backed exception;
 - threshold crossings;
 - new small files;
 - actual abstraction consumers;

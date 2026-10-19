@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .model import HASH_RE, JsonObject, StateError, utc_now
+from .model import (
+    HASH_RE,
+    STATE_SCHEMA_VERSION,
+    JsonObject,
+    StateError,
+    default_charter,
+    utc_now,
+)
 
 
 @dataclass(frozen=True)
@@ -31,19 +39,70 @@ def normalized_legacy_state(legacy: JsonObject, options: MigrationOptions) -> Js
     blockers = migrate_blockers(legacy)
     control = migrate_control(legacy, agents, blockers, was_background)
     stage = migrate_current_stage(legacy, agents, control)
+    run = migrated_run(change_name, options.workflow, options.policy_revision)
     state = {
-        "schema_version": 2,
+        "schema_version": STATE_SCHEMA_VERSION,
         "revision": 1,
-        "run": migrated_run(change_name, options.workflow, options.policy_revision),
+        "run": run,
+        "charter": default_charter(run),
         "repositories": migrate_repositories(legacy),
         "workflow": {"current_stage": phase, "stages": migrate_stages(legacy, phase, stage)},
         "control": control,
+        "delivery": {"status": "pending"},
         "writer_lease": None,
         "artifacts": migrate_artifacts(legacy),
         "blockers": blockers,
         "last_event": {"seq": 1, "id": "migration-placeholder"},
     }
     return state
+
+
+def normalized_v2_state(legacy: JsonObject, options: MigrationOptions) -> JsonObject:
+    if legacy.get("schema_version") != 2:
+        raise StateError("state.json is not schema_version 2")
+    state = copy.deepcopy(legacy)
+    run = state.get("run")
+    if not isinstance(run, dict):
+        raise StateError("schema v2 state is missing run identity")
+    run["workflow"] = options.workflow
+    run["policy_revision"] = options.policy_revision
+    run.setdefault("migrated_from", {"schema_version": 2})
+    state["schema_version"] = STATE_SCHEMA_VERSION
+    state["revision"] = 1
+    state["charter"] = default_charter(run)
+    state["delivery"] = {"status": "pending"}
+    state.setdefault("writer_lease", None)
+    state["last_event"] = {"seq": 1, "id": "migration-placeholder"}
+    upgrade_v2_records(state)
+    return state
+
+
+def upgrade_v2_records(state: JsonObject) -> None:
+    workflow = state.get("workflow")
+    stages = workflow.get("stages", {}) if isinstance(workflow, dict) else {}
+    if isinstance(stages, dict):
+        for stage in stages.values():
+            upgrade_v2_stage(stage)
+    blockers = state.get("blockers", {})
+    if isinstance(blockers, dict):
+        for blocker in blockers.values():
+            if isinstance(blocker, dict):
+                blocker.setdefault("reason_code", "evidence.unverifiable")
+
+
+def upgrade_v2_stage(value: object) -> None:
+    if not isinstance(value, dict):
+        return
+    gates = value.get("gates", {})
+    if not isinstance(gates, dict):
+        return
+    for gate in gates.values():
+        if not isinstance(gate, dict):
+            continue
+        gate.setdefault("kind", "authority_decision")
+        gate.setdefault("reason_code", "approval.required")
+        if gate.get("status") != "pending":
+            gate.setdefault("decision_source", "user")
 
 
 def safe_legacy_name(value: str, fallback: str) -> str:
@@ -149,11 +208,15 @@ def migrate_approvals(legacy: JsonObject) -> JsonObject:
         gate: JsonObject = {
             "status": status,
             "reason": "migrated legacy approval",
+            "kind": "authority_decision",
+            "reason_code": "approval.required",
             "entry": 1,
             "requested_event": 0,
         }
         if status != "pending":
-            gate.update({"decided_by": "legacy", "decision_event": 0})
+            gate.update(
+                {"decided_by": "legacy", "decision_source": "repository", "decision_event": 0}
+            )
         gates[safe_legacy_name(str(name), "legacy-gate")] = gate
     return gates
 
@@ -266,6 +329,7 @@ def migrate_blockers(legacy: JsonObject) -> JsonObject:
         return {}
     return {
         f"legacy-blocker-{index}": {
+            "reason_code": "evidence.unverifiable",
             "reason": str(value),
             "required_action": "review migrated blocker",
             "recorded_event": 0,

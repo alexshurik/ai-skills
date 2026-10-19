@@ -68,6 +68,17 @@ Never reproduce a secret value.
 
 ## Output
 
+Begin the artifact with machine-checkable lines:
+
+```text
+Review map: <review-map fingerprint>
+Source fingerprint: <source fingerprint>
+Status: PASS | FINDINGS | UNVERIFIED
+```
+
+Use `PASS` only when this lens has no unresolved release-blocking finding and no
+required unverified dimension for the assigned snapshot.
+
 Write the complete finding set to the assigned artifact in one pass. Do not drip
 one finding per round. Every finding uses:
 

@@ -43,6 +43,8 @@ def main() -> None:
         "component/browser tests",
         "small set of critical e2e journeys",
         "do not repeat the same assertion",
+        "recorded policy approval",
+        "sensitive/live/destructive boundary",
     )
     reject(tester, "one test per acceptance criterion minimum")
 
@@ -53,6 +55,9 @@ def main() -> None:
         "otherwise implement the approved test strategy yourself",
         "early rendered visual loop",
         "exact-source screenshots",
+        "macro visual gate",
+        "before the broad safe/applicable suite",
+        "specification-conformant but visibly weak",
     )
 
     acceptance = read("workflow/agents/sk-acceptance-reviewer.md")
@@ -60,15 +65,18 @@ def main() -> None:
         acceptance,
         "trusted green full-suite receipt matches exactly",
         "high-risk",
+        "does not by itself justify repeating",
         "the only universal acceptance artifact",
         "never mutate task checkboxes after code review",
         "no placeholder",
+        "visual: pass",
     )
     reject(
         acceptance,
         "create three artifacts",
         'write "no api changes"',
         'write "no operational tasks"',
+        "or the change is high-risk",
     )
 
     tooling = read("workflow/agents/references/review-tooling.md")
@@ -77,7 +85,9 @@ def main() -> None:
         "gate receipts and reuse",
         "entire input closure is identical",
         "acceptance consumes the green receipt",
+        "risk label alone never invalidates",
     )
+    reject(tooling, "or the change is high-risk")
 
     architecture = read("workflow/agents/references/architecture-gates.md")
     require(
@@ -110,6 +120,8 @@ def main() -> None:
         "useful screenshots",
         "complete effective scroll extent",
         "screenshot-first comprehension pass",
+        "objective composition quality",
+        "contract alignment cannot override",
     )
     require(
         composition,
@@ -120,6 +132,8 @@ def main() -> None:
         "stable id",
         "long labels",
         "large or negative values",
+        "literal user constraints",
+        "forbidden alternatives",
     )
     require(
         rendered_evidence,
@@ -129,6 +143,8 @@ def main() -> None:
         "rejecting fixture",
         "deliberate dom/style mutation",
         "changed screenshot baseline is not evidence",
+        "record the first-pass conclusion before reading",
+        "webkit",
     )
     require(
         ui_lens,
@@ -136,18 +152,62 @@ def main() -> None:
         "rendered-evidence.md",
         "original/native resolution",
         "effective scroll owner/extent",
+        "contract: pass | fail | unverified",
+        "visual: pass | fail | unverified",
+        "a correct implementation of a weak composition can still fail",
     )
     require(
         architect,
         "composition ownership matrix",
         "at most one visible primary action",
         "nearest domain canon",
+        "first-viewport composition blueprint",
+        "forbidden alternatives",
     )
     require(
         codestyle,
         "application shell/effective scroll owner",
         "merely available",
         "forbidden competing locations",
+    )
+
+    router = read("workflow/skills/sk-team/SKILL.md")
+    quick = read("workflow/skills/sk-team-quick/SKILL.md")
+    feature = read("workflow/skills/sk-team-feature/SKILL.md")
+    status = read("workflow/skills/sk-team-status/SKILL.md")
+    policy = read("workflow/agents/shared/workflow-charter-policy.md")
+    require(
+        router,
+        "visual quality gate is mandatory",
+        "root personally opens",
+    )
+    require(
+        quick,
+        "one full review round",
+        "one targeted remediation verification",
+        "root personally opens",
+        "before any broad readiness battery",
+        "do not rerun the broad suite",
+    )
+    require(
+        feature,
+        "visual macro gate",
+        "before broad readiness gates",
+        "one full review round",
+        "one targeted remediation verification",
+        "root personally opens",
+    )
+    reject(feature, "exceptional round 3", "automatic round 4")
+    require(
+        status,
+        "engineering",
+        "visual",
+        "acceptance",
+    )
+    require(
+        policy,
+        "narrow successor recovery",
+        "does not restart a full review",
     )
 
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adaptive Team Workflow"
+  short_description: "Choose and run the right-sized development workflow"
+  default_prompt: "Use $sk-team to recommend a Micro, Quick, or Full path, ask once for any missing workflow choices, and carry the task to the selected finish."

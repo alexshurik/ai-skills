@@ -5,14 +5,17 @@
 
 ## Workflow Commands
 
+### /sk-team
+Interactively choose and run a Micro, Quick, or Full development workflow with configurable checkpoints, workspace isolation, assurance, and finish.
+
 ### /sk-team-feature
-Run a worktree-isolated multi-agent feature workflow with explicit approval gates from discovery through retrospective and acceptance archive.
+Run the Full multi-agent feature workflow under a selected charter, with independent discovery, design, review, acceptance, and retrospective.
 
 ### /sk-team-help
 Show help and documentation for multi-agent team workflow
 
 ### /sk-team-quick
-Quick workflow for bugfixes, typos, and small changes
+Quick workflow for bounded fixes, features, and coherent UI polish that need one implementer plus one fresh combined review.
 
 ### /sk-team-status
 Show status of current team workflow
@@ -65,4 +68,4 @@ Research unknown domains, technologies, APIs, and best practices before planning
 Review complete Git scope through three core lenses plus a conditional rendered UI/UX lens with bounded remediation verification.
 
 ### sk-tester
-Independently write approved failing tests before code when risk routing or the user requires a separate Tester.
+Independently write authorized failing tests before code when risk routing or the user requires a separate Tester.

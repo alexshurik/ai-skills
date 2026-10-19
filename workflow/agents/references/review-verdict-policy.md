@@ -36,6 +36,10 @@ The map still accounts for preserved baseline, workflow output, and derived
 acceptance output. Uniform full-file reading by every lens is not required.
 Unchanged content is reusable only when its recorded hash is verified.
 
+Every required lens artifact begins with the review-map fingerprint, source
+fingerprint, and `Status: PASS | FINDINGS | UNVERIFIED`. Absence, empty output,
+fingerprint mismatch, or non-PASS status makes final approval mechanically invalid.
+
 ## Readiness
 
 The root establishes one green full formatter, lint, type/build, tests, diff,
@@ -69,15 +73,15 @@ Severity:
 - **MINOR:** bounded reliability/maintainability defect;
 - **NITPICK:** optional preference.
 
-## Review rounds
+## Review cycle
 
-### Round 1 — full
+### One full review round
 
 Run all three core lenses and conditional UI/UX. Aggregate their complete finding sets,
 resolve every `user_decision`, and freeze the exact remediation allowlist. A lens
 may not hold back findings to generate later cycles.
 
-### Targeted Round 2
+### One targeted remediation verification
 
 Use a fresh snapshot. Require:
 
@@ -94,23 +98,18 @@ proof for changed content.
 
 A material scope expansion, changed authority/base, dependency/trust/infrastructure
 expansion, unexplained path, invalid parent, or unprovable delta forces a full
-core-lens run plus conditional UI/UX while consuming Round 2.
+core-lens run plus conditional UI/UX while consuming the targeted verification.
 
-A normative design/ADR amendment invalidates targeted mode and requires a full
-core-lens review plus conditional UI/UX against the new authority fingerprint
-within the remaining round budget.
+A normative design/ADR amendment invalidates targeted mode and exits the current
+cycle. Route it through Planning/Scope authority before a new full review.
 
-### Exceptional Round 3
+### Bounded recovery
 
-Allow only for an unresolved allowlisted defect, remediation regression, or newly
-proven critical correctness/security defect. Use a fresh snapshot, targeted gates
-plus exact receipt reuse, and owning/impact-routed lenses; escalation conditions may
-require all three core lenses plus conditional UI/UX.
-
-There is no automatic Round 4. After Round 3 return `NEEDS USER DECISION` with exact
-blockers/options. Transport-only wait timeouts do not increment the round and round
-counters do not reset within the workflow unless the user approves a new change
-scope/workflow.
+Allow one narrow successor recovery for an unresolved allowlisted defect,
+remediation regression, or newly proven critical correctness/security defect when
+the charter permits it. Use focused gates plus exact receipt reuse and only owning/
+impact-routed lenses. It does not restart a full review. If the blocker remains,
+return `budget.exhausted` with exact IDs. Transport-only waits consume no budget.
 
 ## Aggregation
 
@@ -126,6 +125,17 @@ scope/workflow.
 Return `APPROVED` only when required gates are green, scope is complete, required
 lenses are valid, no `required_fix` remains, baseline is separate, and there are
 zero required UNVERIFIED dimensions.
+
+APPROVED additionally requires a passing executable approval-gate receipt for the
+current source/review fingerprints. The receipt must prove required lens artifacts
+exist, every collector structural lead and non-OK static row has a disposition,
+applicable tasks are complete or explicitly deferred by authority, and a large
+change has an explicit scale exception. A prose verdict cannot override a failed or
+missing receipt.
+
+When UI/UX is required, approval also requires current `CONTRACT: PASS` and
+`VISUAL: PASS`. These are independent: contract conformance cannot override a
+visual failure.
 
 No source remediation begins while an allowlisted finding still routes to
 Architecture, Scope Triage, or Investigation. A route becomes Developer only after

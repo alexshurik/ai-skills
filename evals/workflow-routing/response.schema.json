@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adaptive workflow routing decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "decision"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route",
+        "route_change",
+        "authorization",
+        "assurance",
+        "workspace",
+        "destination",
+        "approval",
+        "visual_gate",
+        "scope_action",
+        "agent_shape",
+        "broad_suite",
+        "stop_reason",
+        "requires_user_input"
+      ],
+      "properties": {
+        "route": {
+          "type": "string",
+          "enum": ["micro", "quick", "full"]
+        },
+        "route_change": {
+          "type": "string",
+          "enum": ["none", "micro_to_quick", "quick_to_full"]
+        },
+        "authorization": {
+          "type": "string",
+          "enum": ["manual", "checkpoints", "yolo"]
+        },
+        "assurance": {
+          "type": "string",
+          "enum": ["standard", "elevated"]
+        },
+        "workspace": {
+          "type": "string",
+          "enum": ["current", "worktree"]
+        },
+        "destination": {
+          "type": "string",
+          "enum": ["local", "commit", "pr", "merge", "deploy"]
+        },
+        "approval": {
+          "type": "string",
+          "enum": [
+            "ask_compact_charter",
+            "start_without_confirmation",
+            "wait_scope_lock",
+            "wait_execution",
+            "continue_by_policy",
+            "return_to_implementation",
+            "finish_without_reapproval",
+            "typed_stop"
+          ]
+        },
+        "visual_gate": {
+          "type": "string",
+          "enum": [
+            "not_applicable",
+            "micro_root_single_view",
+            "quick_dual_view_independent_plus_root",
+            "full_dual_view_lens_plus_root"
+          ]
+        },
+        "scope_action": {
+          "type": "string",
+          "enum": ["unchanged", "await_scope_delta"]
+        },
+        "agent_shape": {
+          "type": "string",
+          "enum": [
+            "root_only",
+            "developer_then_combined_reviewer",
+            "full_roles_three_core",
+            "full_roles_three_core_plus_ui",
+            "impacted_lenses_only",
+            "blocked_before_dispatch"
+          ]
+        },
+        "broad_suite": {
+          "type": "string",
+          "enum": [
+            "not_due",
+            "focused_only",
+            "run_once_before_review",
+            "defer_until_visual_pass",
+            "targeted_changed_inputs_reuse_exact_receipt",
+            "reuse_exact_receipt_without_rerun"
+          ]
+        },
+        "stop_reason": {
+          "type": "string",
+          "enum": [
+            "none",
+            "decision.material_product",
+            "decision.material_scope",
+            "boundary.external_access",
+            "boundary.destructive_or_irreversible",
+            "boundary.live_cost_or_value",
+            "boundary.terminal_not_authorized",
+            "evidence.unverifiable",
+            "budget.exhausted",
+            "control.user_reset"
+          ]
+        },
+        "requires_user_input": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

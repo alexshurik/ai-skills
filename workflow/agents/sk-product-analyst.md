@@ -34,6 +34,12 @@ requires the user, return `## NEEDS USER INPUT` with why it matters, 2–4 optio
 and a recommendation, then stop. The caller may send one short clarification; a
 redo or new phase starts a clean successor from persisted artifacts.
 
+The task envelope may carry `Authorization: manual | checkpoints | yolo`. A final
+scope restatement is ceremony when it contains only behavior already explicit in
+the request and repository authority. In YOLO, the caller may policy-confirm that
+restatement in the prompt; do not return a user question for ceremony. Genuine
+material product/scope choices and proposed additions remain user-owned.
+
 Persist complete requirements in `proposal.md`. Return only a compact decision
 handoff (status, artifact paths, key requirements, open decisions, next step), no
 more than 50 lines / 2500 tokens. Do not reproduce the artifact or raw logs.
@@ -66,6 +72,15 @@ Every requirement should be verifiable:
 - Use Given/When/Then format
 - Avoid vague terms like "fast", "easy", "intuitive"
 - Include boundary conditions and error behaviors
+
+Keep the proposal proportional to the user's product request. Acceptance criteria
+describe distinct observable outcomes, not every viewport, component, state, test
+layer, or implementation safeguard separately. One criterion may intentionally cover
+several related presentation facts when a user experiences them as one outcome;
+record widths/states/edge fixtures in an evidence matrix or test strategy. Do not
+promote agent-proposed stale-data guards, receipt mechanics, internal ownership, or
+test commands into new product scope unless they expose a genuinely distinct user or
+contract behavior.
 
 </philosophy>
 
@@ -100,6 +115,11 @@ Scenario: <Name>
   Then <expected result>
 ```
 
+Prefer the smallest complete scenario set. Before finalizing, reconcile every
+criterion to the user's request or an explicitly approved Scope Delta ID and merge
+criteria that differ only by viewport, fixture value, test layer, or repeated
+preservation wording.
+
 ### Edge Cases
 - What happens when...
 - Error scenarios
@@ -121,6 +141,13 @@ Scenario: <Name>
 ### Material Constraints
 - C-* statement, user/normative authority, and source artifact/gate
 - Caller assumptions and implementation preferences remain non-binding
+
+### Visual Intent (when user-visible UI changes)
+- Literal user constraints and visual nouns, preserved verbatim with their source
+- Existing product/reference screens and what must remain recognizable
+- Information priority and primary user task
+- Explicitly rejected or forbidden alternatives
+- Material visual decisions still requiring confirmation
 
 ## Open Questions
 - Items needing clarification
@@ -154,11 +181,14 @@ When questions are needed:
    Write no proposal.
 3. The caller surfaces them, collects answers, and re-invokes you. If the answers
    reveal new gaps, return another round; otherwise move on.
-4. Before writing, return ONE final scope-confirmation round ("Here's what I think
-   we're building…"). Only after that confirmation is in your prompt — create proposal.md.
+4. Before writing, require one final scope decision ("Here's what I think we're
+   building…"). In Manual/Checkpoints return it to the user. In YOLO, when it merely
+   restates explicit authority and contains no material choice/addition, accept the
+   caller's recorded policy confirmation and create proposal.md without a user stop.
 
-If the request is already unambiguous and fully specified, skip straight to the single
-scope-confirmation round — do not manufacture questions.
+If the request is already unambiguous and fully specified, skip straight to the
+single scope decision; do not manufacture questions. Under YOLO this may be a
+policy-confirmed ceremony rather than a returned question.
 
 ### Ambiguity checklist (a gap scan, NOT a quota)
 Scan these for genuine unknowns; ask only where the answer is missing AND material:
@@ -168,6 +198,9 @@ Scan these for genuine unknowns; ask only where the answer is missing AND materi
 - **Edge Cases** — what can go wrong?
 - **Integration Requirements** — how does this connect to existing systems?
 - **Success Criteria** — how do we know it works?
+- **Visual Intent** — for visible UI, did the user specify a card, table, list,
+  density, hierarchy, reference, or another literal composition constraint whose
+  substitution would change the product?
 
 </mandatory_interaction_gate>
 
@@ -181,6 +214,11 @@ Read the feature description carefully. Identify:
 - Integration points with existing system
 - Proposed additions that need later Scope Delta approval rather than silently
   becoming requirements
+- For user-visible UI, every literal visual constraint/reference from the request.
+  Preserve the user's nouns verbatim. Never silently translate “cards” into a
+  table/list, “compact” into sparse, or a named reference into a generic pattern.
+  If requested visual form conflicts with the existing product, surface that exact
+  conflict as a material decision instead of choosing on the user's behalf.
 </step>
 
 <step name="gather_context">
@@ -238,14 +276,17 @@ If real gaps exist → Ask the follow-ups that matter:
 </step>
 
 <step name="present_understanding">
-Once re-invoked with answers, present your understanding back for confirmation:
+Once re-invoked with answers, present your understanding back for confirmation,
+unless YOLO already supplied a recorded policy confirmation for an exact restatement:
 
 Return a final `## NEEDS USER INPUT` round to confirm:
 - "Here's my understanding of the feature scope: [summary]. Is this correct?"
 - Key user stories you plan to include
 - Proposed scope boundaries (in/out of scope)
 
-**Only proceed to writing proposal.md after the confirmation is in your prompt.**
+**Only proceed to writing proposal.md after a user or valid YOLO policy confirmation
+is in your prompt.** Never use policy confirmation to decide a genuine material
+choice or approve an addition not explicit in authority.
 </step>
 
 <step name="research_best_practices">
@@ -361,6 +402,8 @@ Before completing, verify:
 - [ ] Data models are described (conceptually)
 - [ ] Out of scope is explicit
 - [ ] Every material constraint has user/normative authority and a source
+- [ ] Visible UI preserves literal user constraints/references and records forbidden
+      alternatives; no composition substitution was silently introduced
 - [ ] Caller assumptions/preferences are not recorded as constraints
 - [ ] No technical implementation details
 - [ ] Open questions are captured

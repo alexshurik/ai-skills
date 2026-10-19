@@ -7,6 +7,35 @@ from runtime_state.support import JsonObject, RuntimeCase, array_at, json_object
 
 
 class MigrationTests(RuntimeCase):
+    def test_schema_v2_projection_migrates_to_charter_state(self) -> None:
+        runtime, current = self.init_runtime("schema-v2")
+        (runtime / "events.jsonl").unlink()
+        current["schema_version"] = 2
+        del current["charter"]
+        del current["delivery"]
+        (runtime / "state.json").write_text(json.dumps(current) + "\n")
+
+        status = self.expect_ok("status", "--runtime-dir", str(runtime))
+        assert status is not None
+        self.assertEqual(status["snapshot_status"], "legacy_v2")
+        self.assertEqual(status["recommended_action"], "migrate-v2")
+
+        migrated = self.expect_ok(
+            "migrate-v2",
+            "--runtime-dir",
+            str(runtime),
+            "--workflow",
+            "sk-team-feature",
+            "--policy-revision",
+            "test-policy-v3",
+        )
+        assert migrated is not None
+        self.assertEqual(migrated["schema_version"], 3)
+        self.assertEqual(object_at(migrated, "charter")["route"], "full")
+        self.assertEqual(object_at(migrated, "charter")["authorization"], "manual")
+        self.assertEqual(object_at(migrated, "delivery")["status"], "pending")
+        self.assertTrue((runtime / "state.v2.json").exists())
+
     def test_repair_allows_migration_after_partial_first_record(self) -> None:
         runtime = self.base / "partial-migration"
         runtime.mkdir()

@@ -38,6 +38,7 @@ FastAPI-specific review checklist and tooling. Applied on top of the Python lang
 
 ### Architecture
 - [ ] Business logic in service classes, not in endpoint functions
+- [ ] Enumerate the owners of every touched router and compare base/current; treat multiple owners as an observation, and report a finding only when they violate repository guidance or an approved responsibility boundary
 - [ ] Service classes use constructor DI for their own dependencies
 - [ ] One router per domain, mounted in the main app
 - [ ] Exception hierarchy: base app exception with status code mapping, domain exceptions inherit from it
@@ -132,6 +133,7 @@ The `FAST` rule set catches common FastAPI mistakes including redundant response
 | Missing `response_model` / return annotation | **MAJOR** |
 | Manual service instantiation instead of `Depends()` | **MAJOR** |
 | Business logic in endpoint (not in service layer) | **MAJOR** |
+| New route handler bypasses a project-required or otherwise authoritative ownership boundary | **MAJOR** |
 | Missing exception hierarchy (bare `HTTPException` raises everywhere) | **MAJOR** |
 | `allow_origins=["*"]` in production CORS | **MAJOR** |
 | No global exception handler for app exceptions | **MAJOR** |

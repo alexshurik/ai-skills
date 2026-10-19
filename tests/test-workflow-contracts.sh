@@ -110,13 +110,21 @@ for phrase in (
     assert phrase.lower() in feature.lower(), phrase
 for phrase in (
     "valid non-empty journal",
-    "valid | stale | diverged | missing | orphaned | legacy_v1 | unsupported_schema",
+    "valid | stale | diverged | missing | orphaned | legacy_v1 | legacy_v2 | unsupported_schema",
     "recover-journal-or-reinitialize",
     "require-compatible-helper",
 ):
     assert phrase.lower() in runtime_policy.lower(), phrase
     assert phrase.lower() in status_skill.lower(), phrase
     assert phrase.lower() in copy_context.lower(), phrase
+for phrase in (
+    "state schema v3",
+    "event schema v2",
+    "change-authorization",
+    "record-terminal",
+    "migrate-v2",
+):
+    assert phrase.lower() in runtime_policy.lower(), phrase
 feature_normalized = " ".join(feature.lower().split())
 for forbidden in (
     "if the projection is missing/stale, rebuild it with `repair`",

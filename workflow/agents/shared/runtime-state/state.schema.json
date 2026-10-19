@@ -1,25 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sk-skills.local/runtime-state/state.schema.json",
-  "title": "SK workflow materialized state v2",
+  "title": "SK workflow materialized state v3",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
     "revision",
     "run",
+    "charter",
     "repositories",
     "workflow",
     "control",
+    "delivery",
     "writer_lease",
     "artifacts",
     "blockers",
     "last_event"
   ],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 3 },
     "revision": { "type": "integer", "minimum": 1 },
     "run": { "$ref": "#/$defs/run" },
+    "charter": { "$ref": "#/$defs/charter" },
     "repositories": {
       "type": "object",
       "propertyNames": { "$ref": "#/$defs/identifier" },
@@ -27,6 +30,7 @@
     },
     "workflow": { "$ref": "#/$defs/workflow" },
     "control": { "$ref": "#/$defs/control" },
+    "delivery": { "$ref": "#/$defs/delivery" },
     "writer_lease": {
       "oneOf": [{ "$ref": "#/$defs/writer_lease" }, { "type": "null" }]
     },
@@ -71,8 +75,64 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["schema_version"],
-          "properties": { "schema_version": { "const": 1 } }
+          "properties": { "schema_version": { "enum": [1, 2] } }
         }
+      }
+    },
+    "charter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "route",
+        "assurance",
+        "authorization",
+        "scope_sha256",
+        "workspace",
+        "destination",
+        "budgets",
+        "updated_event"
+      ],
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 },
+        "route": { "enum": ["micro", "quick", "full"] },
+        "assurance": { "enum": ["standard", "elevated"] },
+        "authorization": { "enum": ["manual", "checkpoints", "yolo"] },
+        "scope_sha256": { "$ref": "#/$defs/sha256" },
+        "scope_authority": { "type": "string", "minLength": 1 },
+        "workspace": { "$ref": "#/$defs/workspace" },
+        "destination": { "$ref": "#/$defs/destination" },
+        "budgets": { "$ref": "#/$defs/budgets" },
+        "updated_event": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "resolved"],
+      "properties": {
+        "requested": { "enum": ["current", "worktree", "auto"] },
+        "resolved": { "enum": ["pending", "current", "worktree"] },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["local", "commit", "pr", "merge", "deploy"] },
+        "target": { "type": "string", "minLength": 1 }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "review_rounds", "remediations"],
+      "properties": {
+        "attempts": { "type": "integer", "minimum": 0 },
+        "review_rounds": { "type": "integer", "minimum": 0 },
+        "remediations": { "type": "integer", "minimum": 0 }
       }
     },
     "repository": {
@@ -130,21 +190,26 @@
     "gate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "reason", "entry", "requested_event"],
+      "required": ["status", "reason", "kind", "reason_code", "entry", "requested_event"],
       "properties": {
         "status": { "enum": ["pending", "approved", "rejected", "waived"] },
         "reason": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": ["authority_decision", "sensitive_action", "terminal_action", "ceremony"]
+        },
+        "reason_code": { "$ref": "#/$defs/identifier" },
         "entry": { "type": "integer", "minimum": 1 },
         "requested_event": { "type": "integer", "minimum": 0 },
         "decided_by": { "type": "string", "minLength": 1 },
+        "decision_source": { "enum": ["user", "policy", "repository"] },
         "decision_event": { "type": "integer", "minimum": 0 },
         "decision_reason": { "type": "string", "minLength": 1 }
       },
       "allOf": [
         {
           "if": { "properties": { "status": { "const": "pending" } }, "required": ["status"] },
-          "then": { "not": { "anyOf": [{ "required": ["decided_by"] }, { "required": ["decision_event"] }] } },
-          "else": { "required": ["decided_by", "decision_event"] }
+          "then": { "not": { "anyOf": [{ "required": ["decided_by"] }, { "required": ["decision_event"] }, { "required": ["decision_source"] }] } },
+          "else": { "required": ["decided_by", "decision_source", "decision_event"] }
         }
       ]
     },
@@ -171,6 +236,7 @@
         "status": { "enum": ["pending", "running", "succeeded", "failed", "blocked", "cancelled"] },
         "created_entry": { "type": "integer", "minimum": 1 },
         "created_event": { "type": "integer", "minimum": 0 },
+        "purpose": { "enum": ["implementation", "review", "remediation", "acceptance"] },
         "lease_holder_attempt_id": { "$ref": "#/$defs/identifier" },
         "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } }
       }
@@ -193,6 +259,7 @@
           }
         },
         "input_fingerprint": { "$ref": "#/$defs/sha256" },
+        "required": { "type": "boolean" },
         "lease_holder_attempt_id": { "$ref": "#/$defs/identifier" },
         "stage_entry": { "type": "integer", "minimum": 1 },
         "started_event": { "type": "integer", "minimum": 0 },
@@ -207,6 +274,7 @@
       "properties": {
         "outcome": { "enum": ["succeeded", "failed", "blocked", "cancelled"] },
         "recorded_event": { "type": "integer", "minimum": 0 },
+        "input_fingerprint": { "$ref": "#/$defs/sha256" },
         "verdict": { "type": "string", "minLength": 1 },
         "artifact": { "type": "string", "minLength": 1 },
         "sha256": { "$ref": "#/$defs/sha256" }
@@ -238,8 +306,21 @@
     "blocker": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reason", "required_action", "recorded_event"],
+      "required": ["reason_code", "reason", "required_action", "recorded_event"],
       "properties": {
+        "reason_code": {
+          "enum": [
+            "decision.material_product",
+            "decision.material_scope",
+            "boundary.external_access",
+            "boundary.destructive_or_irreversible",
+            "boundary.live_cost_or_value",
+            "boundary.terminal_not_authorized",
+            "evidence.unverifiable",
+            "budget.exhausted",
+            "control.user_reset"
+          ]
+        },
         "reason": { "type": "string", "minLength": 1 },
         "required_action": { "type": "string", "minLength": 1 },
         "recorded_event": { "type": "integer", "minimum": 0 }
@@ -256,6 +337,28 @@
         "holder_actor_id": { "$ref": "#/$defs/identifier" },
         "granted_event": { "type": "integer", "minimum": 1 }
       }
+    },
+    "delivery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": { "status": { "const": "pending" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "kind", "recorded_event"],
+          "properties": {
+            "status": { "enum": ["succeeded", "failed", "skipped"] },
+            "kind": { "enum": ["local", "commit", "pr", "merge", "deploy"] },
+            "target": { "type": "string", "minLength": 1 },
+            "evidence": { "type": "string", "minLength": 1 },
+            "recorded_event": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
     },
     "control": {
       "oneOf": [

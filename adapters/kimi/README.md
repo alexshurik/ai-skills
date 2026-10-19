@@ -38,6 +38,7 @@ automatically, so the workflow does not poll task status.
 Start Kimi normally and invoke any installed public skill:
 
 ```text
+/skill:sk-team Add user authentication
 /skill:sk-team-feature Add user authentication
 /skill:sk-team-quick Fix the failing login test
 /skill:sk-code-review
@@ -46,7 +47,7 @@ Start Kimi normally and invoke any installed public skill:
 
 Installed public skills are:
 
-- `sk-team-feature`, `sk-team-quick`, `sk-team-status`, `sk-team-help`
+- `sk-team`, `sk-team-feature`, `sk-team-quick`, `sk-team-status`, `sk-team-help`
 - `sk-code-review`, `sk-explore-codestyle`, `sk-copy-context`
 - `sk-onboard`, `sk-discover-project`, `sk-explore-codebase`
 

@@ -1,6 +1,6 @@
 ---
 name: sk-team-quick
-description: Quick workflow for bugfixes, typos, and small changes
+description: Quick workflow for bounded fixes, features, and coherent UI polish that need one implementer plus one fresh combined review.
 license: MIT
 
 # Claude Code
@@ -15,19 +15,27 @@ You orchestrate a small, well-defined change using **two bounded threads**. Keep
 the TDD and independent-review guarantees of the full workflow without carrying a
 long conversation through four role invocations.
 
+When invoked through `sk-team`, inherit its charter and do not ask the workflow
+choices again. When invoked directly, resolve one compact charter with route fixed
+to Quick before editing.
+
 ## Required policy
 
 Read before starting:
 
 ```text
+~/.claude/agents/shared/workflow-charter-policy.md
 ~/.claude/agents/shared/orchestration-policy.md
 ~/.claude/agents/shared/handoff-protocol.md
 ~/.claude/agents/shared/scope-governance.md
+~/.claude/agents/references/review-approval-gate.md
 or, from the skills repository:
+workflow/agents/shared/workflow-charter-policy.md
 workflow/agents/shared/orchestration-policy.md
 workflow/agents/shared/handoff-protocol.md
 workflow/agents/shared/scope-governance.md
 workflow/agents/shared/runtime-state-policy.md
+workflow/agents/references/review-approval-gate.md
 ```
 
 Installed adapters may expose the same files under their agent reference roots.
@@ -41,8 +49,10 @@ verification, and final-return contract. A thread returns only `FINAL` or `BLOCK
 
 ## Scope gate
 
-Use quick mode only for a bug fix, typo, small code change, or other change with a
-clear intended behavior and no unresolved high-cost design decision.
+Use quick mode for a bug fix, typo, bounded feature, coherent multi-screen UI polish,
+or other change with clear intended behavior and no unresolved high-cost design
+decision. Several related views do not make a task Full when they use established
+owners, contracts, and design language.
 
 Escalate to `sk-team-feature` before editing if discovery reveals any of:
 
@@ -103,30 +113,47 @@ Stage A — read-only diagnosis:
    implementation preferences as non-binding.
    State `Scope Delta: None`; if not none, return the item for user decision and
    escalation instead of editing.
-4. Return BLOCKED with a compact approval checkpoint and the design.md path.
+4. In Manual or Checkpoints, return BLOCKED with a compact execution checkpoint and
+   the design.md path. In YOLO, continue directly to Stage B unless diagnosis exposed
+   a typed material scope/product/safety stop.
 
-Stage B — only after the caller sends the user's approval as one short follow-up:
+Stage B — after the caller sends the recorded execution decision, or immediately
+after Stage A in YOLO:
 1. For a bug, write a regression test first and prove RED for the right reason.
 2. Implement the smallest approved fix.
-3. Prove GREEN and run applicable existing checks.
-4. Write implementation.md with changed paths, design deviations, exact commands
+3. For user-visible UI, render the first coherent screen early at representative
+   compact/desktop widths, pass the macro visual gate, and iterate before broad
+   verification. Preserve literal visual constraints and record exact-source final
+   evidence.
+4. Prove GREEN with focused checks, then run the broad safe/applicable gate once for
+   the final input closure.
+5. Write implementation.md with changed paths, design deviations, exact commands
    and statuses, skipped checks, and log artifact paths.
-5. Return FINAL with at most 50 lines / 2500 tokens; do not paste diffs or logs.
+6. Return FINAL with at most 50 lines / 2500 tokens; do not paste diffs or logs.
 
 No delegation unless the task envelope explicitly grants a bounded depth-2 helper.
 ```
 
-Surface the compact design checkpoint and wait for explicit user approval before
-sending the one follow-up. If the user changes scope or rejects the approach, end
-this thread and start a clean successor from the request, design path, and a short
-feedback artifact; do not accumulate redesign history.
+In Manual or Checkpoints mode, surface the compact design checkpoint and wait for
+the user's Execution decision before the follow-up. In YOLO, record the ceremony
+decision from policy inside the same developer turn; do not force a return-and-
+follow-up round unless design exposed a material scope/product/safety stop. If the
+user changes scope or rejects the
+approach, end this thread and start a clean successor from the request, design path,
+and a short feedback artifact; do not accumulate redesign history.
 
 ## Thread 2 — independent review and acceptance
 
-After implementation is green, capture one review snapshot and fingerprint. Root
-runs readiness gates once before review; red formatter/lint/type/build/tests/diff
-returns to implementation. Spawn a fresh clean reviewer/acceptance thread. It must
-not delegate or rerun the full root gate/tool battery. Its bounded deliverable is:
+After implementation returns, the root first opens the coherent exact-source compact
+and desktop renders and performs the macro visual preflight. If hierarchy, grouping,
+density, alignment, rhythm, responsive priority, or product fit fails, return to the
+same implementation scope before any broad readiness battery. Only after that pass,
+capture one review snapshot and fingerprint. Validate the Developer's exact-input
+broad receipt and run only missing, stale, or untrusted readiness rows; do not create
+a duplicate root-owned full-suite run. Red required formatter/lint/type/build/tests/
+diff evidence returns to implementation. Spawn a fresh clean reviewer/acceptance
+thread. It must not delegate or rerun the full gate/tool battery. Its bounded
+deliverable is:
 
 ```text
 Objective: independently decide whether the approved quick fix is safe and meets
@@ -151,6 +178,13 @@ each owner dimension PASS, FINDINGS, or NOT APPLICABLE:
    representative desktop and one project-appropriate compact/mobile width. Perform
    the shared screenshot-first comprehension pass at original/native resolution and
    cover the complete effective scroll extent. Source inspection alone is UNVERIFIED.
+   For browser chrome, safe-area, fixed navigation, dynamic viewport, keyboard, or
+   `visualViewport` changes, use the actual target browser/device or the closest
+   WebKit/mobile approximation and state the residual gap.
+   Record both `CONTRACT: PASS | FAIL | UNVERIFIED` and
+   `VISUAL: PASS | FAIL | UNVERIFIED`; overall UI approval requires both PASS.
+   Contract conformance cannot excuse weak hierarchy, grouping, density, alignment,
+   rhythm, responsive priority, or product fit.
 
 Then verify intended behavior, regression coverage, applicable tests, documented
 edge cases, and TODO/FIXME/HACK/XXX in changed files.
@@ -166,6 +200,11 @@ Write:
 - SUMMARY.md only for a named consumer or repository requirement, not merely because
   the fix was accepted.
 
+Begin `REVIEW.md` with the review-map fingerprint, source fingerprint, and
+`Status: PASS | FINDINGS | UNVERIFIED`. Explicitly disposition every collector
+structural/route-ownership lead and every non-OK static-analysis row; missing leads
+make the review UNVERIFIED.
+
 Return FINAL with verdict, artifact paths, blocking findings, exact verification
 statuses, skipped/UNVERIFIED checks, and snapshot fingerprint. Keep the return to
 50 lines / 2500 tokens; full evidence stays in artifacts.
@@ -178,38 +217,51 @@ conditional UI/UX.
 
 ## Remediation and finality
 
-Round 1 requires the combined reviewer to return its complete finding set across all
-three dimensions. Before remediation, show mandatory fixes, scope decisions, and
+Quick has one full review round. The combined reviewer returns its complete finding
+set across all dimensions in that round. Before remediation, show mandatory fixes, scope decisions, and
 backlog; resolve every `user_decision` and freeze the exact allowlist containing only
 `required_fix` plus approved IDs, together with each remedy authority/route. Never
 pass “fix all findings”. Send Developer only `within_approved_design` items. Any
 architecture, scope, or investigation route exits quick mode before source edits and
 continues through the full workflow's owning gate.
 
-Targeted Round 2 uses a fresh snapshot, fresh targeted gates for changed inputs plus
-exact-input receipt reuse, valid parent review,
+One targeted remediation verification uses a fresh snapshot, fresh targeted gates
+for changed inputs plus exact-input receipt reuse, and the valid parent full review,
 immutable pre/post fingerprints, complete remediation delta, verified unchanged
 hashes, no expansion, and every impacted dimension. Old evidence never proves
 changed content. A material expansion or unprovable delta exits quick mode to the
 full workflow while consuming the round.
 
-A normative design/ADR amendment is never a targeted quick review: exit quick mode
+A normative design/ADR amendment is never a targeted quick verification: exit quick mode
 and run a full core-lens review plus conditional UI/UX against the new authority fingerprint.
 
-Exceptional Round 3 is allowed only for an unresolved allowlisted defect,
-remediation regression, or newly proven critical correctness/security defect. Run
-fresh targeted gates plus exact-input receipt reuse and all impacted dimensions. New non-critical
-findings after frozen triage go to `DEFERRED.md`; they cannot open another loop.
-
-Quick mode obeys the same three-round cap. There is no automatic Round 4: return
-`NEEDS USER DECISION` with exact blockers/options and offer escalation to
-`sk-team-feature`. Transport-only waits do not consume or reset review rounds.
+If an allowlisted defect remains or remediation introduced a critical regression,
+YOLO may run the charter's single bounded recovery with focused gates and the same
+owning verification; this is not another full review round. Other modes return one
+decision-focused blocker. If recovery still fails, return `budget.exhausted` with
+exact IDs and offer escalation to `sk-team-feature`. New non-critical findings after
+frozen triage go to `DEFERRED.md`; they cannot open another loop. Transport-only
+waits never consume review or recovery budgets.
 
 Only `ACCEPTED` from a fresh independent review of the current snapshot can finish
-the workflow. Surface its compact decision, ask for explicit final approval, then
-archive with a recoverable move to `openspec/completed/<fix-name>/` when requested
-by the workflow/user. Never replace the user's current request or existing unrelated
-artifact.
+the workflow. Surface its compact decision. Manual mode may request its final
+ceremony approval; Checkpoints and YOLO continue to the selected finish without a
+redundant question. Archive with a recoverable move to
+`openspec/completed/<fix-name>/` according to the charter. Never replace the user's
+current request or existing unrelated artifact.
+
+Immediately before finish, recapture evidence with the same base/policy, rebuild a
+current review map, and run `review-gate.sh --mode quick` with
+`combined=<REVIEW.md>`, the dispositions artifact, static summary when applicable,
+and the approved/current maps. The gate must pass. It performs no broad rerun; source
+drift returns to review, while missing reports/leads/tasks/tool dispositions remain
+UNVERIFIED. Do not archive, commit/merge-for-finish, or mark the runtime complete on
+a failed gate.
+
+For user-visible UI, before finish the root personally opens the final exact-source
+compact and desktop renders, verifies the current fingerprint, and records
+Engineering, Visual, and Acceptance status. Do not rerun the broad suite merely to
+perform this aggregation; reuse its exact-input receipt.
 
 Before archive, resolve every `DEFERRED.md` candidate. Promote only user-selected
 items to the repository's tracker or `openspec/backlog/<slug>.md`; preserve rejected/
@@ -221,8 +273,9 @@ deferred decisions in the archived change and do not implement them automaticall
 - Follow the shared foreground-join policy for every required child. Use the longest
   host-permitted event-driven wait and re-enter it after transport-only timeouts.
 - Do not convert empty wake-ups into retry, phase, or workflow-budget counters.
-- Create a logical task/attempt for each successful dispatch and record one
-  foreground attempt join. Transport-only timeouts never write semantic events.
+- Record successfully dispatched one-shot children as one compact batched task; use
+  a long-lived task attempt only when retry lineage matters. Foreground wait
+  validation is read-only, and transport-only timeouts never write semantic events.
 - Detach only for a shared-policy reason and record a detached attempt join with
   `detach_reason`; never rely on a notification to resume aggregation.
 - Do not call `list_agents` after a routine timeout; use it only for reconciliation.
@@ -233,7 +286,10 @@ deferred decisions in the archived change and do not implement them automaticall
 
 ## Start
 
-Validate the scope gate, initialize artifacts and runtime state v2, enter the first
-stage, then run Thread 1. Use stage gates for user approvals and checks for evidence.
+Resolve/inherit the charter, validate the scope gate, resolve the workspace once,
+initialize artifacts and schema-v3 runtime state with `--workflow sk-team`, enter
+the first stage, then run Thread 1. Use typed stage gates for authorization and
+checks for evidence. After acceptance, perform the selected finish and record the
+matching terminal receipt; the charter's destination is authority for that action.
 
 </sk-team-quick>

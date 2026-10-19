@@ -40,6 +40,12 @@ scope, or a public contract.
     application chrome/effective scroll, outer frame, title/action region, surfaces,
     navigation, recurring domain representation, or specialized interaction. Confirm
     that shell/page/component layers do not independently own the same decision.
+11. For every new endpoint, command, handler, scheduled job, or other entry point,
+    name its nearest existing semantic analogue and approved owner. Compare the
+    base/current construction idiom. Do not create a parallel function/class owner
+    in the same router or module when project guidance or the approved design names
+    one owner; record an explicit authority-backed exception before writing if the
+    lifecycle genuinely differs.
 
 If the approved design lacks an owner for a material concern, return
 `## NEEDS USER INPUT` or request Planning rework. Do not invent the owner while
@@ -114,5 +120,6 @@ Report:
 - new-abstraction inventory with keep/inline reasons;
 - local-import reproduction results;
 - before/after structure evidence;
+- nearest-analogue and owner proof for every new entry point;
 - any design deviation and its approval source;
 - remediation route and design-delta result for every allowlisted finding.

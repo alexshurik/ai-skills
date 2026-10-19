@@ -44,7 +44,7 @@ class ReviewLeaseTests(RuntimeCase):
             "--reason-code",
             "review",
         )
-        return runtime, 5
+        return runtime, 4
 
     def grant(self, runtime: Path, revision: int, lease_id: str = "lease-1") -> JsonObject:
         return self.mutate(
@@ -64,6 +64,19 @@ class ReviewLeaseTests(RuntimeCase):
     def leased_mutate(
         self, runtime: Path, revision: int, command: str, *arguments: str
     ) -> JsonObject:
+        normalized = list(arguments)
+        if (
+            command in {"start-attempt", "finish-attempt"}
+            and "--input-fingerprint" not in normalized
+        ):
+            normalized.extend(("--input-fingerprint", "d" * 64))
+        if (
+            command == "finish-attempt"
+            and "--outcome" in normalized
+            and normalized[normalized.index("--outcome") + 1] == "succeeded"
+            and "--sha256" not in normalized
+        ):
+            normalized.extend(("--sha256", "d" * 64))
         result = self.expect_ok(
             command,
             "--runtime-dir",
@@ -76,7 +89,7 @@ class ReviewLeaseTests(RuntimeCase):
             "review-orchestrator",
             "--actor-id",
             "review-root",
-            *arguments,
+            *normalized,
         )
         assert result is not None
         return result
@@ -87,7 +100,7 @@ class ReviewLeaseTests(RuntimeCase):
         self.assertEqual(object_at(state, "writer_lease")["holder_attempt_id"], "orchestrator-1")
         errors = self.invoke_error(
             runtime,
-            6,
+            5,
             "root-write",
             "create-task",
             "--stage",
@@ -100,14 +113,14 @@ class ReviewLeaseTests(RuntimeCase):
         self.assertIn("lease", errors)
         self.create_and_finish_leaf(runtime)
         state = self.leased_mutate(
-            runtime, 9, "record-late-result", "--attempt-id", "security-1", "--verdict", "late"
+            runtime, 8, "record-late-result", "--attempt-id", "security-1", "--verdict", "late"
         )
         self.assertEqual(len(array_at(self.leaf_attempt(state), "late_results")), 1)
-        state = self.leased_mutate(runtime, 10, "release-review-lease", "--lease-id", "lease-1")
+        state = self.leased_mutate(runtime, 9, "release-review-lease", "--lease-id", "lease-1")
         self.assertIsNone(state["writer_lease"])
         finished = self.mutate(
             runtime,
-            11,
+            10,
             "finish-attempt",
             "--stage",
             "review",
@@ -123,7 +136,7 @@ class ReviewLeaseTests(RuntimeCase):
     def create_and_finish_leaf(self, runtime: Path) -> None:
         self.leased_mutate(
             runtime,
-            6,
+            5,
             "create-task",
             "--stage",
             "review",
@@ -134,7 +147,7 @@ class ReviewLeaseTests(RuntimeCase):
         )
         state = self.leased_mutate(
             runtime,
-            7,
+            6,
             "start-attempt",
             "--stage",
             "review",
@@ -145,12 +158,10 @@ class ReviewLeaseTests(RuntimeCase):
             "--host-thread-id",
             "/root/review/security",
         )
-        self.assertEqual(
-            object_at(state, "control")["attempt_ids"], ["orchestrator-1", "security-1"]
-        )
+        self.assertEqual(object_at(state, "control")["kind"], "ready")
         state = self.leased_mutate(
             runtime,
-            8,
+            7,
             "finish-attempt",
             "--stage",
             "review",
@@ -161,7 +172,7 @@ class ReviewLeaseTests(RuntimeCase):
             "--outcome",
             "succeeded",
         )
-        self.assertEqual(object_at(state, "control")["attempt_ids"], ["orchestrator-1"])
+        self.assertEqual(object_at(state, "control")["kind"], "ready")
 
     def leaf_attempt(self, state: JsonObject) -> JsonObject:
         attempts = array_at(state, "workflow", "stages", "review", "tasks", "security", "attempts")
@@ -172,7 +183,7 @@ class ReviewLeaseTests(RuntimeCase):
         self.grant(runtime, revision)
         errors = self.invoke_error(
             runtime,
-            6,
+            5,
             "wrong-holder",
             "create-task",
             "--actor-kind",
@@ -189,7 +200,7 @@ class ReviewLeaseTests(RuntimeCase):
         self.assertIn("does not hold", errors)
         errors = self.invoke_error(
             runtime,
-            6,
+            5,
             "forbidden-check",
             "record-check",
             "--actor-kind",
@@ -275,6 +286,12 @@ class ReviewLeaseTests(RuntimeCase):
         self.assertIn("lease lineage", finish_errors)
 
     def leased_error(self, runtime: Path, revision: int, command: str, *arguments: str) -> str:
+        normalized = list(arguments)
+        if (
+            command in {"start-attempt", "finish-attempt"}
+            and "--input-fingerprint" not in normalized
+        ):
+            normalized.extend(("--input-fingerprint", "d" * 64))
         return self.invoke_error(
             runtime,
             revision,
@@ -284,16 +301,16 @@ class ReviewLeaseTests(RuntimeCase):
             "review-orchestrator",
             "--actor-id",
             "review-root",
-            *arguments,
+            *normalized,
         )
 
     def test_detached_resume_releases_and_regrants_lease(self) -> None:
         runtime, revision = self.prepare_review("lease-detached")
         self.grant(runtime, revision, "lease-before-detach")
-        self.leased_mutate(runtime, 6, "release-review-lease", "--lease-id", "lease-before-detach")
+        self.leased_mutate(runtime, 5, "release-review-lease", "--lease-id", "lease-before-detach")
         detached = self.mutate(
             runtime,
-            7,
+            6,
             "wait-agents",
             "--attempt-id",
             "orchestrator-1",
@@ -308,7 +325,7 @@ class ReviewLeaseTests(RuntimeCase):
         self.expect_ok("validate", "--runtime-dir", str(runtime))
         self.mutate(
             runtime,
-            8,
+            7,
             "wait-agents",
             "--attempt-id",
             "orchestrator-1",
@@ -317,10 +334,10 @@ class ReviewLeaseTests(RuntimeCase):
             "--reason-code",
             "resume-review",
         )
-        state = self.grant(runtime, 9, "lease-after-resume")
+        state = self.grant(runtime, 7, "lease-after-resume")
         self.assertEqual(object_at(state, "writer_lease")["id"], "lease-after-resume")
         released = self.leased_mutate(
-            runtime, 10, "release-review-lease", "--lease-id", "lease-after-resume"
+            runtime, 8, "release-review-lease", "--lease-id", "lease-after-resume"
         )
         self.assertIsNone(released["writer_lease"])
 
@@ -334,7 +351,7 @@ class ReviewLeaseTests(RuntimeCase):
         self.detach_and_regrant(runtime, revision)
         finished = self.leased_mutate(
             runtime,
-            revision + 7,
+            revision + 6,
             "finish-attempt",
             "--stage",
             "review",
@@ -410,4 +427,4 @@ class ReviewLeaseTests(RuntimeCase):
             "--reason-code",
             "resume-review",
         )
-        self.grant(runtime, revision + 6, "lease-after-resume")
+        self.grant(runtime, revision + 5, "lease-after-resume")

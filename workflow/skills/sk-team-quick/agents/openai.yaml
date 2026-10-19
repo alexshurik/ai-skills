@@ -1,4 +1,4 @@
 interface:
   display_name: "Team Quick"
-  short_description: "Run the gated quick-change workflow"
-  default_prompt: "Use $sk-team-quick to implement this small change through design, development, review, and acceptance."
+  short_description: "Run a bounded change with one implementation and one review"
+  default_prompt: "Use $sk-team-quick to implement this bounded change through design, development, fresh review, and acceptance. Resolve control, workspace, and finish once before starting."

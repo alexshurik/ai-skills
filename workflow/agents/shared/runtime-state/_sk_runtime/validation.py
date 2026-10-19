@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from .model import (
+    ASSURANCE_LEVELS,
+    AUTHORIZATION_MODES,
+    DESTINATION_KINDS,
+    ROUTES,
     STATE_SCHEMA_VERSION,
+    STOP_REASON_CODES,
     TERMINAL_ATTEMPTS,
+    WORKSPACE_POLICIES,
+    WORKSPACE_RESOLUTIONS,
     JsonObject,
     StateError,
     find_attempt,
@@ -42,30 +49,119 @@ def validate_run(value: object) -> JsonObject:
     require_timestamp(run["created_at"], "run.created_at")
     if "migrated_from" in run:
         migrated = require_object(run["migrated_from"], "run.migrated_from")
-        if migrated != {"schema_version": 1}:
-            raise StateError("run.migrated_from must identify schema version 1")
+        if migrated not in ({"schema_version": 1}, {"schema_version": 2}):
+            raise StateError("run.migrated_from must identify schema version 1 or 2")
     return run
+
+
+def validate_charter(value: object) -> JsonObject:
+    charter = require_object(value, "charter")
+    required = {
+        "revision",
+        "route",
+        "assurance",
+        "authorization",
+        "scope_sha256",
+        "workspace",
+        "destination",
+        "budgets",
+        "updated_event",
+    }
+    require_fields(charter, required, required | {"scope_authority"}, "charter")
+    require_integer(charter["revision"], "charter.revision", minimum=1)
+    validate_enum(charter["route"], "charter.route", ROUTES)
+    validate_enum(charter["assurance"], "charter.assurance", ASSURANCE_LEVELS)
+    validate_enum(charter["authorization"], "charter.authorization", AUTHORIZATION_MODES)
+    require_hash(charter["scope_sha256"], "charter.scope_sha256")
+    if "scope_authority" in charter:
+        require_string(charter["scope_authority"], "charter.scope_authority")
+    validate_workspace(charter["workspace"])
+    validate_destination(charter["destination"])
+    validate_budgets(charter["budgets"])
+    require_integer(charter["updated_event"], "charter.updated_event", minimum=1)
+    return charter
+
+
+def validate_enum(value: object, name: str, allowed: frozenset[str]) -> str:
+    checked = require_identifier(value, name)
+    if checked not in allowed:
+        raise StateError(f"{name} has an unsupported value")
+    return checked
+
+
+def validate_workspace(value: object) -> None:
+    workspace = require_object(value, "charter.workspace")
+    required = {"requested", "resolved"}
+    require_fields(workspace, required, required | {"path"}, "charter.workspace")
+    requested = validate_enum(
+        workspace["requested"], "charter.workspace.requested", WORKSPACE_POLICIES
+    )
+    resolved = validate_enum(
+        workspace["resolved"], "charter.workspace.resolved", WORKSPACE_RESOLUTIONS
+    )
+    if requested != "auto" and resolved not in {"pending", requested}:
+        raise StateError("charter.workspace resolution conflicts with its requested policy")
+    if "path" in workspace:
+        require_string(workspace["path"], "charter.workspace.path")
+    if resolved == "pending" and "path" in workspace:
+        raise StateError("pending workspace must not have a path")
+
+
+def validate_destination(value: object) -> None:
+    destination = require_object(value, "charter.destination")
+    require_fields(destination, {"kind"}, {"kind", "target"}, "charter.destination")
+    kind = validate_enum(destination["kind"], "charter.destination.kind", DESTINATION_KINDS)
+    if "target" in destination:
+        require_string(destination["target"], "charter.destination.target")
+    if kind in {"pr", "merge", "deploy"} and "target" not in destination:
+        raise StateError(f"charter destination {kind} requires a target")
+    if kind in {"local", "commit"} and "target" in destination:
+        raise StateError(f"charter destination {kind} must not have a target")
+
+
+def validate_budgets(value: object) -> None:
+    budgets = require_object(value, "charter.budgets")
+    required = {"attempts", "review_rounds", "remediations"}
+    require_fields(budgets, required, required, "charter.budgets")
+    for field in required:
+        require_integer(budgets[field], f"charter.budgets.{field}", minimum=0)
 
 
 def validate_gate(value: object, label: str, entries: int) -> None:
     gate = require_object(value, label)
-    required = {"status", "reason", "entry", "requested_event"}
-    allowed = required | {"decided_by", "decision_event", "decision_reason"}
+    required = {"status", "reason", "kind", "reason_code", "entry", "requested_event"}
+    allowed = required | {
+        "decided_by",
+        "decision_source",
+        "decision_event",
+        "decision_reason",
+    }
     require_fields(gate, required, allowed, label)
     status = require_identifier(gate["status"], f"{label}.status")
     if status not in {"pending", "approved", "rejected", "waived"}:
         raise StateError(f"{label} has invalid status")
     require_string(gate["reason"], f"{label}.reason")
+    validate_enum(
+        gate["kind"],
+        f"{label}.kind",
+        frozenset({"authority_decision", "sensitive_action", "terminal_action", "ceremony"}),
+    )
+    require_identifier(gate["reason_code"], f"{label}.reason_code")
     if require_integer(gate["entry"], f"{label}.entry", minimum=1) > entries:
         raise StateError(f"{label} belongs to a future entry")
     require_integer(gate["requested_event"], f"{label}.requested_event")
-    decided = {"decided_by", "decision_event"}
+    decided = {"decided_by", "decision_source", "decision_event"}
     if status == "pending" and decided & set(gate):
         raise StateError(f"{label} pending gate contains decision fields")
     if status != "pending" and not decided.issubset(gate):
         raise StateError(f"{label} decided gate is missing decision fields")
     if "decided_by" in gate:
         require_string(gate["decided_by"], f"{label}.decided_by")
+        validate_enum(
+            gate["decision_source"],
+            f"{label}.decision_source",
+            frozenset({"user", "policy", "repository"}),
+        )
         require_integer(gate["decision_event"], f"{label}.decision_event")
     if "decision_reason" in gate:
         require_string(gate["decision_reason"], f"{label}.decision_reason")
@@ -94,7 +190,12 @@ def validate_check(value: object, label: str, entries: int) -> None:
 def validate_result(value: object, label: str, status: str) -> None:
     result = require_object(value, label)
     required = {"outcome", "recorded_event"}
-    require_fields(result, required, required | {"verdict", "artifact", "sha256"}, label)
+    require_fields(
+        result,
+        required,
+        required | {"input_fingerprint", "verdict", "artifact", "sha256"},
+        label,
+    )
     if result["outcome"] != status:
         raise StateError(f"{label} outcome does not match attempt status")
     require_integer(result["recorded_event"], f"{label}.recorded_event")
@@ -103,6 +204,8 @@ def validate_result(value: object, label: str, status: str) -> None:
             require_string(result[field], f"{label}.{field}")
     if "sha256" in result:
         require_hash(result["sha256"], f"{label}.sha256")
+    if "input_fingerprint" in result:
+        require_hash(result["input_fingerprint"], f"{label}.input_fingerprint")
 
 
 def validate_late_result(value: object, label: str) -> None:
@@ -120,7 +223,7 @@ def validate_late_result(value: object, label: str) -> None:
 def validate_attempt(value: object, label: str, ordinal: int, entries: int) -> str:
     attempt = require_object(value, label)
     required = {"id", "ordinal", "status", "agent", "stage_entry", "started_event", "late_results"}
-    allowed = required | {"input_fingerprint", "result", "lease_holder_attempt_id"}
+    allowed = required | {"input_fingerprint", "result", "lease_holder_attempt_id", "required"}
     require_fields(attempt, required, allowed, label)
     attempt_id = require_identifier(attempt["id"], f"{label}.id")
     if require_integer(attempt["ordinal"], f"{label}.ordinal", minimum=1) != ordinal:
@@ -134,6 +237,8 @@ def validate_attempt(value: object, label: str, ordinal: int, entries: int) -> s
     require_integer(attempt["started_event"], f"{label}.started_event")
     if "input_fingerprint" in attempt:
         require_hash(attempt["input_fingerprint"], f"{label}.input_fingerprint")
+    if "required" in attempt:
+        require_boolean(attempt["required"], f"{label}.required")
     if "lease_holder_attempt_id" in attempt:
         require_identifier(attempt["lease_holder_attempt_id"], f"{label}.lease_holder_attempt_id")
     validate_attempt_result(attempt, label, status)
@@ -168,7 +273,7 @@ def validate_agent(value: object, label: str) -> None:
 def validate_task(value: object, label: str, entries: int) -> set[str]:
     task = require_object(value, label)
     required = {"role", "required", "status", "created_entry", "created_event", "attempts"}
-    require_fields(task, required, required | {"lease_holder_attempt_id"}, label)
+    require_fields(task, required, required | {"lease_holder_attempt_id", "purpose"}, label)
     require_identifier(task["role"], f"{label}.role")
     require_boolean(task["required"], f"{label}.required")
     status = require_identifier(task["status"], f"{label}.status")
@@ -180,6 +285,14 @@ def validate_task(value: object, label: str, entries: int) -> set[str]:
     owner = task.get("lease_holder_attempt_id")
     if owner is not None:
         require_identifier(owner, f"{label}.lease_holder_attempt_id")
+    purpose = task.get("purpose")
+    if purpose is not None and require_identifier(purpose, f"{label}.purpose") not in {
+        "implementation",
+        "review",
+        "remediation",
+        "acceptance",
+    }:
+        raise StateError(f"{label}.purpose is invalid")
     attempts = task["attempts"]
     if not isinstance(attempts, list):
         raise StateError(f"{label}.attempts must be an array")
@@ -189,10 +302,23 @@ def validate_task(value: object, label: str, entries: int) -> set[str]:
     }
     if any(attempt.get("lease_holder_attempt_id") != owner for attempt in attempts):
         raise StateError(f"{label} attempts do not match task lease lineage")
-    expected_status = attempts[-1]["status"] if attempts else "pending"
+    expected_status = expected_task_status(attempts, purpose, label)
     if status != expected_status:
         raise StateError(f"{label} status does not match its latest attempt")
     return attempt_ids
+
+
+def expected_task_status(attempts: list[JsonObject], purpose: object, label: str) -> str:
+    if purpose is None:
+        return attempts[-1]["status"] if attempts else "pending"
+    if not attempts:
+        raise StateError(f"{label} batched task has no attempts")
+    if any(attempt["status"] == "running" for attempt in attempts):
+        return "running"
+    required_attempts = [attempt for attempt in attempts if attempt.get("required", True)]
+    if all(attempt["status"] == "succeeded" for attempt in required_attempts):
+        return "succeeded"
+    return "failed"
 
 
 def validate_lease_lineages(state: JsonObject) -> None:
@@ -332,8 +458,9 @@ def validate_named_records(state: JsonObject) -> JsonObject:
     for name, value in blockers.items():
         require_identifier(name, "blocker name")
         blocker = require_object(value, f"blocker {name}")
-        required = {"reason", "required_action", "recorded_event"}
+        required = {"reason_code", "reason", "required_action", "recorded_event"}
         require_fields(blocker, required, required, f"blocker {name}")
+        validate_enum(blocker["reason_code"], f"blocker {name}.reason_code", STOP_REASON_CODES)
         require_string(blocker["reason"], f"blocker {name}.reason")
         require_string(blocker["required_action"], f"blocker {name}.required_action")
         require_integer(blocker["recorded_event"], f"blocker {name}.recorded_event")
@@ -355,6 +482,8 @@ def validate_writer_lease(value: object, state: JsonObject) -> None:
     for field in ("id", "stage", "holder_attempt_id", "holder_actor_id"):
         require_identifier(lease[field], f"writer_lease.{field}")
     require_integer(lease["granted_event"], "writer_lease.granted_event", minimum=1)
+    if state["charter"]["route"] != "full" or lease["stage"] != "review":
+        raise StateError("writer lease is not bounded to nested Full review")
     if state["workflow"]["current_stage"] != lease["stage"]:
         raise StateError("writer lease does not belong to the current stage")
     stage_name, task_name, attempt = find_attempt(state, lease["holder_attempt_id"])
@@ -363,11 +492,6 @@ def validate_writer_lease(value: object, state: JsonObject) -> None:
     role = state["workflow"]["stages"][stage_name]["tasks"][task_name]["role"]
     if role not in {"review-orchestrator", "sk-review-orchestrator"}:
         raise StateError("writer lease holder is not a review orchestrator")
-    control = state["control"]
-    if control.get("join") != "foreground":
-        raise StateError("writer lease requires a foreground agent join")
-    if lease["holder_attempt_id"] not in control.get("attempt_ids", []):
-        raise StateError("writer lease holder is not present in the foreground join")
 
 
 def validate_state(state: object) -> JsonObject:
@@ -376,9 +500,11 @@ def validate_state(state: object) -> JsonObject:
         "schema_version",
         "revision",
         "run",
+        "charter",
         "repositories",
         "workflow",
         "control",
+        "delivery",
         "writer_lease",
         "artifacts",
         "blockers",
@@ -389,6 +515,7 @@ def validate_state(state: object) -> JsonObject:
         raise StateError("state uses an unsupported schema version")
     revision = require_integer(item["revision"], "revision", minimum=1)
     validate_run(item["run"])
+    validate_charter(item["charter"])
     repositories = require_object(item["repositories"], "repositories")
     for name, repository in repositories.items():
         validate_repository(repository, f"repository {require_identifier(name, 'repository name')}")
@@ -406,6 +533,7 @@ def validate_state(state: object) -> JsonObject:
         raise StateError("workflow.current_stage does not exist")
     blockers = validate_named_records(item)
     validate_control(item["control"], item, blockers)
+    validate_delivery(item["delivery"], item["charter"])
     validate_lease_lineages(item)
     validate_writer_lease(item["writer_lease"], item)
     last_event = require_object(item["last_event"], "last_event")
@@ -414,3 +542,23 @@ def validate_state(state: object) -> JsonObject:
         raise StateError("last_event.seq must equal revision")
     require_identifier(last_event["id"], "last_event.id")
     return item
+
+
+def validate_delivery(value: object, charter: object) -> None:
+    delivery = require_object(value, "delivery")
+    status = require_identifier(delivery.get("status"), "delivery.status")
+    if status == "pending":
+        require_fields(delivery, {"status"}, {"status"}, "delivery")
+        return
+    required = {"status", "kind", "recorded_event"}
+    require_fields(delivery, required, required | {"target", "evidence"}, "delivery")
+    if status not in {"succeeded", "failed", "skipped"}:
+        raise StateError("delivery.status has an unsupported value")
+    kind = validate_enum(delivery["kind"], "delivery.kind", DESTINATION_KINDS)
+    require_integer(delivery["recorded_event"], "delivery.recorded_event", minimum=1)
+    for field in ("target", "evidence"):
+        if field in delivery:
+            require_string(delivery[field], f"delivery.{field}")
+    destination = require_object(charter, "charter")["destination"]
+    if kind != destination["kind"] or delivery.get("target") != destination.get("target"):
+        raise StateError("delivery does not match charter destination")

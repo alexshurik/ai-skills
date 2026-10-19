@@ -7,9 +7,10 @@
 
 ### Workflow (Multi-Agent Team)
 
-- `sk-team-feature` - Run a worktree-isolated multi-agent feature workflow with explicit approval gates from discovery through retrospective and acceptance archive.
+- `sk-team` - Interactively choose and run a Micro, Quick, or Full development workflow with configurable checkpoints, workspace isolation, assurance, and finish.
+- `sk-team-feature` - Run the Full multi-agent feature workflow under a selected charter, with independent discovery, design, review, acceptance, and retrospective.
 - `sk-team-help` - Show help and documentation for multi-agent team workflow
-- `sk-team-quick` - Quick workflow for bugfixes, typos, and small changes
+- `sk-team-quick` - Quick workflow for bounded fixes, features, and coherent UI polish that need one implementer plus one fresh combined review.
 - `sk-team-status` - Show status of current team workflow
 
 ### Onboarding
@@ -53,7 +54,7 @@ Research unknown domains, technologies, APIs, and best practices before planning
 Review complete Git scope through three core lenses plus a conditional rendered UI/UX lens with bounded remediation verification.
 
 ### sk-tester
-Independently write approved failing tests before code when risk routing or the user requires a separate Tester.
+Independently write authorized failing tests before code when risk routing or the user requires a separate Tester.
 
 ## Multi-Agent Orchestration
 
@@ -85,14 +86,16 @@ Independently write approved failing tests before code when risk routing or the 
   plus exact-input receipt reuse after remediation.
 - Launch a full wave before waiting. Keep required children in a foreground join and
   use the longest event-driven mailbox wait permitted by the host and higher-priority
-  policy. Record one semantic foreground attempt join; transport-only timeouts are
-  not workflow retries, budget events, or runtime-state writes. Never
+  policy. Record one compact batched dispatch or long-lived task attempt; foreground
+  wait validation is read-only, and transport-only timeouts are not workflow
+  retries, budget events, or runtime-state writes. Never
   list, nudge, or chatter between routine returns. Detach only on explicit user
   request, a forced host deadline, or unavailable/failing wait support; persist the
   reason. Notifications are observability, not workflow continuation. Drain ready
   completions before launching new work.
 
-Canonical policies: `workflow/agents/shared/orchestration-policy.md`,
+Canonical policies: `workflow/agents/shared/workflow-charter-policy.md`,
+`workflow/agents/shared/orchestration-policy.md`,
 `workflow/agents/shared/handoff-protocol.md`, and
 `workflow/agents/shared/scope-governance.md`. Runtime transitions and migration are
 defined by `workflow/agents/shared/runtime-state-policy.md`.
@@ -140,10 +143,10 @@ cp -R adapters/cursor/.cursor /path/to/project/
 
 Invocation syntax depends on the host:
 
-- **Claude Code:** `/sk-team-feature Add user authentication`
-- **OpenAI Codex:** `$sk-team-feature Add user authentication`
-- **Kimi Code CLI:** `/skill:sk-team-feature Add user authentication`
-- **Cursor and other agents:** mention `sk-team-feature` in chat
+- **Claude Code:** `/sk-team Add user authentication`
+- **OpenAI Codex:** `$sk-team Add user authentication`
+- **Kimi Code CLI:** `/skill:sk-team Add user authentication`
+- **Cursor and other agents:** mention `sk-team` in chat
 
 ## License
 

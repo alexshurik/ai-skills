@@ -5,6 +5,7 @@
     "agent_prompt_lines": 500
   },
   "catalog": [
+    {"name": "sk-team", "source": "workflow/skills/sk-team"},
     {"name": "sk-team-feature", "source": "workflow/skills/sk-team-feature"},
     {"name": "sk-team-help", "source": "workflow/skills/sk-team-help"},
     {"name": "sk-team-quick", "source": "workflow/skills/sk-team-quick"},

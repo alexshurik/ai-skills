@@ -41,6 +41,7 @@ After installation, use the skills in Codex:
 
 ```
 $sk-team-help       # Show documentation
+$sk-team            # Recommend and run the right-sized workflow
 $sk-team-feature    # Start full feature workflow
 $sk-team-quick      # Quick fix workflow
 $sk-onboard         # Project onboarding
