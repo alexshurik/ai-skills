@@ -26,6 +26,11 @@ Installed adapters expose the same files under their shared agent references.
 
 ## Start
 
+Before task setup, apply `sk-onboard check` once for the target repository, using
+its read-only first-use contract. Reuse an existing check result for this session;
+offer missing steering without blocking the task or starting onboarding without
+acceptance. Pass the result to Quick/Full so they do not ask again.
+
 1. Inspect the request and only enough repository state to make a recommendation.
    Do not delegate merely to classify the route.
 2. Resolve the five user-facing choices from the request: Path, Control, Workspace,

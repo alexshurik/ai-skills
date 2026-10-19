@@ -19,6 +19,10 @@ When invoked through `sk-team`, inherit its charter and do not ask the workflow
 choices again. When invoked directly, resolve one compact charter with route fixed
 to Quick before editing.
 
+Reuse the parent's `sk-onboard check` result. On direct invocation, apply that
+read-only first-use check once before task setup. Offer missing steering without
+blocking the task; setup requires acceptance and is not implied by the charter.
+
 ## Required policy
 
 Read before starting:

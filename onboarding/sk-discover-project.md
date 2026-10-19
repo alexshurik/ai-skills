@@ -15,7 +15,7 @@ allowed-tools:
 
 # Discover Project Structure
 
-Generate `.claude/docs/project-map.md` with comprehensive project overview for quick onboarding.
+Generate a project map with a comprehensive overview for onboarding.
 
 ## Output Modes
 
@@ -26,8 +26,13 @@ Generate `.claude/docs/project-map.md` with comprehensive project overview for q
 
 ### 1. Pre-flight Check
 - Verify project root exists
-- Check for existing `.claude/docs/project-map.md`
-- Create `.claude/docs/` directory if needed
+- Use the output path and merge plan supplied by `sk-onboard`, when present.
+- Otherwise reuse the project's existing map owner (including
+  `.claude/docs/project-map.md`); default to `.agents/docs/project-map.md` for a new map.
+- Inspect existing content and preserve human edits; create only the chosen parent
+  directory. Do not migrate or create a second map merely to match the default.
+- Treat the map as descriptive evidence: cite sources and label inferred business
+  purpose, user stories, or constraints. Unknown facts remain unknown.
 
 ### 2. Run Parallel Explorers
 
@@ -481,6 +486,6 @@ If no ops tooling found:
 | **Goal** | Prevent duplication | Understand structure |
 | **Style** | Prescriptive ("check X before Y") | Descriptive ("here's what exists") |
 | **When** | While working on project | First time onboarding |
-| **Output** | `.claude/rules/codebase-navigation.md` | `.claude/docs/project-map.md` |
+| **Output** | Existing navigation owner or `.agents/steering/architecture.md` | Existing map owner or `.agents/docs/project-map.md` |
 
 Both complement each other - use `sk-onboard` to run both.

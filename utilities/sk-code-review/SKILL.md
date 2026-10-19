@@ -10,6 +10,10 @@ from the repository. Read `scope-governance.md`, the canonical
 `sk-review-orchestrator.md`, and `review-verdict-policy.md` completely. This skill
 never modifies source or feature artifacts.
 
+Before capturing scope, apply `sk-onboard check` once or reuse the session's result.
+Only report a useful setup/refresh offer and continue the review; do not generate
+steering, modify entrypoints, or change review inputs as part of this read-only task.
+
 ## 1. Capture scope and authority
 
 Resolve the Git-local review runtime directory, run the installed change-evidence

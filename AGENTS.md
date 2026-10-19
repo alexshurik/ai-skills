@@ -17,7 +17,7 @@
 
 - `sk-discover-project` - Discover project structure, stack, domains, and API surface for quick onboarding
 - `sk-explore-codebase` - Explore a codebase and generate navigation plus authoritative project convention profiles
-- `sk-onboard` - Discover a project and generate its map, navigation rules, and authoritative convention profiles
+- `sk-onboard` - Check, create, or refresh modular project steering, reusing existing guidance and deriving project maps and authoritative convention profiles.
 
 ### Utilities
 

@@ -96,6 +96,12 @@ then load profiles for each and report all matches per component.
 Also read platform-native guidance files if present:
 `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`
 
+When that guidance points to a steering index, read the index and select only
+documents matching the current task, role, and component/path scope. Also check
+`.agents/steering/index.md` when no custom index is declared. Keep scoped project
+guidance within its declared scope; an index is routing, not a new authority level.
+Do not load every linked document or treat descriptive maps as normative rules.
+
 Project convention generation may also create
 `.agents/best-practices/project/evidence.md`. It contains Observed and
 Legacy/uncertain evidence only. Do not load it as a coder/reviewer rulebook and do

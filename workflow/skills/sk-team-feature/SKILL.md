@@ -78,6 +78,10 @@ or shared/templates/retrospective.md from the skills repo
 
 ## Setup
 
+Reuse the parent's `sk-onboard check` result. On direct invocation, apply that
+read-only first-use check once before task setup. Offer missing steering without
+blocking the task; setup requires acceptance and is not implied by the charter.
+
 1. Derive a short kebab-case feature name.
 2. When no parent `sk-team` charter exists, resolve one compact charter first with
    route fixed to Full; recommend Checkpoints, Auto workspace, Local finish, and

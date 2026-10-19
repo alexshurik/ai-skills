@@ -15,13 +15,21 @@ allowed-tools:
 
 # Explore Codebase & Generate Navigation Rules
 
-Generate `.claude/rules/codebase-navigation.md` with check-before-create rules for AI agents.
+Generate project navigation with check-before-create guidance and authoritative
+convention profiles for AI agents.
 
 ## Process
 
 ### 1. Pre-flight Check
 - Detect actual source roots from manifests, build configuration, and repository guidance
-- Check for existing `.claude/rules/codebase-navigation.md`
+- Use the destination and merge plan supplied by `sk-onboard`, when present.
+- Otherwise reuse the existing navigation owner (including
+  `.claude/rules/codebase-navigation.md`); default to
+  `.agents/steering/architecture.md` for new guidance.
+- Preserve existing human guidance and component-scoped profiles. Read the
+  destination/merge sections of `project-steering-guide.md` from the same installed
+  or source reference directory used below. Direct exploration does not authorize
+  entrypoint changes unless the user requested them.
 
 ### 2. Explore Categories
 
@@ -66,9 +74,9 @@ notifications never substitute for result aggregation.
 
 ### 3. Generate Rules
 
-After exploration, create `.claude/rules/codebase-navigation.md` from discovered
-evidence. Do not impose a framework or directory layout that the repository does
-not already enforce or approve:
+After exploration, merge discovered evidence into the resolved navigation owner.
+Distinguish descriptive locations from approved boundary rules. Do not impose a
+framework or directory layout that the repository does not already enforce or approve:
 
 ```markdown
 # Codebase Navigation Rules
@@ -149,8 +157,9 @@ Write:
 - `.agents/best-practices/project/evidence.md` — Observed/Legacy evidence,
   counterexamples, confidence, and promotion questions.
 
-Show all three artifacts for confirmation. Confirmation promotes only explicitly
-selected observations, not the entire sample.
+Show the three artifacts and their changes. Inherit an accepted onboarding merge
+plan without asking again. Ask for decisions only on material conflicts or
+individual proposed promotions; confirmation never approves the entire sample.
 
 (This differs from the navigation rules above: navigation = "where to put files",
 the profile = "how to write the code".)
@@ -161,8 +170,8 @@ Display:
 - Number of domains found
 - Number of services, repositories, utilities discovered
 - Paths to generated files (navigation rules + project convention profile)
-- Reminder: navigation rules auto-load in new Claude sessions; the convention profile
-  is loaded by the `sk-*` dev/review agents
+- Report the actual navigation entrypoint, or say it is not yet connected. The
+  convention profile is loaded by the `sk-*` dev/review agents.
 
 ## Focus Areas
 
@@ -174,14 +183,14 @@ If argument provided:
 
 ## Output
 
-Write to:
-- `.claude/rules/codebase-navigation.md` — navigation hints (auto-loads in sessions)
+Write to the resolved owners:
+- existing navigation document or `.agents/steering/architecture.md` — navigation
 - `.agents/best-practices/project/coder.md` + `reviewer.md` — normative project
   profile, loaded at highest precedence by the `sk-*` dev/review agents
 - `.agents/best-practices/project/evidence.md` — non-normative observations,
   legacy patterns, and unresolved promotion questions
 
-The navigation file auto-loads in Claude Code sessions; other hosts can reference
-it from their repository guidance. The convention profile follows enforced and
-approved project decisions without copying legacy patterns merely because they
-are common.
+`sk-onboard` connects navigation through the project's steering index and short
+entrypoint pointer. Standalone exploration reports any missing connection rather
+than claiming automatic loading. The convention profile follows enforced and
+approved project decisions without promoting common legacy patterns.

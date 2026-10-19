@@ -1,8 +1,8 @@
 ---
 name: sk-onboard
-version: 1.0.0
-description: Discover a project and generate its map, navigation rules, and authoritative convention profiles
-argument-hint: "[optional: quick|full]"
+version: 1.1.0
+description: Check, create, or refresh modular project steering, reusing existing guidance and deriving project maps and authoritative convention profiles.
+argument-hint: "[optional: check|quick|full]"
 license: MIT
 allowed-tools:
   - Read
@@ -14,93 +14,105 @@ allowed-tools:
   - Skill
 ---
 
-# Full Project Onboarding
+# Project Onboarding and Steering
 
-Run both discovery skills to generate complete project documentation for AI agents and developers.
+Connect project knowledge and approved rules through a small routing index. Reuse
+existing documentation and preserve human guidance. A direct setup request
+authorizes non-conflicting generation and entrypoint updates; adoption of new
+recommendations requires an explicit decision on those items.
 
-Before running, compute a reusable **project fingerprint** from repository revision,
-dirty-file metadata/content hashes, relevant manifests, and repository guidance.
-Record it with output artifact hashes in the git-local `sk-workflow/onboarding/`
-ledger. If the fingerprint and required output hashes match a prior successful run,
-reuse its discovery artifacts and skip duplicate exploration. Re-run only the
-invalidated discovery half when its input subset changed; never reuse merely
-because files exist.
+## Required reference
 
-## Process
+Read the relevant mode in `project-steering-guide.md` before acting:
 
-### 1. Run discover-project
+```text
+~/.claude/agents/best-practices/project-steering-guide.md
+or, from this source repository:
+shared/best-practices/project-steering-guide.md
+```
 
-Execute `sk-discover-project` to generate `.claude/docs/project-map.md`:
-- Tech stack detection
-- Domain discovery
-- API endpoints mapping
-- Key files identification
-
-### 2. Run explore-codebase
-
-Execute `sk-explore-codebase` to generate navigation rules AND the project
-convention profile:
-- `.claude/rules/codebase-navigation.md` — check-before-create rules, structure
-- `.agents/best-practices/project/{coder,reviewer}.md` — Enforced and Approved
-  project conventions loaded by `sk-*` implementation/review agents
-- `.agents/best-practices/project/evidence.md` — Observed and Legacy/uncertain
-  source patterns that are evidence, not automatic instructions
-
-### 3. Summary
-
-Display combined results:
-- Tech stack summary
-- Number of domains, endpoints, services discovered
-- Paths to all generated artifacts
-- Reminder about auto-loading rules
-- Input fingerprint and whether each discovery artifact was reused or regenerated
+Installed adapters rewrite the installed locator for their host. For `check`, read
+only the Check section and return; the remaining sections govern setup/refresh.
 
 ## Modes
 
-**`full` (default):**
-- Complete API endpoint extraction with schemas and auth info
-- Detailed domain feature analysis
-- Full check-before-create rules
+- **`check`:** inspect existing guidance and report readiness plus a concrete
+  setup/refresh offer. No writes, delegation, or full discovery. Safe for first-use
+  callers and read-only reviews; missing steering never blocks their task.
+- **`quick`:** create or refresh useful routing, high-level project context,
+  navigation, and project profiles. Skip detailed endpoint/schema extraction.
+- **`full` (default):** also perform detailed domain and API discovery. Detailed maps
+  are reference material, not instructions to load on every task.
 
-**`quick`:**
-- Skip detailed endpoint extraction
-- Focus on high-level structure
-- Faster execution for large codebases
+Re-running quick/full refreshes only affected artifacts. An existing steering
+layout is supported; no migration is required to use this skill.
 
-## Output Files
+## Setup and refresh
 
-| File | Purpose | Auto-loads |
-|------|---------|------------|
-| `.claude/docs/project-map.md` | Project overview for onboarding | No |
-| `.claude/rules/codebase-navigation.md` | Navigation rules for AI | Yes |
-| `.agents/best-practices/project/coder.md` | Project code-style conventions | Loaded by sk-* agents |
-| `.agents/best-practices/project/reviewer.md` | Same rules as review checks | Loaded by sk-* agents |
-| `.agents/best-practices/project/evidence.md` | Non-normative observations and legacy patterns | No |
+### 1. Inspect and plan
 
-## When to Use
+Apply the shared Check contract, then resolve destinations before discovery. Show
+a compact plan of existing owners to reuse, missing modules to create, and the
+entrypoint block to add/update. If invoked after an accepted first-use offer,
+inherit its decisions instead of asking again. Respect explicit module/component
+scope and surface only unresolved material choices.
 
-- **New to project:** Run `sk-onboard` once
-- **After major changes:** Re-run to update the project map, navigation, and profiles
-- **Just need navigation/profiles:** Run `sk-explore-codebase` only
-- **Just need overview:** Run `sk-discover-project` only
+Use `.agents/steering/index.md` for a new routing owner. Existing README/ADRs and
+native steering files can remain authoritative. Preserve existing map/navigation
+paths; new defaults are `.agents/docs/project-map.md` and
+`.agents/steering/architecture.md`. Project convention profiles remain in
+`.agents/best-practices/project/`, including existing component-specific profiles.
 
-## Example Output
+### 2. Reuse verified discovery
 
-After running, you'll have:
+Compute a reusable **project fingerprint** from the selected mode/components,
+resolved destinations, skill/reference content, and consumed repository inputs:
+manifests, tooling, guidance, and source paths/content hashes including dirty files.
+Record repository revision for provenance, but do not invalidate every module
+merely because HEAD moved. Record the discovered directory inventory too, so new
+or deleted relevant source files invalidate the appropriate discovery subset.
 
-```
-.claude/
-├── docs/
-│   └── project-map.md        # "Here's what the project does"
-└── rules/
-    └── codebase-navigation.md # "Check here before creating X"
-.agents/
-└── best-practices/
-    └── project/
-        ├── coder.md           # Enforced and Approved coding rules
-        ├── reviewer.md        # Matching review checks
-        └── evidence.md        # Observed and Legacy/uncertain evidence
-```
+Use the Git-local `sk-workflow/onboarding/` ledger for input and output hashes.
+Track input subsets per discovery artifact. Exclude generated outputs from their
+own source fingerprints; track manual guidance within them separately. When input
+and required output hashes match, reuse the artifact. A mode upgrade must satisfy
+the new coverage before reuse. A changed output requires inspection/merge to
+preserve edits. Never reuse merely because a file exists. Without Git metadata,
+verify in the session without creating tracked runtime files.
 
-The Claude rule auto-loads in new Claude Code sessions. The `sk-*` implementation
-and review agents load the project convention profiles on every supported host.
+### 3. Discover only missing or invalidated coverage
+
+Run `sk-discover-project` for the project map, and `sk-explore-codebase` for
+navigation and convention profiles. Pass the mode, component scope, resolved
+output paths, existing owners, and merge decisions explicitly. Share common facts
+and prior verified evidence rather than exploring the repository twice. The
+discovery skills retain their bounded explorer and foreground-join contracts.
+
+For a thin or empty project, generate only supported facts and approved/tooling
+rules. Ask only for information needed for the requested setup; record other gaps
+without inventing purpose, terminology, architecture, or a test command.
+
+### 4. Assemble modular steering
+
+Apply the shared Derive and merge contract. Index existing documents wherever they
+cover the concern. Add a brief project overview or testing module only when useful
+information lacks an owner; do not duplicate the detailed map or command sources.
+Keep architecture navigation separate from role-specific coder/reviewer rules and
+non-normative evidence. Include task/role triggers and component/path scope in each
+index row, so an implementation task does not load every review rule or API map.
+
+Use relevant bundled best-practice profiles to propose missing decisions. Keep
+unaccepted recommendations out of normative modules. Present only concrete items
+requiring a decision, with their source and scope; preserve already approved rules.
+
+### 5. Connect and verify
+
+Apply the shared Connect the entrypoint and Validate contracts. Add a short managed
+pointer to the resolved index without rewriting unrelated `AGENTS.md` or native
+guidance. For generated entrypoints, update their maintained source. Verify links,
+selective loading, preserved edits, authority classifications, and repeat-run
+stability. Record successful input/output hashes after writing the final artifacts.
+
+Report detected stack/components, reused/created/merged paths, the entrypoint and
+loading rules, verification performed, and unresolved decisions or connections.
+Do not claim that creating files alone makes them load automatically.

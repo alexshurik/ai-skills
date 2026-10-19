@@ -145,7 +145,7 @@ one full pass and, only when needed, one targeted remediation verification.
 | `sk-team-quick` | Quick workflow for bounded fixes, features, and coherent UI polish |
 | `sk-team-status` | Show status of active workflows |
 | `sk-team-help` | Team workflow documentation |
-| `sk-onboard` | Full project onboarding |
+| `sk-onboard` | Check, create, or refresh modular project steering and onboarding |
 | `sk-discover-project` | Discover project structure and tech stack |
 | `sk-explore-codebase` | Generate navigation rules and project convention profiles |
 | `sk-code-review` | Deep review of committed, staged, unstaged, and untracked changes |
@@ -155,6 +155,22 @@ one full pass and, only when needed, one targeted remediation verification.
 Invocation syntax is host-specific: Claude uses `/skill-name`, Codex uses
 `$skill-name` or `/skills`, Kimi uses `/skill:skill-name`, and Cursor exposes
 installed skills in its slash-command menu.
+
+`sk-onboard check` inspects existing guidance without writing files or running full
+discovery. `sk-team`, direct Quick/Full workflows, and `sk-code-review` use this
+first-use check and offer setup when useful; declining does not block the task.
+Reviews only report the offer. `sk-onboard quick` builds or refreshes high-level
+guidance; the default `full` mode also maps domains and APIs.
+
+Onboarding reuses existing README, ADRs, native steering, maps, and project rules.
+For a new layout it creates `.agents/steering/index.md`, navigation in
+`.agents/steering/architecture.md`, a reference map in `.agents/docs/project-map.md`,
+and the existing `.agents/best-practices/project/` profiles. Additional overview or
+testing modules are created only when useful content lacks an owner. A short
+entrypoint pointer connects the index; its task/role/path conditions keep unrelated
+modules out of context. Existing `.claude/` outputs remain supported. Re-runs merge
+human edits and reuse verified artifacts; new recommendations become project rules
+only when explicitly adopted.
 
 Codex, Claude Code, and current Kimi Code all provide native plan mode. Use the
 host's native plan command for standalone planning; `sk-team-feature` remains the
