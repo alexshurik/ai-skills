@@ -65,6 +65,8 @@ Read `workflow-charter-policy.md` and `runtime-state-policy.md` before Setup or
 resume. They define authorization/workspace/destination semantics, the only
 permitted writer, schema-v3 state model, semantic events, attempts, gates, and
 migration.
+Read `workspace-lifecycle.md` from the same shared directory at Setup and Archive
+for resource ownership, merge verification, preservation, and cleanup.
 Before Code Review, Acceptance, or finish, read
 `~/.claude/agents/references/review-approval-gate.md` or the source fallback
 `workflow/agents/references/review-approval-gate.md` completely.
@@ -98,7 +100,9 @@ blocking the task; setup requires acceptance and is not implied by the charter.
    branch/base identities. Enter Setup as the first stage. Never hand-edit
    `state.json` or `events.jsonl`.
 
-Do not infer permission for a different branch/path or destructive cleanup.
+Record run-owned worktrees and temporary resources under `workspace-lifecycle.md`.
+The Merge receipt includes normal post-merge cleanup. Do not infer permission for
+a different branch/path or destructive overrides.
 
 ## Gate behavior
 
@@ -437,8 +441,13 @@ After Retrospective satisfies Gate behavior:
 
 1. verify that `DEFERRED.md` has no unresolved `candidate`, then move
    `openspec/changes/<name>` to `openspec/completed/<name>`;
-2. report worktree, branch, base, final verification, and all artifact paths;
+2. ensure durable reports are included in the reviewed delivery and record
+   worktree, branch, base, and final verification;
 3. perform the charter's selected Local/Commit/PR/Merge/Deploy finish and record its
    terminal receipt; the selected destination counts as explicit authority;
-4. do not exceed that destination or delete the worktree unless explicitly
-   requested.
+4. apply `workspace-lifecycle.md`: verify merge targets, preserve reports and
+   Git-local runtime state outside the worktree, and remove eligible run-owned
+   worktrees/temporary output;
+5. record the cleanup receipt and report surviving artifact paths plus every
+   removed/retained resource with its reason before completing runtime state.
+   Never exceed the selected destination or force removal of a blocked workspace.

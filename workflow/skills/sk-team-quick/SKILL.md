@@ -45,6 +45,9 @@ workflow/agents/references/review-approval-gate.md
 Installed adapters may expose the same files under their agent reference roots.
 The shared policy controls context inheritance, artifacts, nesting, waiting, and
 compact returns.
+Read `workspace-lifecycle.md` from the same shared directory during workspace
+setup and finish. Record run-owned resources and include post-merge cleanup in the
+start receipt when Merge is selected.
 
 For Codex, every new thread uses `fork_turns="none"`. Omit model and reasoning
 overrides so both threads inherit the parent's selected model and effort. Give each
@@ -295,5 +298,8 @@ initialize artifacts and schema-v3 runtime state with `--workflow sk-team`, ente
 the first stage, then run Thread 1. Use typed stage gates for authorization and
 checks for evidence. After acceptance, perform the selected finish and record the
 matching terminal receipt; the charter's destination is authority for that action.
+Then apply `workspace-lifecycle.md`: preserve reports and runtime state outside any
+worktree being removed, clean eligible run-owned resources after a verified merge,
+and record/report removed or retained paths with reasons before runtime completion.
 
 </sk-team-quick>

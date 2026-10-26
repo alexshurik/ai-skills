@@ -15,6 +15,13 @@ Resolve the per-worktree root with `git rev-parse --git-path sk-workflow` and us
 └── .state.lock   # helper-owned writer lock
 ```
 
+Linked-worktree removal can delete this entire runtime root. Before cleanup, apply
+`workspace-lifecycle.md`: quiesce writers, copy and verify the journal/projection
+and evidence under `<common-dir>/sk-workflow-archive/<change>/<run-id>/`, and use
+only that surviving `--runtime-dir` for subsequent cleanup/completion writes.
+Keep historical paths in the journal intact; record the relocation map and current
+artifact references. Never remove a worktree containing the sole copy of a run.
+
 Use `runtime-state/sk_state.py` from this shared-policy directory. In the source
 repository it is `workflow/agents/shared/runtime-state/sk_state.py`. The helper
 requires Python 3.10 or newer and has no third-party runtime dependencies.

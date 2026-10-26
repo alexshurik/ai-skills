@@ -81,6 +81,12 @@ extra mode or another startup question. Micro uses root visual inspection, Quick
 uses an early/final render plus its fresh combined reviewer, and Full adds the
 independent rendered UI/UX lens. YOLO skips ceremony, never the visual gate.
 
+Merge finish includes cleanup of the run's disposable worktree after the selected
+target(s) are verified and reports/runtime evidence are preserved. Local, Commit,
+and open PR retain their worktree. Dirty, active, shared, or uncertain resources
+remain with a reported reason; cleanup never forces deletion. Temporary output
+stays in recorded run-local directories. See the shared `workspace-lifecycle.md`.
+
 ## Agents (delegated subagent roles)
 
 | Agent | Role | Purpose |

@@ -42,6 +42,8 @@ acceptance. Pass the result to Quick/Full so they do not ask again.
 5. Create a new run for this objective. Never inherit YOLO from another run.
 6. Resolve `auto` workspace once, preserve unrelated changes, and initialize the
    schema-v3 runtime ledger with `--workflow sk-team` plus the complete charter.
+   Apply the shared `workspace-lifecycle.md` policy to record resource ownership
+   and include post-merge cleanup in the start receipt when Merge is selected.
 
 Recommend from the requested product risk, not from ceremony created by the
 workflow. The number of bullets, generated acceptance criteria, touched test files,
@@ -132,6 +134,9 @@ checklist became longer.
 
 Perform the selected terminal action after required checks. The charter itself is
 authority for local changes, commit, PR, merge, or deploy to its recorded target.
-Record the matching terminal receipt, complete the workflow only after that receipt
-succeeds, and report the outcome, verification, changed paths/artifacts, and any
-deferred items. Do not add a redundant “final approval” gate.
+Record the matching terminal receipt, then apply the shared
+`workspace-lifecycle.md` policy before completing the workflow. Preserve evidence
+outside any worktree being removed; report the outcome, verification, surviving
+artifacts, deferred items, and removed/retained resources with reasons. Complete
+only after delivery succeeds and cleanup is reconciled. Do not add a redundant
+“final approval” gate.

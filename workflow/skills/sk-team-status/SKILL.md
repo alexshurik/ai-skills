@@ -32,6 +32,13 @@ Resolve the Git-local workflow state root first:
 git rev-parse --git-path sk-workflow
 ```
 
+Also inspect `sk-workflow-archive/<change>/<run-id>/` under the absolute Git common
+directory for completed/cleanup-pending runs moved out of removed worktrees. Use the shared
+`workspace-lifecycle.md` relocation map and cleanup receipt to resolve historical
+artifact paths without editing journal history. Report retained/blocked resources
+and the recorded next action; status inspection never performs cleanup. Deduplicate
+by run ID using the verified relocation record, not directory timestamps.
+
 Read the installed/source `runtime-state-policy.md`. For each runtime directory run
 the shared helper `status`; when the projection reports `valid`, also run `validate`.
 `events.jsonl` is the authority and `state.json` is its derived projection. Validate
@@ -138,6 +145,7 @@ status as `UNVERIFIED` instead of assuming `npm test`.
 - **Deferred candidates**: none | <IDs requiring triage>
 - **Snapshot/fingerprints**: <current durable artifact fingerprints>
 - **Delivery**: pending | succeeded/failed receipt and evidence
+- **Cleanup**: removed/retained/blocked/not_applicable resources, reasons, surviving evidence
 - **Resume**: invoke `sk-team` using the current host's skill syntax
 
 ### 2. <another-feature>

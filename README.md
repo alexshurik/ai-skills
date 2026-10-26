@@ -271,6 +271,15 @@ tool calls already live in Codex/Claude/Kimi session logs. Do not create paralle
 Structure is inspired by [OpenSpec](https://openspec.dev/). Runtime directories are
 created automatically.
 
+Merge finish also reconciles run-owned worktrees and temporary output. After
+verifying the selected target(s), the root preserves reports and runtime evidence,
+removes eligible task worktrees, and reports anything retained with its reason.
+Local, Commit, and open PR keep their workspace. Cleanup never forces deletion of
+dirty, active, shared, or uncertain resources. Before removing a linked worktree,
+its journal and evidence move to
+`<git-common-dir>/sk-workflow-archive/<change>/<run-id>/`, where status can find them.
+The shared policy is [workspace lifecycle](workflow/agents/shared/workspace-lifecycle.md).
+
 ### Resume and troubleshoot
 
 Start with the status skill for your host: `/sk-team-status` in Claude Code,

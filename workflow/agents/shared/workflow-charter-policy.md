@@ -202,8 +202,11 @@ Ask once when the user explicitly wants to choose. For `auto`, select and record
   or repository policy requiring isolation.
 
 Do not create a worktree merely because a legacy workflow used one. Before either
-choice, inspect Git state and preserve unrelated user changes. Never delete a
-worktree without explicit authority.
+choice, inspect Git state and preserve unrelated user changes. Read
+`workspace-lifecycle.md` at setup and finish. Record ownership of worktrees and
+temporary resources; the selected Merge finish includes its verified, run-owned
+cleanup. Pre-existing/shared workspaces and destructive overrides require separate
+authority.
 
 ## Typed stops
 
@@ -232,3 +235,9 @@ normal checks pass; it does not need a second generic “final approval”. Reco
 terminal receipt matching the destination before completing the run. A failed or
 blocked PR/merge/deploy remains visible with evidence and does not become a false
 success.
+
+After delivery, reconcile resources using `workspace-lifecycle.md` before marking
+the run complete. Local/Commit/open-PR worktrees remain available; a verified merge
+removes eligible task worktrees after preserving artifacts and Git-local runtime
+state. Report removed and retained resources with reasons and surviving evidence
+paths. Do not turn normal authorized cleanup into another approval ceremony.

@@ -110,7 +110,10 @@ root
   ```
 
   This resolves correctly for normal repositories and linked worktrees and stays
-  outside the reviewed Git diff.
+  outside the reviewed Git diff. Before removing a linked worktree, preserve its
+  runtime directory using `workspace-lifecycle.md`; Git may remove administrative
+  state with the worktree. Keep disposable previews/scratch output in recorded
+  run-local paths instead of the project root.
 - Every runtime artifact has a content fingerprint. Parent summaries name the exact
   artifact path and fingerprint they used.
 - `events.jsonl` is the authoritative append-only history of semantic workflow
