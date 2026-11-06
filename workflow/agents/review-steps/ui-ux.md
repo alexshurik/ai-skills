@@ -48,7 +48,11 @@ detached, or better moved.
 
 Record URL or image paths, viewport, state/setup, effective scroll owner/extent,
 source fingerprint, and applicable deterministic render inputs from the rendered-
-evidence contract. A normal UI change needs roughly 4–6 useful screenshots, not a
+evidence contract. Use its reference/actual comparison and observed-state checks;
+an intended tab or screenshot filename cannot stand in for the state shown. An
+unresolved deviation from the requested reference blocks CONTRACT approval even
+when it matches an implementation-authored plan or refreshed golden. A normal UI
+change needs roughly 4–6 useful screenshots, not a
 generated gallery or HTML report. Missing runnable, original-resolution, or complete-
 extent evidence is `UNVERIFIED`; never approve visual composition from source alone.
 

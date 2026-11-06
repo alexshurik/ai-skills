@@ -115,6 +115,22 @@ Full mode requires architecture-design, correctness-safety, engineering-quality,
 and conditional UI/UX reports plus their validated scope manifests. Quick mode
 requires `combined=<REVIEW.md>` and no full-review manifests.
 
+When `ui_ux_required` is true, the Full `ui-ux` report or Quick `combined`
+report must also contain:
+
+```text
+CONTRACT: PASS
+VISUAL: PASS
+```
+
+Each required verdict field occurs exactly once in its report. Plain text and bold
+Markdown fields are accepted. Missing, repeated, conflicting, empty, or non-PASS
+values block approval; a general `Status: PASS` cannot override either UI verdict.
+Non-UI reports do not need UI verdicts. The gate validates declared verdicts and
+identity; the reviewer remains responsible for actually inspecting the evidence
+under `~/.claude/agents/best-practices/ui/rendered-evidence.md` or source fallback
+`shared/best-practices/ui/rendered-evidence.md`.
+
 For targeted review, an unrouted lens may use a small current-source reuse receipt
 only when it also records the parent report path/hash, parent snapshot, verified
 unchanged assigned paths/hashes, and why impact routing excludes that lens. This is

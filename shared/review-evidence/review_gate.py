@@ -12,7 +12,6 @@ from typing import Any
 
 from review_map import REQUIRED_LENSES, read_json, validate_scopes, verified_review_map_fingerprint
 
-PASS_STATUS_RE = re.compile(r"(?im)^\s*(?:[-*]\s*)?(?:\*\*)?status(?:\*\*)?\s*:\s*PASS\s*$")
 UNCHECKED_TASK_RE = re.compile(r"^\s*[-*]\s+\[\s\]\s+(?P<text>.+?)\s*$", re.IGNORECASE)
 
 
@@ -44,6 +43,18 @@ def required_lenses(review_map: dict[str, Any]) -> set[str]:
     return lenses
 
 
+def require_pass_verdict(content: str, field: str, lens: str) -> None:
+    # Accept plain and bold Markdown fields, but never pick one PASS from
+    # contradictory or repeated verdicts. Horizontal whitespace cannot eat a line.
+    pattern = rf"(?im)^[ \t]*(?:[-*][ \t]+)?(?:\*\*)?{field}(?:\*\*)?[ \t]*:[ \t]*([^\r\n]*)$"
+    values = re.findall(pattern, content)
+    if len(values) != 1:
+        raise ValueError(f"lens report must contain exactly one {field} verdict: {lens}")
+    value = values[0].strip().removeprefix("**").removesuffix("**").strip()
+    if value.upper() != "PASS":
+        raise ValueError(f"lens report {field} is not PASS: {lens} ({value or 'empty'})")
+
+
 def validate_lens_reports(
     review_map: dict[str, Any], raw_reports: list[str], expected: set[str] | None = None
 ) -> None:
@@ -71,8 +82,13 @@ def validate_lens_reports(
             raise ValueError(f"empty lens report: {lens}")
         if map_fingerprint not in content or source_fingerprint not in content:
             raise ValueError(f"stale/unbound lens report: {lens}")
-        if PASS_STATUS_RE.search(content) is None:
-            raise ValueError(f"lens report is not PASS: {lens}")
+        require_pass_verdict(content, "Status", lens)
+        if review_map.get("review_policy", {}).get("ui_ux_required") and lens in {
+            "ui-ux",
+            "combined",
+        }:
+            require_pass_verdict(content, "CONTRACT", lens)
+            require_pass_verdict(content, "VISUAL", lens)
 
 
 def structural_lead_keys(review_map: dict[str, Any]) -> set[tuple[str, str]]:

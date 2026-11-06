@@ -175,6 +175,77 @@ def refresh_source_identity(review_map: dict[str, Any]) -> None:
     refresh_map_fingerprint(review_map)
 
 
+def check_ui_verdicts(directory: Path) -> None:
+    source = evidence()
+    source["review_policy"].update(
+        ui_ux_required=True,
+        ui_ux_reason="server-rendered UI fixture",
+        ui_impact_paths=["src/api.py"],
+    )
+    review_map = build_review_map(source)
+    map_path = directory / "ui-map.json"
+    dispositions_path = directory / "ui-dispositions.json"
+    write_json(map_path, review_map)
+    write_json(dispositions_path, dispositions(review_map))
+    header = (
+        f"Review map: {review_map['fingerprint']}\n"
+        f"Source fingerprint: {review_map['source_fingerprint']}\n"
+    )
+    core_reports = []
+    scope_paths = []
+    scopes = manifests(review_map)
+    scopes.append({**scopes[0], "lens": "ui-ux"})
+    for scope in scopes:
+        path = directory / f"ui-{scope['lens']}.json"
+        write_json(path, scope)
+        scope_paths.append(path)
+        if scope["lens"] != "ui-ux":
+            report = directory / f"ui-{scope['lens']}.md"
+            report.write_text(header + "Status: PASS\n", encoding="utf-8")
+            core_reports.append(f"{scope['lens']}={report}")
+    report = directory / "ui-verdict.md"
+    for mode in ("quick", "full"):
+        args = Namespace(
+            mode=mode,
+            approved_map=map_path,
+            current_map=map_path,
+            manifest=scope_paths if mode == "full" else [],
+            lens_report=[*core_reports, f"ui-ux={report}"]
+            if mode == "full"
+            else [f"combined={report}"],
+            dispositions=dispositions_path,
+            static_summary=None,
+            tasks=None,
+        )
+        check_verdict_cases(args, report, header)
+
+
+def check_verdict_cases(args: Namespace, report: Path, header: str) -> None:
+    passing = "Status: PASS\nCONTRACT: PASS\nVISUAL: PASS\n"
+    report.write_text(header + passing, encoding="utf-8")
+    assert validate(args)["approval_gate"] == "PASS"
+    for field in ("VISUAL", "CONTRACT", "Status"):
+        for verdict in ("FAIL", "UNVERIFIED", "FINDINGS", "", "UNKNOWN", "PASS | FAIL"):
+            body = passing.replace(f"{field}: PASS", f"{field}: {verdict}")
+            report.write_text(header + body, encoding="utf-8")
+            expect_error(field, lambda: validate(args))
+        report.write_text(header + passing.replace(f"{field}: PASS\n", ""), encoding="utf-8")
+        expect_error(field, lambda: validate(args))
+        for extra in (f"{field}: FAIL\n", f"{field}: PASS\n", f"- **{field}**: UNVERIFIED\n"):
+            report.write_text(header + passing + extra, encoding="utf-8")
+            expect_error(field, lambda: validate(args))
+    report.write_text(passing, encoding="utf-8")
+    expect_error("stale/unbound", lambda: validate(args))
+    for body in (
+        "- **Status**: PASS\n- **CONTRACT**: PASS\n- **VISUAL**: PASS\n",
+        "**Status:** PASS\n**CONTRACT:** PASS\n**VISUAL:** PASS\n",
+        "Status: **PASS**\nCONTRACT: **PASS**\nVISUAL: **PASS**\n",
+        "**Status: PASS**\n**CONTRACT: PASS**\n**VISUAL: PASS**\n",
+    ):
+        report.write_text(header + body, encoding="utf-8")
+        assert validate(args)["approval_gate"] == "PASS"
+
+
 def main() -> None:
     review_map = build_review_map(evidence())
     with tempfile.TemporaryDirectory() as temporary:
@@ -231,6 +302,18 @@ def main() -> None:
         assert receipt["structural_leads"] == 4
         assert receipt["static_findings_dispositioned"] == 1
         assert receipt["incomplete_tasks_dispositioned"] == 1
+
+        # Backend-only Quick reviews remain valid without UI verdicts.
+        quick = Namespace(
+            **{
+                **vars(args),
+                "mode": "quick",
+                "manifest": [],
+                "lens_report": [lens_reports[0].replace("architecture-design=", "combined=", 1)],
+            }
+        )
+        assert validate(quick)["approval_gate"] == "PASS"
+        check_ui_verdicts(directory)
 
         stale = json.loads(json.dumps(review_map))
         stale["files"][0]["current_sha256"] = "f" * 64

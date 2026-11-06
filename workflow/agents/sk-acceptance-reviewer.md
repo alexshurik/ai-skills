@@ -147,6 +147,13 @@ has both `CONTRACT: PASS` and `VISUAL: PASS` from exact-source rendered evidence
 Missing, stale, FAIL, or UNVERIFIED visual evidence blocks acceptance. Do not rerun
 the visual review or broad suite here; consume the current review artifacts and run
 only criterion-specific acceptance interactions.
+
+For delivery of a UI artifact, apply the release-reuse section of
+`~/.claude/agents/best-practices/ui/rendered-evidence.md` or source fallback
+`shared/best-practices/ui/rendered-evidence.md`. Bind reused visual acceptance to
+the released artifact, criteria/reference version, and relevant render inputs even
+when the immediate Git diff is CI-only. Reverify the scope of a reported visual
+defect; a previously passing receipt cannot dismiss that report as baseline debt.
 </step>
 
 <step name="verify_each_criterion">
