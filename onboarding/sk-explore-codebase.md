@@ -58,9 +58,13 @@ notifications never substitute for result aggregation.
 - Find external integrations
 
 **Explorer 2: Business Logic & Data Access**
-- Find business-logic owners
-- Find persistence/data-access owners
-- Identify naming patterns
+- Read only “Scenarios and dependency boundaries” plus the boundary matrix from
+  `~/.claude/agents/references/architecture-gates.md` (source:
+  `workflow/agents/references/architecture-gates.md`).
+- Trace scoped operations using that record; reuse the project map's facts and
+  record gaps. Connect entry/input, owner, public dependency contracts, state/atomic
+  boundaries, result/failure, and acceptance evidence without proposing a new layout.
+- Distinguish discovered internal coupling from approved dependency direction.
 
 **Explorer 3: Types & Shared Capabilities**
 - Find schemas, DTOs, models, and validation boundaries
@@ -90,9 +94,11 @@ framework or directory layout that the repository does not already enforce or ap
 - Before creating an HTTP client: check `[discovered paths]`
 - Before adding an external integration: check `[discovered integration owners]`
 
-### Services (Business Logic)
-- Before creating business logic: check `[discovered business-logic owners]`
-- Existing domains: [list discovered domains]
+### Scenarios and Business Logic
+- Before creating business logic: check `[scenario owner and existing operation]`
+- Public dependencies: `[approved provider contracts; cite authority or mark unknown]`
+- State/atomic boundaries and acceptance evidence: `[scenario/invariant map links]`
+- Keep discovered coupling descriptive until authority selects the boundary.
 
 ### Data Access
 - Before creating data access: check `[discovered persistence owners]`

@@ -88,7 +88,11 @@ artifact. Give lenses those artifact paths, not raw scanner output.
 The canonical runner classifies semantic output as well as exit status. In
 particular, jscpd clone reports, Lizard warning sections, Radon B-or-worse
 complexity, Radon C-or-worse maintainability, and Vulture unused-code rows are
-`FINDINGS` even if the tool exits zero. Do not rewrite those rows as OK.
+`FINDINGS` even if the tool exits zero. Lizard's complete `No thresholds exceeded`
+report with zero warnings is `OK` at exit zero; the printed threshold predicate is
+not a finding. Failed, inconsistent, truncated, or unrecognized Lizard reports are
+`UNVERIFIED`, with failure taking precedence. Do not rewrite raw findings rows as OK;
+contextual dispositions belong in the review, including for Bandit.
 
 ## Final approval gate
 

@@ -136,7 +136,13 @@ Gather comprehensive stack information:
 
 **Explorer 4: Domain Deep Dive**
 
-For each domain folder discovered (e.g., `src/domains/`, `app/`, `modules/`):
+Read only “Scenarios and dependency boundaries” plus the boundary matrix from
+`~/.claude/agents/references/architecture-gates.md` (source:
+`workflow/agents/references/architecture-gates.md`). Trace meaningful scoped
+operations using that record, within the existing project map. Mark unknowns and
+inferred stories; discovered coupling does not approve a dependency.
+
+For each actual responsibility owner, regardless of directory layout:
 
 1. **Identify Domain Purpose**
    - Read models/entities to understand data
@@ -163,10 +169,10 @@ For each domain folder discovered (e.g., `src/domains/`, `app/`, `modules/`):
    - Server-Sent Events (SSE) endpoints
    - Patterns: `socket.on()`, `io.of()`, `/socket`, `/ws`, `/events`
 
-6. **List Service Files**
-   - Core business logic files
-   - External integrations
-   - Background jobs
+6. **Connect Scenario Ownership**
+   - Link entry/input to primary owner and allowed public dependency contracts
+   - Link state/atomic boundaries, observable result/failure, and acceptance evidence
+   - Cite sources and separate facts, approved rules, inferences, and gaps
 
 ---
 
@@ -362,25 +368,11 @@ I, as a {role}:
 - `GET /api/{domain}/socket` - {namespace description}
 - `socket.on('{event}')` - {what it does}
 
-**Services:**
-- `{service-file}` — {purpose}
-- `{service-file}` — {purpose}
+**Scenarios and dependencies:**
+{Compact records from architecture-gates, with public contracts, state/transaction,
+result/failure, acceptance evidence, and unknowns; link existing facts above.}
 
-### 6.2 {Domain Name}
-
-**Purpose:** ...
-
-**Stories:** ...
-
-**Frontend:** ...
-
-**API:** ...
-
-**Realtime:** ...
-
-**Services:** ...
-
-{Continue for each domain...}
+{Repeat for each actual responsibility owner; retain the project's vocabulary.}
 
 ## 7. Monitoring & Operations
 

@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "suite": "scenario-workflow",
+  "cases": [
+    {
+      "id": "layered-reservations",
+      "request": "Use the current Architect instructions to produce design.md and tasks.md for the approved proposal. The approach is approved, Scope Delta is None. Inspect the supplied application and identify the affected scenarios and dependencies. Do not implement application code.",
+      "sources": [
+        "workflow/agents/sk-architect.md",
+        "workflow/agents/references/architecture-gates.md",
+        "shared/templates/design.md",
+        "shared/templates/tasks.md",
+        "workflow/agents/shared/scope-governance.md"
+      ],
+      "fixture_root": "cases/layered-reservations",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "438d748c70e8347e92c7c212300bf6c18819234c013cab999b6b2d221869000a"
+        },
+        {
+          "path": "openspec/changes/reservations/proposal.md",
+          "sha256": "40b77afdec5748018e7ae1ac7a72af3d21cef1fd02220ee618df5ab6088d2d62"
+        },
+        {
+          "path": "app/http.py",
+          "sha256": "88adc1623e6811a85610efe695f0b6eecec2cdaf1e0a5f8b8ff84181c9337187"
+        },
+        {
+          "path": "app/kiosk.py",
+          "sha256": "07df7c574ffa554a4ee70f4cd11c0903804ba7ff3b446815773e85eeb6253828"
+        },
+        {
+          "path": "app/contracts.py",
+          "sha256": "95a8b3b40c516cee7a00ead212b5cd93d8c4aa6a9993abb87f154f3ef8acd903"
+        },
+        {
+          "path": "app/service.py",
+          "sha256": "4df2932eb223326a2ea091461bfbe04a0816ff88be86fb02fd22f0d999879f4b"
+        },
+        {
+          "path": "app/ports.py",
+          "sha256": "2afe2648f915fd01a7cbba85f2ccae9b9b9185a45dd1f62c59d7c2b5b92cdd42"
+        },
+        {
+          "path": "app/sql.py",
+          "sha256": "3168c0f8cabe0384ce0529a3fe2a9ae0051a0596c212ad42c6c3ab980203b9ef"
+        },
+        {
+          "path": "tests/test_booking.py",
+          "sha256": "a8043ea746817820f101708aae0948b245a30f3b60c53663ff5aef000b6f3daf"
+        }
+      ],
+      "criteria": [
+        "AC-1",
+        "AC-2"
+      ]
+    },
+    {
+      "id": "native-decisions-archive",
+      "request": "Record the already approved session decision for the supplied change. Reuse the project decision conventions. Create the new record and navigation, then archive openspec/changes/session-revocation to openspec/completed/session-revocation. Preserve existing accepted decisions. Check affected links after the move and report exact before/after evidence. This fixture is a temporary repository; no external actions are authorized.",
+      "sources": [
+        "workflow/agents/shared/scope-governance.md",
+        "workflow/agents/sk-architect.md",
+        "shared/templates/design.md",
+        "workflow/skills/sk-team-feature/SKILL.md"
+      ],
+      "fixture_root": "cases/native-decisions-archive",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "957c1542ddc33de6e65a7a327379326a624581a25ef6018d48bae68805d41cbf"
+        },
+        {
+          "path": "docs/decisions/README.md",
+          "sha256": "265c22f3fc6afbfda19386f2173911169a62782ac295ed790ed43aef67ae7d91"
+        },
+        {
+          "path": "docs/decisions/0001-stateless-sessions.md",
+          "sha256": "de02c8f70cda9cc44c2ba78ef41567fa9947befec640d5428bb832c20bef6517"
+        },
+        {
+          "path": "openspec/completed/booking/adr/0042-transaction.md",
+          "sha256": "ac8adc2964749ebfe6c83d94d1973ca433cd2f751c77c54dddf867ded625b975"
+        },
+        {
+          "path": "openspec/completed/booking/design.md",
+          "sha256": "a583c5e46364a0236507f083fbea4a6df314079f96bd47c6dab135b96ae20e93"
+        },
+        {
+          "path": "openspec/changes/session-revocation/proposal.md",
+          "sha256": "1ac30099e3a02c1c108989b0f036b82dfa832abd36708f4706238618786abe2c"
+        },
+        {
+          "path": "openspec/changes/session-revocation/design.md",
+          "sha256": "e1a3a8e93e1fa960d718e199915c9a77b5ee1197b8b9107457032214734e28aa"
+        }
+      ],
+      "criteria": [
+        "AC-3"
+      ]
+    },
+    {
+      "id": "decision-owner-fallback",
+      "request": "Record the already approved session decision, link it from the supplied design, and archive session-revocation. Inspect the project to choose its decision destination. Verify affected links and report the resulting paths. Work only in this temporary fixture.",
+      "sources": [
+        "workflow/agents/shared/scope-governance.md",
+        "workflow/agents/sk-architect.md",
+        "shared/templates/design.md",
+        "workflow/skills/sk-team-feature/SKILL.md"
+      ],
+      "fixture_root": "cases/decision-owner-fallback",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "036ef7cbd7e7b20ce6efee375882b716988c29f8f6d45c268eea41448ab2d587"
+        },
+        {
+          "path": "openspec/changes/session-revocation/proposal.md",
+          "sha256": "1ac30099e3a02c1c108989b0f036b82dfa832abd36708f4706238618786abe2c"
+        },
+        {
+          "path": "openspec/changes/session-revocation/design.md",
+          "sha256": "6f181f2f2488b502fb915c8242e34e07489fd47e21da6b4cc9b517db7de2b2d5"
+        }
+      ],
+      "criteria": [
+        "AC-3"
+      ]
+    },
+    {
+      "id": "enforcement-evidence",
+      "request": "Use the current convention-profile workflow to create coder.md, reviewer.md, and evidence.md from this repository and the supplied configuration/receipts. This is authorized setup. Treat provided policy exports as observations for their named branches and dates. Record unavailable facts and do not contact external services or install/run tools.",
+      "sources": [
+        "utilities/sk-explore-codestyle/SKILL.md",
+        "shared/best-practices/convention-evidence-model.md",
+        "shared/best-practices/project-conventions-guide.md"
+      ],
+      "fixture_root": "cases/enforcement-evidence",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "6ddf7bc94162e68176f184499fe9ec124dd8ed39a86a065b822ed0661689db06"
+        },
+        {
+          "path": "pyproject.toml",
+          "sha256": "521e0c4a1cabbe3962d0a7111c27782de691da0e05a163ffa1b208bf6b1efa9c"
+        },
+        {
+          "path": "src/amounts.py",
+          "sha256": "3e74c4827c2fe8f6da102da9925bb669d37aa7babd1868b0e951a20e36fdc87f"
+        },
+        {
+          "path": "scripts/quality.sh",
+          "sha256": "e546c55f1705cb43d78c63b0bef4ab74fd085f7b9a2f288ba233ad945b6679a6"
+        },
+        {
+          "path": "scripts/core.sh",
+          "sha256": "0f9428582e85b2cea2a3dc9ca6e61bc138b8b4d2bcaf03bdb893e2b630d0adef"
+        },
+        {
+          "path": "tests/test_amounts.py",
+          "sha256": "bc923427157d0b968fb503a092f42031aedaa53143e3fc6bea5ba9eeafa3c1a0"
+        },
+        {
+          "path": ".github/workflows/quality.yml",
+          "sha256": "38ee63edd16b4c0e6dec392d6107147a81f2d1bf4936222aad26aefe6f5fdaef"
+        },
+        {
+          "path": "evidence/context.json",
+          "sha256": "71fcd066b259cfac05058e8d18098570533b1fccf2f401e090418a3570bd1a71"
+        },
+        {
+          "path": "evidence/old-lint-receipt.json",
+          "sha256": "776b6d20857b8ecee7efda8496caa2a9a4a8d3f36761b42eb8535dbef3408b7e"
+        },
+        {
+          "path": "evidence/core-receipt.json",
+          "sha256": "01c87bb739d8dcf2d5041e829ff47bf535ef9f3b769497e5385b6283ea886b06"
+        },
+        {
+          "path": "evidence/release-policy.json",
+          "sha256": "b7282eb27e3f0f6a4e91982a0f33b1c52ea6a799c679ffe7707f0bcff97d5182"
+        },
+        {
+          "path": "evidence/dev-policy.json",
+          "sha256": "1162129fb1c15ae065a4b709ee6b723392cd6a5308e08a1ff3f6299758b3471d"
+        }
+      ],
+      "criteria": [
+        "AC-4"
+      ]
+    },
+    {
+      "id": "bandit-context",
+      "request": "Review the supplied changed Python code and raw Bandit report using the current Python reviewer guidance. Produce a per-issue assessment and a review disposition summary. Preserve the report. Do not modify source, suppress findings, or invent missing caller context.",
+      "sources": [
+        "shared/best-practices/languages/python/reviewer.md",
+        "workflow/agents/shared/scope-governance.md",
+        "workflow/agents/review-steps/correctness-safety.md",
+        "workflow/agents/references/review-tooling.md"
+      ],
+      "fixture_root": "cases/bandit-context",
+      "files": [
+        {
+          "path": "src/actions.py",
+          "sha256": "472ec336e6139fdc67bad8ee691ed1407f40e67c37e9ec96b9b874593a0f9dbe"
+        },
+        {
+          "path": "context.md",
+          "sha256": "afb1daf17326ec9d0516f4aebfd01643ab2ab14dcd1d95ea96b583a205eac38a"
+        },
+        {
+          "path": "bandit.json",
+          "sha256": "f7f0a2766a4c9dee0d3ce4f62fc552aa34a1d8db01d33918229307d00b91fc9a"
+        }
+      ],
+      "criteria": [
+        "AC-5b"
+      ]
+    },
+    {
+      "id": "small-local-fix",
+      "request": "Plan the fix for summarize([]) raising ZeroDivisionError. Approved behavior: an empty list returns None; nonempty inputs retain their arithmetic mean. Keep this as a bounded local fix. Produce a compact design and tasks; do not implement it.",
+      "sources": [
+        "workflow/agents/references/architecture-gates.md",
+        "shared/templates/tasks.md"
+      ],
+      "fixture_root": "cases/small-local-fix",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "c549005784d0615ad8f37de0289cf930a33d401e0c2adca7747b16491d12dd11"
+        },
+        {
+          "path": "metrics.py",
+          "sha256": "17c474597088321f5f920ac7741c10cb9035fdb3f447419d5ca4e081631c54c2"
+        },
+        {
+          "path": "test_metrics.py",
+          "sha256": "27f11e5e95c0c695ca53e46baa46f6ec2d35f723703098ad661c370939583577"
+        }
+      ],
+      "criteria": [
+        "AC-1",
+        "AC-2"
+      ]
+    }
+  ]
+}

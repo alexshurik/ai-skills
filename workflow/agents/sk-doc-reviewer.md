@@ -56,6 +56,9 @@ Every requirement must trace to a design decision and at least one task:
 - Approved Scope Delta IDs may also authorize design/tasks; unapproved additions
   must be removed or staged in `DEFERRED.md`
 - Build the full traceability chain before anything else
+- Use the tasks template's outcome contract: each milestone retains user criterion
+  IDs plus design, development, testing, and review work with dependencies/evidence;
+  ordinary Code Review may cover multiple milestones without new review loops
 
 ## Surface Hidden Assumptions
 

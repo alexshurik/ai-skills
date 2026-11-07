@@ -1,0 +1,9 @@
+[project]
+name = "amount-service"
+version = "0.1.0"
+[tool.ruff]
+line-length = 100
+[tool.ruff.lint]
+select = ["F"]
+[tool.ruff.lint.per-file-ignores]
+"generated/*.py" = ["F"]

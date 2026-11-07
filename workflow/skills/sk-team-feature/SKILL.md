@@ -160,7 +160,10 @@ non-goals. General approach approval does not approve an unlisted addition. Show
 boundary/architecture summary, file map, model/interface changes, growth forecast,
 conditional mechanism budget, state/coordination invariant alignment when
 applicable, risks, and non-goals; apply Gate behavior. In Checkpoints this is the
-Execution checkpoint.
+Execution checkpoint. Use the Architect/tasks-template outcome contract: show the
+scenario and milestone graph with criterion IDs and each milestone's design,
+development, testing, and review work. Milestones are task groups within the
+existing phases, not runtime stages or additional gates.
 
 ### 2.5 Documentation Review — optional
 
@@ -189,14 +192,17 @@ live/paid/credential-backed/destructive suites explicitly approved in either rou
 Every real bug gets a lowest-faithful-layer regression test; unit tests cover only
 non-trivial logic; component/browser tests cover UI states/interactions; integration/
 contract tests cover boundaries; use only a few critical E2E journeys and a small
-stable visual-regression set. Do not require one test per acceptance criterion or
-duplicate the same assertion at multiple layers without unique confidence.
+stable visual-regression set. Link this evidence to each affected milestone. Do not
+require one test per acceptance criterion or duplicate the same assertion at
+multiple layers without unique confidence.
 
 ### 4. Implementation
 
 Dispatch `sk-developer`. Require the pre-write architecture gate and full handoff
 evidence. Show files, boundary/abstraction/structure decisions, and exact
-verification; apply Gate behavior.
+verification; apply Gate behavior. Track the approved milestone dependencies and
+leave acceptance pending until their testing and review work is complete. The
+normal Code Review may cover several milestones by explicit coverage.
 For meaningful user-visible UI work, require the early rendered visual loop and
 exact-source desktop/compact evidence covering the complete effective scroll extent
 from Developer before review.
@@ -440,7 +446,10 @@ proven.
 After Retrospective satisfies Gate behavior:
 
 1. verify that `DEFERRED.md` has no unresolved `candidate`, then move
-   `openspec/changes/<name>` to `openspec/completed/<name>`;
+   `openspec/changes/<name>` to `openspec/completed/<name>` under the permanent ADR
+   and archive-navigation lifecycle in `scope-governance.md` §6. Repair affected
+   index/incoming links and verify decision/change navigation without copying or
+   rewriting accepted decision bodies;
 2. ensure durable reports are included in the reviewed delivery and record
    worktree, branch, base, and final verification;
 3. perform the charter's selected Local/Commit/PR/Merge/Deploy finish and record its

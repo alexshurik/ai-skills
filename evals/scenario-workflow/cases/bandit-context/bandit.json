@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-11-06T12:00:00Z",
+  "errors": [],
+  "results": [
+    {
+      "filename": "src/actions.py",
+      "line_number": 6,
+      "test_id": "B311",
+      "issue_severity": "LOW",
+      "issue_confidence": "HIGH",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes."
+    },
+    {
+      "filename": "src/actions.py",
+      "line_number": 10,
+      "test_id": "B311",
+      "issue_severity": "LOW",
+      "issue_confidence": "HIGH",
+      "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes."
+    },
+    {
+      "filename": "src/actions.py",
+      "line_number": 14,
+      "test_id": "B603",
+      "issue_severity": "LOW",
+      "issue_confidence": "HIGH",
+      "issue_text": "subprocess call - check for execution of untrusted input."
+    },
+    {
+      "filename": "src/actions.py",
+      "line_number": 18,
+      "test_id": "B602",
+      "issue_severity": "HIGH",
+      "issue_confidence": "HIGH",
+      "issue_text": "subprocess call with shell=True identified, security issue."
+    },
+    {
+      "filename": "src/private_plugin.py",
+      "line_number": 27,
+      "test_id": "B603",
+      "issue_severity": "LOW",
+      "issue_confidence": "HIGH",
+      "issue_text": "subprocess call - check for execution of untrusted input."
+    }
+  ]
+}

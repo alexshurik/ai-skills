@@ -17,6 +17,9 @@ Record:
 - exact verification command;
 - scope and exceptions.
 
+This class describes the check's mechanical authority, not proof that it runs
+locally, in CI, or as a required merge gate. Collect those facts separately below.
+
 Enforced rules may appear in generated coder and reviewer profiles.
 
 ### Approved
@@ -64,6 +67,32 @@ Record:
 
 Legacy/uncertain items belong in `evidence.md`. A higher approved rule may
 explicitly prohibit copying them.
+
+## Authority and enforcement evidence
+
+For each normative `ENF-*` or `APP-*` rule, retain two independently sourced parts:
+
+| Part | Required evidence |
+|---|---|
+| Authority | Stable ID/class, selected instruction/check, source file/section or config setting, scope, exceptions/supersession |
+| Check | Exact command, pinned runner/config, actual checked scope and exclusions; available but unexecuted when no run exists |
+| Invocation | Local hook/script and CI job/trigger sources; configured, observed running, absent, or unknown |
+| Blocking | Local failure behavior, CI job failure behavior, and required merge-check policy separately; proven, optional/nonblocking, absent, or unknown with sources |
+| Freshness | Last checked time, relevant revision/input hashes or receipt; mark stale evidence and unexecuted commands |
+| Gaps | Manual review obligations and uncovered requirements, with owner or unknown |
+
+Configuration proves availability and what a checker can inspect. An execution
+receipt proves only that run and its inputs. CI config may prove invocation and job
+failure behavior; branch protection/required-check policy needs separate evidence.
+A job name, local green run, or config file cannot prove merge blocking. If remote
+policy is unavailable, record unknown. Stale receipts cannot establish current
+coverage. Do not invent a command, invocation, freshness, or blocking status.
+
+An Approved rule remains authoritative when verification is manual or incomplete.
+Keep its manual check and gaps visible; do not downgrade it to Observed. Conversely,
+mechanical enforcement cannot approve an architectural pattern outside its scope.
+Reuse the same rule ID and evidence link in coder/reviewer profiles; do not maintain
+two conflicting enforcement records.
 
 ## Precedence
 

@@ -156,7 +156,7 @@ openspec/changes/<feature-name>/
 ├── RESEARCH.md       # Optional research
 ├── design.md         # Approved design + Scope Delta decisions
 ├── tasks.md          # Required/explicitly approved work only
-├── adr/              # Optional significant decisions
+├── adr/              # Legacy change-local decisions, when already present
 ├── DOC_REVIEW.md     # Optional alignment review
 ├── CODE_REVIEW.md    # Compact feature verdict + Review Triage
 ├── REVIEW.md         # Quick-mode equivalent (quick workflow only)
@@ -166,7 +166,10 @@ openspec/changes/<feature-name>/
 ```
 
 After final approval, the complete directory moves from `openspec/changes/` to
-`openspec/completed/`.
+`openspec/completed/`. New significant ADRs use the project's permanent decision
+owner/index (for example `docs/decisions/`), resolved by `scope-governance.md` §6.
+Designs link there; archive updates affected navigation while preserving legacy
+records and accepted decision bodies.
 
 Heavy runtime data is not committed:
 

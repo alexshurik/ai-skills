@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "shared" / "review-evidence"))
 
-from review_gate import validate, validate_change_scale  # noqa: E402
+from review_gate import validate, validate_change_scale, validate_static_analysis  # noqa: E402
 from review_map import build_review_map, canonical_fingerprint  # noqa: E402
 
 
@@ -246,6 +246,46 @@ def check_verdict_cases(args: Namespace, report: Path, header: str) -> None:
         assert validate(args)["approval_gate"] == "PASS"
 
 
+def test_lizard_provenance() -> None:
+    dispositions = {
+        "static_analysis": [
+            {
+                "dimension": "cyclomatic+length",
+                "tool": "lizard",
+                "decision": "baseline",
+                "rationale": "The sole reported function is unchanged baseline.",
+                "authority": "review finding QUAL-BASE-LIZARD",
+            }
+        ]
+    }
+    with tempfile.TemporaryDirectory() as temporary:
+        summary = Path(temporary) / "static.txt"
+        for status, exit_code in (
+            ("OK", 0),
+            ("FINDINGS (exit 1)", 1),
+            ("FINDINGS (reported with exit 0)", 0),
+            ("UNVERIFIED (failed to execute)", 2),
+            ("UNVERIFIED (inconsistent Lizard report)", 0),
+        ):
+            summary.write_text(
+                "===== STATIC ANALYSIS PROVENANCE =====\n"
+                "Dimension | Tool | Version | Command | Exit | Status | Full log\n"
+                f"cyclomatic+length | lizard | 1.21.2 | lizard . | {exit_code} | {status} | log\n"
+                "===== END PROVENANCE =====\n",
+                encoding="utf-8",
+            )
+            if status == "OK":
+                assert validate_static_analysis(summary, {}) == 0
+            elif status.startswith("FINDINGS"):
+                expect_error(
+                    "undispositioned static-analysis findings",
+                    lambda: validate_static_analysis(summary, {}),
+                )
+                assert validate_static_analysis(summary, dispositions) == 1
+            else:
+                expect_error("UNVERIFIED", lambda: validate_static_analysis(summary, dispositions))
+
+
 def main() -> None:
     review_map = build_review_map(evidence())
     with tempfile.TemporaryDirectory() as temporary:
@@ -350,4 +390,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    test_lizard_provenance()
     print("OK: review approval gate")

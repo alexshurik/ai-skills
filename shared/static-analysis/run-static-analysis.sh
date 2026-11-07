@@ -144,9 +144,6 @@ _tool_reports_findings() {
     jscpd:duplication)
       _result_matches 'Clone found|Exact clone|duplication[^0-9]*[1-9][0-9]*(\.[0-9]+)?%'
       ;;
-    lizard:cyclomatic+length)
-      _result_matches '!!!![[:space:]]+Warnings|warning:[[:space:]]|cyclomatic_complexity[[:space:]]*>'
-      ;;
     radon:cyclomatic)
       _result_matches '[[:space:]]-[[:space:]][B-F][[:space:]]*\('
       ;;
@@ -160,6 +157,43 @@ _tool_reports_findings() {
       return 1
       ;;
   esac
+}
+
+# Lizard prints threshold predicates in clean reports too. Require its completed
+# summary and reconcile warning evidence with the exit status before classifying.
+_lizard_status() {
+  awk -v exit_code="$rc" '
+    /^No thresholds exceeded \(/ { clean++ }
+    /^!!!![[:space:]]+Warnings.*!!!!/ { warnings++ }
+    /Total nloc.*Warning cnt/ { headers++; summary = 1; next }
+    summary && NF == 8 && $1 ~ /^[0-9]+$/ && $5 ~ /^[0-9]+$/ && $6 ~ /^[0-9]+$/ {
+      numeric = 1
+      for (field = 1; field <= NF; field++) {
+        if ($field !~ /^[0-9]+([.][0-9]+)?$/) numeric = 0
+      }
+      if (numeric) { rows++; count = $6 }
+    }
+    tolower($0) ~ /(^usage:|(^|:[[:space:]])error:|traceback \(most recent call last\))/ { failed = 1 }
+    END {
+      if (failed) print "UNVERIFIED (failed to execute)"
+      else if (exit_code != 0 && exit_code != 1)
+        print "UNVERIFIED (unsupported Lizard exit " exit_code ")"
+      else if (headers > 1 || rows > 1 || clean > 1 || warnings > 1 || (clean && warnings))
+        print "UNVERIFIED (inconsistent Lizard report)"
+      else if (headers != 1 || rows != 1)
+        print "UNVERIFIED (unrecognized Lizard report)"
+      else if ((clean && (count > 0 || exit_code == 1)) || (warnings && count == 0))
+        print "UNVERIFIED (inconsistent Lizard report)"
+      else if (count > 0)
+        print (exit_code == 0 ? "FINDINGS (reported with exit 0)" : "FINDINGS (exit 1)")
+      else if (clean && exit_code == 0) print "OK"
+      else print "UNVERIFIED (unrecognized Lizard report)"
+    }
+  ' < <(
+    if [ -n "$ARTIFACT_DIR" ]; then sed -n '6,$p' "$log"
+    else printf '%s\n' "$out"
+    fi
+  )
 }
 
 # run_tool <dimension> <tool> <gate|info> -- <cmd...>
@@ -204,6 +238,13 @@ run_tool() {
   elif { [ -n "$ARTIFACT_DIR" ] && grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown' "$log"; } \
     || { [ -z "$ARTIFACT_DIR" ] && echo "$out" | grep -qiE 'traceback \(most recent call last\)|command not found|no such file|unrecognized arguments|error: unknown'; }; then
     status="UNVERIFIED (failed to execute)"; N_UNVERIFIED=$((N_UNVERIFIED+1))
+  elif [ "$tool:$dim" = "lizard:cyclomatic+length" ]; then
+    status="$(_lizard_status)" || status="UNVERIFIED (Lizard parser failed)"
+    case "$status" in
+      OK) N_OK=$((N_OK+1)) ;;
+      FINDINGS*) N_FIND=$((N_FIND+1)) ;;
+      *) N_UNVERIFIED=$((N_UNVERIFIED+1)) ;;
+    esac
   elif [ "$rc" -eq 0 ] && _tool_reports_findings; then
     status="FINDINGS (reported with exit 0)"; N_FIND=$((N_FIND+1))
   elif [ "$rc" -eq 0 ]; then

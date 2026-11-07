@@ -51,12 +51,11 @@ Analyze active components separately when their tooling or conventions differ.
 ### 2. Collect Enforced evidence
 
 Read formatter, linter, type checker, build, test, pre-commit, and CI configuration.
-Record exact settings and commands through the pinned project runner.
-
-For UI components, inspect project design guards, component/browser suites,
-maintained visual-regression commands, and where they are invoked. A script or
-snapshot directory is only an available mechanism until repository authority or a
-required workflow/CI command makes it an Enforced rule.
+Collect authority and enforcement separately using `convention-evidence-model.md`.
+Follow invocation/receipt sources and available required-check policy; preserve
+unknown blocking status, manual gaps, and stale evidence. Include UI design guards
+and component/browser/visual suites when applicable. A merely available check proves
+neither invocation nor merge gating.
 
 Classify a rule as Enforced only when the tool actually checks it. Do not claim
 tool authority over architecture, ownership, business vocabulary, or abstraction
@@ -127,12 +126,9 @@ Write:
 3. `evidence.md` with Observed and Legacy/uncertain evidence, counts,
    counterexamples, confidence, and promotion questions.
 
-Each normative item must include:
-
-- `ENF-*` or `APP-*` ID;
-- source path/section or exact config;
-- scope;
-- verification command when mechanically enforced.
+Use the guide's rule-record presentation and the model's authority/enforcement
+fields for every `ENF-*`/`APP-*` item. Keep one evidence record and reference it from
+the matching reviewer ID; do not duplicate the schema or infer a merge gate.
 
 For approved UI composition items, also record the concern's project-native primary
 owner, forbidden competing locations, and any exception ID with exact scope,
@@ -162,11 +158,12 @@ Before returning, verify:
 
 - `coder.md` contains no `OBS-*` or `LEG-*` instruction;
 - `reviewer.md` contains exactly the normative IDs it checks;
-- every normative ID has an authoritative source;
+- every normative ID has an authoritative source and separate enforcement evidence;
 - every sample-only pattern remains in `evidence.md`;
 - exact safe format/lint/type/test commands are present;
-- UI guard/visual commands are correctly classified as required or merely available,
-  and every approved composition concern has one owner or justified `N/A`;
+- check availability, invocation, CI failure, and merge blocking follow the model's
+  evidence; manual gaps, unknowns, and freshness are explicit;
+- every approved UI composition concern has one owner or justified `N/A`;
 - contradictions and promotion questions are visible.
 
 Return:
