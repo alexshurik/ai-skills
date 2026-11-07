@@ -89,6 +89,8 @@ Report contradictions. Do not treat repeated legacy code as approval.
 
 Inspect the nearest existing components, dependency directions, integration points,
 tests, configuration, and changed-file candidates. Find reusable implementations.
+Trace scoped operations using the scenario record in `architecture-gates.md`,
+reusing discovered facts and marking unknowns before choosing approved changes.
 Use current official documentation only when designing against a library/framework
 whose behavior is not established locally.
 
@@ -97,6 +99,7 @@ whose behavior is not established locally.
 Produce the items defined in `architecture-gates.md`:
 
 - authority inventory;
+- scenario records with public dependencies, state/transaction, and acceptance links;
 - boundary matrix with one primary owner per concern;
 - business-vocabulary decisions;
 - reuse decision for custom cross-cutting infrastructure;
@@ -151,7 +154,7 @@ Create `openspec/changes/<name>/design.md` with:
 3. Authority and constraints.
 4. Architecture/component diagram.
 5. Boundary ownership matrix.
-6. Data flow and trust boundaries.
+6. Scenario records, public dependency contracts, data flow, and trust boundaries.
 7. Public API/interface changes and compatibility impact.
 8. Data/persistence model changes and migrations.
 9. State/coordination invariant alignment and lifecycle when applicable.
@@ -195,11 +198,11 @@ applicable.
 
 ## 6. Record significant decisions
 
-Create `openspec/changes/<name>/adr/NNNN-<title>.md` for new dependencies,
-persistence/runtime choices, cross-cutting patterns, and public-contract decisions.
-
-Record Context, Decision, alternatives, and positive/negative/neutral consequences.
-Never rewrite an accepted ADR; supersede it.
+For significant dependency, persistence/runtime, cross-cutting, or public-contract
+decisions, resolve and reuse the permanent ADR owner under `scope-governance.md` §6.
+Record its directory/index in the structural digest; write new decisions there and
+link them from the design. Follow that lifecycle for numbering, supersession,
+legacy records, and archive navigation. Do not default to a change-local folder.
 
 ## 7. Break work into tasks
 
@@ -208,23 +211,20 @@ task cites an acceptance criterion or explicitly approved `SD-*` ID. Never turn 
 unselected proposal into a task; stage a useful one in `DEFERRED.md` using the
 shared template.
 
-For each 15–60 minute task record:
-
-- exact files;
-- owning boundary/component;
-- implementation result;
-- dependencies;
-- verification command or observable evidence.
-
-Split tasks that span multiple responsibilities or more than roughly 3–5 files.
-Order foundation/models, core policy, adapters/integration, and verification by
-real dependencies rather than a fixed template.
+Use `~/.claude/agents/templates/tasks.md` or source `shared/templates/tasks.md`.
+Group independently verifiable tasks by observable outcome. Each milestone keeps
+its user criterion IDs and design, development, testing, and review work, with
+owners, exact candidate files, dependencies, and evidence as the template specifies.
+Split by responsibility, acceptance boundary, risk, and dependency order. File
+counts and durations are signals only; a cohesive task may span more than five
+files. Preserve the workflow's Testing/Code Review phases and existing risk route.
 
 ## 8. Verify and return
 
 Confirm:
 
-- every acceptance criterion traces to design and tasks;
+- every acceptance criterion traces through a scenario/outcome to its milestone's
+  design, development, testing, and review work;
 - every material concern has exactly one owner;
 - every applicable UI composition concern has one project-native owner or a justified
   `N/A`, with no shell/page/component competing ownership;
@@ -242,7 +242,8 @@ Confirm:
 - every unselected useful proposal is deferred and every rejected repeated-risk
   proposal has its decision recorded;
 - tasks are atomic and independently verifiable;
-- required ADRs exist.
+- required ADRs exist under the resolved permanent owner, with design/index links
+  and archive-safe related-change navigation per scope-governance §6.
 
 Persist the full structural digest in the design artifact, including:
 

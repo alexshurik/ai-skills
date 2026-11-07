@@ -219,7 +219,7 @@ complete directory moves to `openspec/completed/<feature-name>/`.
 | `RESEARCH.md` | Researcher | Technology findings (optional) |
 | `design.md` | Architect | Approved design and Scope Delta decisions |
 | `tasks.md` | Architect | Only required or explicitly approved implementation work |
-| `adr/` | Architect | Significant approved architecture decisions (optional) |
+| `adr/` | Architect | Legacy change-local decisions, when already present |
 | `DOC_REVIEW.md` | Doc Reviewer | Alignment verification (optional) |
 | `VERIFICATION.md` | Acceptance Reviewer | QA verification report |
 | `CODE_REVIEW.md` | Review Orchestrator | Compact full-workflow verdict, triage, fingerprint, and evidence links |
@@ -229,6 +229,12 @@ complete directory moves to `openspec/completed/<feature-name>/`.
 | `SUMMARY.md` | Acceptance Reviewer | Executive summary when actually required |
 | `API_CHANGELOG.md` | Acceptance Reviewer | API changes when applicable |
 | `OPERATIONAL_TASKS.md` | Acceptance Reviewer | Operational actions when applicable |
+
+New significant ADRs use the existing permanent project decision owner and index,
+such as `docs/decisions/`, with links from the change design. The
+[ADR lifecycle](workflow/agents/shared/scope-governance.md#permanent-adr-ownership-and-archive-navigation)
+defines destination resolution, fallback, legacy preservation, and affected link
+checks after archive. Accepted decision bodies remain intact.
 
 `DEFERRED.md` is not automatically the project backlog. It records
 `candidate | deferred | rejected | promoted` decisions. At archive, only

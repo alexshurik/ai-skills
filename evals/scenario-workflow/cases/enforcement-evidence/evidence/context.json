@@ -1,0 +1,7 @@
+{
+  "observed_at": "2026-11-06T12:00:00Z",
+  "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "runner": "uv 0.9.10; Python 3.11.14",
+  "lockfile": "not supplied",
+  "format_invocation_search": "No local hook or CI invocation of ruff format found."
+}

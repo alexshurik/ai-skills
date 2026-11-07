@@ -273,6 +273,9 @@ perform this aggregation; reuse its exact-input receipt.
 Before archive, resolve every `DEFERRED.md` candidate. Promote only user-selected
 items to the repository's tracker or `openspec/backlog/<slug>.md`; preserve rejected/
 deferred decisions in the archived change and do not implement them automatically.
+Apply `scope-governance.md` §6 for permanent ADR ownership and archive navigation:
+repair affected index/incoming links and verify decision/change links after moving
+the change, preserving accepted bodies and legacy locations.
 
 ## Communication and waiting
 

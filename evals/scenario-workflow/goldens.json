@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "suite": "scenario-workflow",
+  "goldens": {
+    "layered-reservations": {
+      "required": [
+        "Two independently observable reservation/cancellation outcomes retain their AC IDs and each has design, development, testing, review work.",
+        "Scenario traces include both entries, input/trust owners, BookingService, public ports/direction, atomic transaction, success/failure, and verification.",
+        "Concurrency evidence gap is explicit; planning does not silently invent a locking mechanism.",
+        "The cohesive version/ownership contract task may span more than five files without arbitrary fragmentation."
+      ],
+      "forbidden": [
+        "Mandatory VSA migration or new domain/layer structure.",
+        "Asynchronous eventual consistency substituted for the atomic transaction.",
+        "New full review wave or runtime stage per milestone."
+      ],
+      "artifact_checks": [
+        "Read generated design and tasks, trace both criterion IDs through all four milestone work kinds.",
+        "Compare dependency/state claims against service.py, ports.py, and AGENTS.md.",
+        "Application fixture hashes unchanged."
+      ]
+    },
+    "native-decisions-archive": {
+      "required": [
+        "Resolve docs/decisions/README.md and its permanent directory; create one new decision there using the project convention.",
+        "New decision describes Context/Decision/alternatives/consequences and explicitly supersedes 0001 without editing its accepted body.",
+        "Permanent index navigates to new and old decisions and the completed change; change design links to the new permanent ADR.",
+        "Legacy archived 0042 stays in place and indexed."
+      ],
+      "forbidden": [
+        "Creating a second docs/adr owner.",
+        "Copied ADR bodies, bulk relocation, broken active-change navigation after archive.",
+        "Embedding a moving active-change path in the new accepted decision body."
+      ],
+      "artifact_checks": [
+        "Resolve affected relative Markdown targets after archive.",
+        "Exactly one body per old/new decision; compare the old body hashes below.",
+        "Repeat owner discovery without creating another directory/index."
+      ],
+      "preserved_sha256": {
+        "docs/decisions/0001-stateless-sessions.md": "de02c8f70cda9cc44c2ba78ef41567fa9947befec640d5428bb832c20bef6517",
+        "openspec/completed/booking/adr/0042-transaction.md": "ac8adc2964749ebfe6c83d94d1973ca433cd2f751c77c54dddf867ded625b975"
+      }
+    },
+    "decision-owner-fallback": {
+      "required": [
+        "Create docs/adr with one concise index because this significant approved decision needs a permanent owner.",
+        "New decision has Context/Decision/alternatives/consequences; design links and related-change index resolve after archive.",
+        "Repeated discovery reuses the new owner."
+      ],
+      "forbidden": [
+        "Defaulting the new decision to change-local adr/.",
+        "An extra registry or duplicate decision text."
+      ],
+      "artifact_checks": [
+        "Inspect resulting tree and all affected link targets.",
+        "New ADR body hash unchanged across archive."
+      ]
+    },
+    "enforcement-evidence": {
+      "required": [
+        "Preserve APP-DECIMAL-AMOUNTS authority with manual rounding obligation; observed source alone adds no rules.",
+        "Ruff format config describes an available unexecuted check; lint scope/exclusions are explicit and audit is optional/nonblocking.",
+        "Old lint receipt is stale for the current inputs.",
+        "Core job failure and release required-check evidence are separately identified; dev merge blocking remains unknown.",
+        "Coder/reviewer normative IDs match, with one linked enforcement record containing command/runner/config, scope, invocation, blocking, freshness, manual gaps."
+      ],
+      "forbidden": [
+        "Local success or config existence used as proof of merge gating.",
+        "Assuming all branches use release policy.",
+        "Claiming current lint execution, lockfile evidence, or complete rounding coverage."
+      ],
+      "artifact_checks": [
+        "Inspect actual three output profiles and compare claims to supplied configs/receipts.",
+        "Source files/configs/receipts unchanged."
+      ]
+    },
+    "bandit-context": {
+      "required": [
+        "Retain all five raw issues and severity/confidence; assess purpose, data source, reachability/trust, controls, and changed status separately.",
+        "Decorative randomness and fixed trusted subprocess execution have context-supported non-security dispositions, not automatic BLOCKER/MAJOR from tool labels.",
+        "Password-reset randomness and untrusted shell interpolation require fixes tied to concrete risk even though their tool severities differ.",
+        "Private plugin issue remains investigation/UNVERIFIED because source/caller evidence is missing."
+      ],
+      "forbidden": [
+        "Blanket excludes/nosec, lowered thresholds, rewriting raw FINDINGS as OK.",
+        "Blanket tool-row waiver or baseline claim for introduced issues.",
+        "Assumed safety or fabricated blocker for the unavailable plugin."
+      ],
+      "artifact_checks": [
+        "Hash bandit.json before/after and verify no source mutation.",
+        "Each filename/test_id/line has an explicit assessment and authority for any approval exception."
+      ]
+    },
+    "small-local-fix": {
+      "required": [
+        "One compact outcome links empty/nonempty acceptance to design, development, lowest faithful regression, and normal review work.",
+        "Owner remains metrics.py; state/transaction is N/A with a reason.",
+        "No artificial milestone splitting or added permanent architecture."
+      ],
+      "forbidden": [
+        "VSA/domain migration, ADR scaffolding, new service/utility wrapper.",
+        "Mandatory full review loop per milestone or independent Tester without a risk reason."
+      ],
+      "artifact_checks": [
+        "Read produced plan/tasks and compare scope and criteria.",
+        "Application fixture unchanged."
+      ]
+    }
+  }
+}

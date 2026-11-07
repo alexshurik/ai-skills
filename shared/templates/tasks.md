@@ -5,104 +5,51 @@
 > Design: ./design.md
 > Proposal: ./proposal.md
 
-## Overview
-<!-- Brief summary of the implementation -->
+## Outcome Plan
 
-Total Tasks: X
-Estimated Phases: X
+Repeat the milestone below for each independently observable user/operator outcome.
+A small fix may use one compact milestone. Split by responsibility, acceptance
+boundary, risk, and dependency order; file counts and durations are estimates, not
+split rules. Shared groundwork is a dependency of the first outcome that needs it,
+not an invented user outcome.
 
-## Phase 1: Foundation
+Milestones organize the approved task graph within the existing workflow phases.
+Testing keeps its risk-based Tester/Developer route. Code Review remains a phase;
+one normal full review may cover several milestones by explicit scope. No extra
+full-review wave or user gate is required per milestone. A milestone is accepted
+only after its required tests and review dispositions are complete.
 
-### Task 1.1: <Task Title>
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: New file | Modification | Configuration
-- **Files**:
-  - `path/to/file.ts` - <description>
-- **Details**:
-  - <what to do>
-  - <acceptance criteria>
-- **Dependencies**: None
+## M1 — <Observable user/operator outcome>
 
-### Task 1.2: <Task Title>
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: <type>
-- **Files**:
-  - `path/to/file.ts`
-- **Details**:
-  - <what to do>
-- **Dependencies**: Task 1.1
+- **Acceptance:** <user criterion IDs and observable success/failure>
+- **Scenarios and primary owner:** <scenario IDs, project-native owner>
+- **Dependencies:** <prior outcomes or shared groundwork; none when independent>
+- **Contracts and invariants:** <public dependency contracts and transaction/state rows in design>
 
-## Phase 2: Core Implementation
+Keep all four kinds of work inside each milestone. Every task cites an acceptance
+criterion or explicitly approved Scope Delta ID; omit unapproved proposals.
 
-### Task 2.1: <Task Title>
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: <type>
-- **Files**:
-  - `path/to/file.ts`
-- **Details**:
-  - <what to do>
-- **Dependencies**: Phase 1
+- [ ] M1-D — **Design:** <contract/decision work or link to its completed decision>.
+  Scope basis: <AC/SD IDs>. Owner: <owner>. Evidence: <approved design/ADR paths>.
+- [ ] M1-I — **Development:** <verifiable implementation result>.
+  Scope basis: <AC/SD IDs>. Owner: <boundary/component>. Files: <exact candidate paths>.
+  Dependencies: <task IDs>. Evidence: <observable result>.
+- [ ] M1-T — **Testing:** <lowest faithful layer and relevant failure cases>.
+  Scope basis: <AC/SD IDs>. Owner: <Tester or Developer per risk route>.
+  Dependencies: <task IDs>. Evidence: <exact commands/receipts and expected behavior>.
+- [ ] M1-R — **Review:** <applicable owner and changed scope>.
+  Scope basis: <AC/SD IDs>. Dependencies: <task IDs>.
+  Evidence: <normal review coverage and resolved dispositions>.
 
-### Task 2.2: <Task Title>
-...
+## Dependencies and Progress
 
-## Phase 3: Integration
+Record only useful task/milestone edges; do not recreate a horizontal
+foundation/core/integration/testing ladder.
 
-### Task 3.1: <Task Title>
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: <type>
-- **Files**:
-  - `path/to/file.ts`
-- **Details**:
-  - <what to do>
-- **Dependencies**: Phase 2
+| Milestone | Design | Development | Testing evidence | Review evidence | Acceptance |
+|---|---|---|---|---|---|
+| M1 | <status/link> | <status/link> | <status/link> | <status/link> | <pending/verified> |
 
-## Phase 4: Testing & Polish
-
-### Task 4.1: Write Integration Tests
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: New files
-- **Files**:
-  - `tests/integration/<feature>.test.ts`
-- **Details**:
-  - Integration tests for component interactions
-- **Dependencies**: Phase 3
-
-### Task 4.2: Documentation
-- **Scope basis**: <acceptance criterion or approved Scope Delta ID>
-- **Type**: Modification
-- **Files**:
-  - `README.md`
-  - `docs/<feature>.md`
-- **Details**:
-  - Update documentation
-- **Dependencies**: Task 4.1
-
-## Dependency Graph
-
-```
-Phase 1: [1.1] ──► [1.2]
-              │
-              ▼
-Phase 2: [2.1] ──► [2.2]
-              │
-              ▼
-Phase 3: [3.1]
-              │
-              ▼
-Phase 4: [4.1] ──► [4.2]
-```
-
-## Progress Tracking
-
-| Task | Status | Assignee | Notes |
-|------|--------|----------|-------|
-| 1.1 | Pending | | |
-| 1.2 | Pending | | |
-| 2.1 | Pending | | |
-| 2.2 | Pending | | |
-| 3.1 | Pending | | |
-| 4.1 | Pending | | |
-| 4.2 | Pending | | |
-
-Status: Pending | In Progress | Complete | Blocked
+Task status: Pending | In Progress | Complete | Blocked.
+Shared finish checks can close the change, but do not replace each milestone's
+testing or review work.

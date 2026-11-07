@@ -74,6 +74,16 @@ Do not promote caller assumptions or implementation preferences into constraints
 |---|---|---|---|---|
 | <concern> | <input> | <owner> | <model> | <locations> |
 
+## Scenarios and Public Dependencies
+
+Use the scenario record in `~/.claude/agents/references/architecture-gates.md`
+(source: `workflow/agents/references/architecture-gates.md`). Link existing map
+evidence and state/invariant rows instead of duplicating them.
+
+| Scenario / actor | Entry/input and validation | Primary owner | Public dependencies/direction | State/transaction link | Result/failure and AC/evidence | Facts/decisions/gaps |
+|---|---|---|---|---|---|---|
+| <ID / action> | <entry and contract> | <owner> | <provider contract> | <row or N/A reason> | <observable result, AC IDs, verification> | <sources and unknowns> |
+
 ## Data Flow
 
 ### Sequence Diagram
@@ -237,7 +247,9 @@ Use only when an operational mechanism is added or materially changed.
 - **Model/public-interface changes:** <changes or none>
 - **Task dependencies:** <summary>
 - **Risks and non-goals:** <summary>
-- **Required ADRs:** <paths or none>
+- **Permanent ADR owner and index:** <resolved project-native paths; none if no decision needs an ADR>
+- **Required ADRs:** <links to permanent records or none; legacy links remain in place>
+- **Related-change navigation:** <index/permalink owner and archive link checks per scope-governance §6>
 
 ## Implementation Notes
 <!-- Any notes for developers -->

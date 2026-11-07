@@ -62,6 +62,10 @@ native steering files can remain authoritative. Preserve existing map/navigation
 paths; new defaults are `.agents/docs/project-map.md` and
 `.agents/steering/architecture.md`. Project convention profiles remain in
 `.agents/best-practices/project/`, including existing component-specific profiles.
+Resolve permanent ADR ownership/navigation with §6 of
+`~/.claude/agents/shared/scope-governance.md` (source:
+`workflow/agents/shared/scope-governance.md`). Reuse and link the decision index;
+onboarding alone does not require a new ADR or relocation of legacy records.
 
 ### 2. Reuse verified discovery
 

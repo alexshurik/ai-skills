@@ -1,0 +1,10 @@
+{
+  "command": "uv run --frozen python -m unittest discover -s tests",
+  "exit": 0,
+  "checked_at": "2026-11-06T11:50:00Z",
+  "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "input_sha256": {
+    "src/amounts.py": "3e74c4827c2fe8f6da102da9925bb669d37aa7babd1868b0e951a20e36fdc87f"
+  },
+  "scope": "one conversion test only; rounding policy not covered"
+}

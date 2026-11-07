@@ -1,0 +1,12 @@
+name: quality
+on: [pull_request]
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - run: sh scripts/quality.sh
+  core:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: sh scripts/core.sh

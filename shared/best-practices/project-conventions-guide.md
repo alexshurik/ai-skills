@@ -45,10 +45,10 @@ Read actual configuration and authoritative commands:
 - for UI repositories, required static design guards, component/browser tests,
   maintained visual-regression commands, and their CI/pre-commit/workflow invocation.
 
-Record the exact config path, selected setting/rule, command, scope, and exception.
-Do not claim a tool enforces architecture or vocabulary it cannot inspect.
-The existence of a guard script or screenshot suite is not itself proof that the
-repository requires it; distinguish an available command from an enforced gate.
+Collect the model's authority and enforcement evidence separately, including
+invocation sources, receipts and remote required-check policy when available.
+Do not claim a tool enforces architecture or vocabulary it cannot inspect. Mark
+unavailable or stale evidence honestly, including for UI/visual checks.
 
 ### Approved candidates
 
@@ -94,19 +94,11 @@ integrations from frequency alone.
 
 ## Rule record
 
-Each item must include:
+Use `convention-evidence-model.md` for field semantics and stable IDs. Present a
+compact authority record and a separate enforcement record for each normative rule.
+Keep the full record once in `coder.md`; `reviewer.md` references that ID/anchor.
+Observed/Legacy items in `evidence.md` retain the model's sample evidence fields.
 
-```text
-ID: ENF-<topic> | APP-<topic> | OBS-<topic> | LEG-<topic>
-Classification: Enforced | Approved | Observed | Legacy/uncertain
-Source: exact file/section/config or sampled paths
-Evidence: setting or N/M count plus counterexamples
-Scope: affected language/package/component
-Confidence: high | medium | low
-Instruction/check: only for Enforced or Approved
-```
-
-Use stable IDs so `coder.md` and `reviewer.md` cannot drift independently.
 For an applicable approved UI composition rule, also record the concern's primary
 owner, forbidden competing locations, and any exception ID with exact scope,
 rationale, authority owner/source, and expiry or review trigger.
@@ -125,11 +117,20 @@ rationale, authority owner/source, and expiry or review trigger.
 
 ## Approved architecture and conventions
 - [APP-topic] <imperative instruction>
-  Source: `<path/section>` · Scope: `<scope>`
+  Authority: `<path/section>` · Scope/exceptions: `<scope>`
+  Enforcement: `<manual/tool evidence and gaps; link full record below>`
 
 ## Enforced implementation rules
 - [ENF-topic] <imperative instruction>
-  Source: `<config setting>` · Verify: `<cmd>`
+  Authority: `<config setting>` · Scope/exceptions: `<scope>`
+  Enforcement: `<link to record below>`
+
+## Enforcement evidence by rule ID
+- [ENF-topic / APP-topic] Check: `<command, runner/config, checked scope/exclusions>`
+  Invocation: `<local/CI sources and observed/configured/unknown status>`
+  Blocking: `<local behavior; CI job behavior; merge policy, each with evidence>`
+  Freshness: `<checked date, revision/input receipt or stale/unexecuted>`
+  Gaps: `<manual checks, uncovered requirements, owner or unknown>`
 
 ## Conflicts and escalation
 - Follow the cited source. If two normative sources conflict, stop and request
@@ -141,7 +142,8 @@ rationale, authority owner/source, and expiry or review trigger.
 ```markdown
 # Project Reviewer Profile — <repository>
 
-Review only the normative IDs from `coder.md`.
+Review only the normative IDs from `coder.md`; link their authority and enforcement
+records instead of duplicating them. Unknown blocking/freshness remains unknown.
 
 - [ENF-topic] Verify `<mechanically enforced behavior>` with `<cmd>`.
 - [APP-topic] Verify `<approved architecture/convention>` against `<source>`.
@@ -174,7 +176,9 @@ violation unless an Enforced/Approved rule prohibits the pattern.
 Before returning:
 
 - every coder/reviewer item is Enforced or Approved;
-- every normative item has a source and stable ID;
+- every normative item has a source and stable ID plus separate enforcement evidence;
+- available/configured checks, actual runs, CI failure, and merge blocking are not
+  conflated; gaps, unknowns, and stale evidence remain explicit;
 - reviewer IDs match coder IDs;
 - sample counts and counterexamples remain in `evidence.md`;
 - uncertain patterns are questions, not instructions;

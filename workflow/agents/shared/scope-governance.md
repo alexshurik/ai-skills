@@ -239,7 +239,8 @@ Store under `openspec/changes/<name>/` and archive the directory to
 
 - `proposal.md`: request, acceptance criteria, required scope, non-goals;
 - optional `RESEARCH.md`;
-- `design.md`, `tasks.md`, and required `adr/` entries: approved work only;
+- `design.md` and `tasks.md`: approved work only, with links to permanent ADRs;
+- legacy change-local `adr/` entries when already present;
 - optional `DOC_REVIEW.md`;
 - `CODE_REVIEW.md` for a full workflow or `REVIEW.md` for quick mode: compact current
   verdict, triage, approved finding IDs, snapshot fingerprint, and evidence paths;
@@ -250,6 +251,34 @@ Store under `openspec/changes/<name>/` and archive the directory to
 Do not create separate `SCOPE.md`, `TRIAGE.md`, `AGENT_CALLS.md`, or duplicate
 `review-summary.md`. Keep scope in proposal/design, triage in the durable review
 artifact, and orchestration counters in runtime state.
+
+### Permanent ADR ownership and archive navigation
+
+For a significant decision that needs an ADR, resolve the destination in this order:
+explicit user destination, existing permanent project decision directory/index
+(such as `docs/adr` or `docs/decisions`), then `docs/adr/` with one concise index.
+A change-local OpenSpec directory is historical context, not the default permanent
+owner. Do not create empty scaffolding when no decision needs an ADR. Record the
+resolved owner/index in the design's structural digest and reuse it in onboarding.
+
+Write new records using that owner's numbering/status convention. Keep Context,
+Decision, alternatives, consequences, and supersession semantics. Supersede accepted
+decisions rather than replacing them. Link from the change design to the permanent
+record. Keep mutable related-change links in the permanent index, which links both
+the decision and its active/archived change; avoid soon-to-move paths in new
+accepted decision text. Reuse project permalinks/navigation where available.
+
+Keep legacy records in place and index them without copying their text or bulk
+relocation. An active change's legacy ADR moves only with the already-defined
+whole-change archive; already archived records stay put. Preserve IDs and decision
+bodies. Repair only affected navigation metadata, not unrelated documentation.
+
+At archive, move only the change directory. Update affected index/incoming links
+to its completed location and verify incoming/outgoing links for the change,
+permanent decisions, and legacy records. Change-internal links stay relative.
+Derive relative links from the actual layout: `../../../docs/adr/<record>.md`
+resolves from both conventional `openspec/changes/<name>/` and
+`openspec/completed/<name>/`, but custom layouts require their own paths.
 
 ### Git-local runtime state and heavy evidence
 

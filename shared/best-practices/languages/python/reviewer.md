@@ -142,18 +142,26 @@ clean; flag missing/`Any`-typed public signatures.
 
 ### bandit (Security Scanner)
 
-Dedicated security analysis beyond what ruff `S` rules cover.
+Dedicated security analysis beyond what ruff `S` rules cover. Preserve the raw
+report and all findings in the approved scan scope:
 
 ```bash
-# Scan entire project
 bandit -r src/ -f json
-
-# Scan with specific severity
-bandit -r src/ -ll  # medium and above
-
-# Exclude test files
-bandit -r src/ --exclude src/tests/
 ```
+
+Tool severity/confidence are evidence, not the review verdict. For each issue,
+inspect location/test ID, data source, reachability, trust boundary, purpose,
+controls, and changed/baseline status. Non-cryptographic randomness for display or
+simulation differs from randomness for secrets. Fixed trusted subprocess arguments
+differ from untrusted shell interpolation. Assess the actual code and threat model.
+
+Use the existing correctness-safety severity criteria and scope-governance
+severity/disposition/remedy routing. Keep issue-by-issue rationale and raw FINDINGS;
+missing context requires investigation/UNVERIFIED, not assumed safety or an invented
+blocker. A tool-row disposition must cover every underlying issue. Existing
+`baseline` or `approved_exception` dispositions require their normal authority and
+rationale. Do not add blanket excludes, blanket `nosec`, or change thresholds to
+make the battery green.
 
 ### radon (Complexity and Maintainability)
 
@@ -253,9 +261,7 @@ Extends the orchestrator's severity table with Python-specific entries.
 | `from src.` import | **MAJOR** |
 | Missing docstring on public API | **MINOR** |
 | Wildcard import | **MAJOR** |
-| bandit high severity | **BLOCKER** |
-| bandit medium severity | **MAJOR** |
-| bandit low severity | **MINOR** |
+| bandit finding | Contextual severity/disposition under the Bandit guidance above; retain raw severity/confidence |
 | radon CC grade D or worse (>15) | **MAJOR** |
 | radon CC grade C (11-15) | **MINOR** |
 | radon MI below 20 | **MAJOR** |

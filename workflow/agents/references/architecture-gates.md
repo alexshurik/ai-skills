@@ -24,7 +24,34 @@ List the sources that constrain the design:
 | Existing code and samples | Evidence only | Candidate patterns and integration clues |
 
 Do not make a repeated source pattern normative when a higher authority rejects or
-has not approved it.
+has not approved it. For each claimed gate, link the rule's authority and actual
+enforcement evidence using `best-practices/convention-evidence-model.md` (source:
+`shared/best-practices/convention-evidence-model.md`). Configuration alone does not
+prove invocation or merge blocking; preserve unknown or stale evidence.
+
+## Scenarios and dependency boundaries
+
+Discovery and design use this record for meaningful operations in the requested
+scope. Reuse the project's map/navigation owner and existing evidence; do not create
+a parallel scenario document. Discovery describes the current system. Design makes
+only approved changes. Mark facts, approved decisions, inferences, and unknowns.
+
+| Field | Record |
+|---|---|
+| Scenario ID, operation, actor | User/operator action, not a directory name |
+| Entry and input | UI/HTTP/event/job/CLI entry, input contract, validation/trust owner |
+| Primary owner | Project-native responsibility owner and source evidence, or unknown |
+| Public dependencies | Provider owner, allowed contract, dependency direction; incidental internal coupling |
+| State and transaction | Source of truth and atomic/coordination scope; link the invariant row below when applicable |
+| Result and acceptance | Observable success/failure, criterion IDs, faithful verification route |
+| Evidence and gaps | Source paths, authority classification, unresolved facts/decisions |
+
+Keep approved architecture and vocabulary, whether layered, functional,
+framework-native, or VSA. Shared public contracts and composition wiring are valid.
+Do not replace an atomic operation with asynchronous messaging merely to remove an
+import. A local operation can mark state/transaction N/A with a reason. Split work
+by responsibility, acceptance boundary, risk, and dependency order, not file count.
+A small fix can use one compact record; do not manufacture new domains or layers.
 
 ## Boundary matrix
 
@@ -180,7 +207,8 @@ or secret-delivery path.
 Before task breakdown, confirm the design contains:
 
 - required scope, approved Scope Delta IDs, and explicit non-goals;
-- authority inventory;
+- authority inventory with separate enforcement evidence for claimed gates;
+- scenario records linking operations, public dependencies, state, and acceptance;
 - boundary matrix;
 - business-vocabulary decisions;
 - reuse decisions for custom cross-cutting concerns;
