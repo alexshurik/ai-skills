@@ -6,9 +6,11 @@ A collection of AI coding agent skills for multi-agent development workflows.
 
 ## Requirements
 
-- Python 3.10 or newer is required at runtime. Installers resolve `python3`,
-  `python`, or the Windows launcher `py -3` and fail before writing when the
-  interpreter is missing or too old.
+- Python 3.10 or newer is required at runtime. Installers and the installed
+  helpers use `$PYTHON` when it is set; otherwise they resolve `python3`, `python`,
+  or the Windows launcher `py -3`. They fail before writing when the interpreter is
+  missing or too old (macOS `/usr/bin/python3` is 3.9: set
+  `PYTHON=/path/to/python3.10+`).
 - The installed skills use only the Python standard library; Ruff, MyPy, uv, and
   jsonschema are repository-development dependencies, not end-user dependencies.
 - Repository development uses [uv](https://docs.astral.sh/uv/): run `uv sync --dev`

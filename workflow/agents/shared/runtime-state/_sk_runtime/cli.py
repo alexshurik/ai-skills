@@ -599,9 +599,17 @@ def add_task_commands(commands: argparse._SubParsersAction[argparse.ArgumentPars
     created.add_argument("--role", required=True)
     created.add_argument("--optional", dest="required", action="store_false", default=True)
     created.add_argument(
-        "--purpose", choices=["implementation", "review", "remediation", "acceptance"]
+        "--purpose",
+        choices=["implementation", "review", "remediation", "acceptance"],
+        help="batch label; requires one --member-json per dispatched child",
     )
-    created.add_argument("--member-json", dest="members", action="append", type=batch_member_json)
+    created.add_argument(
+        "--member-json",
+        dest="members",
+        action="append",
+        type=batch_member_json,
+        help="dispatched batch member; requires --purpose",
+    )
     created_fields = ("stage", "task", "role", "required", "purpose", "members")
     created.set_defaults(handler=transition_handler("task.created", created_fields))
 

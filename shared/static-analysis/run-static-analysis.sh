@@ -11,11 +11,16 @@
 #
 # Usage:
 #   run-static-analysis.sh [--artifact-dir DIR] [--summary-only] [PATH ...]
+#   run-static-analysis.sh --probe-only
 #     PATH ...  files or dirs to analyze. If omitted, falls back to the changed
 #               files vs the merge-base, then to the current dir.
 #     --artifact-dir DIR  persist one complete log per tool under DIR.
 #     --summary-only      suppress raw tool output on stdout (requires artifact
 #                         logs for later inspection).
+#     --probe-only        run nothing; report which battery tools for the detected
+#                         stack resolve (same runner and probe as a real run), so a
+#                         workflow can settle install decisions at Setup instead of
+#                         discovering UNVERIFIED rows at the review approval gate.
 #
 # Honors an exported $RUN (project tool runner, e.g. "uv run") if the caller set
 # one; otherwise it resolves the runner itself from lockfiles. Every tool is probed
@@ -34,9 +39,14 @@ set -o pipefail
 # ---------------------------------------------------------------------------
 ARTIFACT_DIR=""
 SUMMARY_ONLY=0
+PROBE_ONLY=0
 TARGETS=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --probe-only)
+      PROBE_ONLY=1
+      shift
+      ;;
     --artifact-dir)
       if [ "$#" -lt 2 ]; then
         echo "ERROR: --artifact-dir requires a directory" >&2
@@ -60,6 +70,10 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+if [ "$PROBE_ONLY" -eq 1 ] && { [ -n "$ARTIFACT_DIR" ] || [ "$SUMMARY_ONLY" -eq 1 ] || [ "${#TARGETS[@]}" -gt 0 ]; }; then
+  echo "ERROR: --probe-only runs no analyzer and takes no paths or artifact options" >&2
+  exit 2
+fi
 if [ "$SUMMARY_ONLY" -eq 1 ] && [ -z "$ARTIFACT_DIR" ]; then
   echo "ERROR: --summary-only requires --artifact-dir so evidence is not discarded" >&2
   exit 2
@@ -69,7 +83,7 @@ if [ -n "$ARTIFACT_DIR" ]; then
   ARTIFACT_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
 fi
 
-if [ "${#TARGETS[@]}" -eq 0 ]; then
+if [ "$PROBE_ONLY" -eq 0 ] && [ "${#TARGETS[@]}" -eq 0 ]; then
   base="$(git merge-base HEAD origin/main 2>/dev/null \
         || git merge-base HEAD main 2>/dev/null || echo HEAD~1)"
   # bash 3.2 has no mapfile — read line by line, keep only existing paths
@@ -108,8 +122,9 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Helpers
 # ---------------------------------------------------------------------------
-ROWS=()           # provenance rows
+ROWS=()           # provenance rows (probe rows in --probe-only mode)
 N_OK=0; N_FIND=0; N_UNVERIFIED=0
+N_AVAILABLE=0; N_MISSING=0; MISSING_TOOLS=""
 LOG_INDEX=0
 
 # portable timeout wrapper
@@ -130,13 +145,46 @@ _probe() {
   return 1
 }
 
-_result_matches() {
-  local pattern="$1"
-  if [ -n "$ARTIFACT_DIR" ]; then
-    sed -n '6,$p' "$log" | grep -qE "$pattern"
-  else
-    printf '%s\n' "$out" | grep -qE "$pattern"
+# --probe-only: record whether a battery tool resolves, without running analysis.
+_record_probe() {
+  local dim="$1" tool="$2" kind="$3" prefix
+  if prefix="$(_probe "$tool")"; then
+    ROWS+=("$dim | $tool | $kind | ${prefix:-<global PATH>} | AVAILABLE")
+    N_AVAILABLE=$((N_AVAILABLE+1))
+    return
   fi
+  ROWS+=("$dim | $tool | $kind | — | MISSING")
+  N_MISSING=$((N_MISSING+1))
+  case " $MISSING_TOOLS " in
+    *" $tool "*) ;;
+    *) MISSING_TOOLS="${MISSING_TOOLS:+$MISSING_TOOLS }$tool" ;;
+  esac
+}
+
+_result_text() {
+  if [ -n "$ARTIFACT_DIR" ]; then
+    sed -n '6,$p' "$log"
+  else
+    printf '%s\n' "$out"
+  fi
+}
+
+_result_matches() {
+  _result_text | grep -qE "$1"
+}
+
+# lizard always prints a threshold banner that names cyclomatic_complexity: older
+# releases print "!!!! Warnings (...) !!!!" over an empty table, newer ones print
+# "No thresholds exceeded (...)". Neither is a finding. Only a function row
+# (NLOC CCN token PARAM length name@start-end@file) inside the warnings section, or
+# a `-w` style "file:line: warning:" line, counts.
+_lizard_reports_warnings() {
+  _result_text | awk '
+    /^!!!![[:space:]]+Warnings/ { in_warnings = 1; next }
+    /^[[:space:]]*Total nloc/ { in_warnings = 0 }
+    in_warnings && /^[[:space:]]*[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+.*@[0-9]+-[0-9]+@/ { found = 1 }
+    /:[0-9]+:[[:space:]]+warning:[[:space:]]/ { found = 1 }
+    END { exit found ? 0 : 1 }'
 }
 
 _tool_reports_findings() {
@@ -145,7 +193,7 @@ _tool_reports_findings() {
       _result_matches 'Clone found|Exact clone|duplication[^0-9]*[1-9][0-9]*(\.[0-9]+)?%'
       ;;
     lizard:cyclomatic+length)
-      _result_matches '!!!![[:space:]]+Warnings|warning:[[:space:]]|cyclomatic_complexity[[:space:]]*>'
+      _lizard_reports_warnings
       ;;
     radon:cyclomatic)
       _result_matches '[[:space:]]-[[:space:]][B-F][[:space:]]*\('
@@ -168,6 +216,10 @@ run_tool() {
   local dim="$1" tool="$2" kind="$3"; shift 3
   [ "$1" = "--" ] && shift
   local prefix ver out rc status log slug
+  if [ "$PROBE_ONLY" -eq 1 ]; then
+    _record_probe "$dim" "$tool" "$kind"
+    return
+  fi
   if ! prefix="$(_probe "$tool")"; then
     ROWS+=("$dim | $tool | (not installed) | — | — | UNVERIFIED (not installed) | —")
     N_UNVERIFIED=$((N_UNVERIFIED+1))
@@ -221,9 +273,13 @@ run_tool() {
 # 3. Run the battery by detected stack
 # ---------------------------------------------------------------------------
 echo "=============================================="
-echo " STATIC ANALYSIS BATTERY"
+if [ "$PROBE_ONLY" -eq 1 ]; then
+  echo " STATIC ANALYSIS PROBE (no analyzer runs)"
+else
+  echo " STATIC ANALYSIS BATTERY"
+fi
 echo " runner: ${RUN:-<global PATH>}"
-echo " targets: ${TARGETS[*]}"
+[ "$PROBE_ONLY" -eq 0 ] && echo " targets: ${TARGETS[*]}"
 [ -n "$ARTIFACT_DIR" ] && echo " artifacts: $ARTIFACT_DIR"
 echo "=============================================="
 
@@ -262,6 +318,23 @@ fi
 # ---------------------------------------------------------------------------
 # 4. Provenance + summary (caller pastes this into the verdict)
 # ---------------------------------------------------------------------------
+if [ "$PROBE_ONLY" -eq 1 ]; then
+  # Deliberately not a PROVENANCE table: review-gate.sh must never accept a probe.
+  echo ""
+  echo "===== STATIC ANALYSIS PROBE ====="
+  echo "Dimension | Tool | Kind | Resolved via | Status"
+  echo "----------|------|------|--------------|-------"
+  for r in "${ROWS[@]}"; do echo "$r"; done
+  echo "===== END PROBE ====="
+  echo ""
+  echo "PROBE: ${N_AVAILABLE} AVAILABLE · ${N_MISSING} MISSING"
+  if [ "$N_MISSING" -gt 0 ]; then
+    echo "MISSING TOOLS: ${MISSING_TOOLS}"
+    echo "NOTE: each missing tool becomes an UNVERIFIED row in review, and review-gate.sh"
+    echo "      rejects APPROVED on any UNVERIFIED row. Settle install or proceed now."
+  fi
+  exit 0
+fi
 echo ""
 echo "===== STATIC ANALYSIS PROVENANCE ====="
 echo "Dimension | Tool | Version | Command | Exit | Status | Full log"

@@ -40,4 +40,62 @@ OUTPUT="$(PATH="$LAUNCHER_DIR:$PATH" bash -c \
     '. "$1"; sk_require_python; sk_python selected-launcher' shell "$REPO_DIR/scripts/python-runtime.sh")"
 [ "$OUTPUT" = "selected-launcher" ]
 
+# An interpreter stub that reports a fixed version and passes the 3.10 probe only
+# when that version qualifies.
+make_versioned() {
+    local target="$1" version="$2" qualifies="$3"
+    printf '%s\n' \
+        '#!/bin/sh' \
+        'case "$*" in' \
+        "  *'version_info[:3]'*) echo $version; exit 0 ;;" \
+        "  *'version_info >= (3, 10)'*) exit $qualifies ;;" \
+        'esac' \
+        "printf '$version:%s\n' \"\$*\"" > "$target"
+    chmod +x "$target"
+}
+
+# PYTHON wins over python3 when it qualifies, and is exclusive when it does not.
+OVERRIDE_DIR="$TEST_ROOT/override"
+mkdir -p "$OVERRIDE_DIR/bin"
+make_versioned "$OVERRIDE_DIR/bin/python3" 3.12.1 0
+make_versioned "$OVERRIDE_DIR/custom-python" 3.11.4 0
+make_versioned "$OVERRIDE_DIR/old-python" 3.9.6 1
+OUTPUT="$(PATH="$OVERRIDE_DIR/bin:$PATH" PYTHON="$OVERRIDE_DIR/custom-python" bash -c \
+    '. "$1"; sk_python chosen' shell "$REPO_DIR/scripts/python-runtime.sh")"
+[ "$OUTPUT" = "3.11.4:chosen" ]
+if PATH="$OVERRIDE_DIR/bin:$PATH" PYTHON="$OVERRIDE_DIR/old-python" bash -c \
+    '. "$1"; sk_python chosen' shell "$REPO_DIR/scripts/python-runtime.sh" \
+    > "$TEST_ROOT/old-override.out" 2> "$TEST_ROOT/old-override.err"; then
+    echo "an explicit PYTHON older than 3.10 must not fall back to python3" >&2
+    exit 1
+fi
+grep -qF "PYTHON=$OVERRIDE_DIR/old-python is 3.9.6" "$TEST_ROOT/old-override.err"
+[ ! -s "$TEST_ROOT/old-override.out" ]
+
+# With only macOS's 3.9 python3, the installed helper wrappers stop with a clear
+# message before Python runs, and PYTHON points them at a supported interpreter.
+OLD_ONLY="$TEST_ROOT/old-only"
+mkdir -p "$OLD_ONLY/bin"
+make_versioned "$OLD_ONLY/bin/python3" 3.9.6 1
+ln -s "$(command -v dirname)" "$OLD_ONLY/bin/dirname"
+REAL_PYTHON="$(bash -c '. "$1"; sk_python -c "import sys; print(sys.executable)"' \
+    shell "$REPO_DIR/scripts/python-runtime.sh")"
+for wrapper in collect-change-evidence.sh review-map.sh review-gate.sh; do
+    set +e
+    PATH="$OLD_ONLY/bin" "$REPO_DIR/shared/review-evidence/$wrapper" --help \
+        > "$TEST_ROOT/$wrapper.out" 2> "$TEST_ROOT/$wrapper.err"
+    STATUS=$?
+    set -e
+    [ "$STATUS" -eq 127 ]
+    grep -qF 'SK helpers require Python >= 3.10; found: python3 is 3.9.6;' "$TEST_ROOT/$wrapper.err"
+    grep -qF 'set PYTHON=/path/to/python3.10+' "$TEST_ROOT/$wrapper.err"
+    if grep -q 'Traceback' "$TEST_ROOT/$wrapper.err"; then
+        echo "$wrapper reached Python under an unsupported interpreter" >&2
+        exit 1
+    fi
+    PATH="$OLD_ONLY/bin" PYTHON="$REAL_PYTHON" \
+        "$REPO_DIR/shared/review-evidence/$wrapper" --help > "$TEST_ROOT/$wrapper.ok"
+    grep -q 'usage:' "$TEST_ROOT/$wrapper.ok"
+done
+
 echo "OK: Python runtime resolver"

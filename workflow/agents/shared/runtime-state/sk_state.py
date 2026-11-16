@@ -9,6 +9,29 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+MINIMUM_PYTHON = (3, 10)
+
+
+def _require_supported_python() -> None:
+    """Fail clearly before the runtime package hits a 3.10-only construct."""
+    version: tuple[int, ...] = tuple(sys.version_info[:3])
+    if version >= MINIMUM_PYTHON:
+        return
+    found = ".".join(str(part) for part in version)
+    message = (
+        f"sk_state.py requires Python >= 3.10, but {sys.executable or 'this interpreter'} "
+        f"is {found}. Re-run it with a 3.10+ interpreter: set PYTHON=/path/to/python3.10+ "
+        'and run "$PYTHON" sk_state.py, or try `python` or `py -3` '
+        "(macOS /usr/bin/python3 is 3.9)."
+    )
+    if __name__ == "__main__":
+        print(f"ERROR: {message}", file=sys.stderr)
+        raise SystemExit(2)
+    raise ImportError(message)
+
+
+_require_supported_python()
+
 
 def _module_origin(module: ModuleType) -> Path | None:
     origin = getattr(getattr(module, "__spec__", None), "origin", None)

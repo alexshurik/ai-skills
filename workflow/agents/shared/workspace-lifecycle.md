@@ -31,6 +31,35 @@ of `dev` to `main` does not require keeping the feature worktree. If the user
 requested both targets, finish both before cleanup. Do not infer success from a
 branch name, PR closure, or the mere existence of `dev`/`main`.
 
+## Run-start baseline for dirty repositories
+
+At Setup, check each repository the run will edit in place. If it already has
+staged, unstaged, or untracked paths, record their hashes before the run writes
+anything there:
+
+```text
+~/.claude/agents/review-evidence/collect-change-evidence.sh --repo <repo> \
+  --base HEAD --format json --output <runtime-dir>/run-start/<repo-id>-dirty-baseline.json
+```
+
+(`shared/review-evidence/collect-change-evidence.sh` from the skills repo.) With
+`--base HEAD`, the evidence lists exactly the pre-existing dirty paths, each with
+its `current_sha256`. The runtime directory lives under the Git directory, so
+writing the capture does not dirty the tree. Register the file with `record-artifact`
+(kind `run-start-baseline`) while Setup is current, so its digest is in the journal
+before any implementation event, and name it in `workspace.md`. For a clean
+repository, record `run-start baseline: clean` in `workspace.md` instead. A fresh
+worktree starts clean; dirty paths in the checkout it was cut from are outside the
+run.
+
+`preserved_baseline` identity is provable only from this capture. Copy every
+`preserved_baseline_hashes` value in a review policy from the run-start
+`current_sha256` of the same path, never from the snapshot under review.
+`review-map.sh build` then rejects a preserved path whose bytes changed after run
+start. A dirty path without a run-start hash cannot be classified
+`preserved_baseline`: review it as `reviewable`, or report its baseline identity as
+unproven.
+
 ## Verify before removal
 
 For each repository independently:

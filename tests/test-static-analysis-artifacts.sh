@@ -40,7 +40,17 @@ EOF
 cat > "$FIXTURE_DIR/bin/lizard" <<'EOF'
 #!/bin/sh
 if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi
-echo "!!!! Warnings (cyclomatic_complexity > 15) !!!!"
+cat <<'OUT'
+!!!! Warnings (cyclomatic_complexity > 15 or length > 1000 or nloc > 1000000 or parameter_count > 100) !!!!
+================================================
+  NLOC    CCN   token  PARAM  length  location
+------------------------------------------------
+      36     18    127      1      36 hot@1-36@src/hot.py
+==========================================================================================
+Total nloc   Avg.NLOC  AvgCCN  Avg.token   Fun Cnt  Warning cnt   Fun Rt   nloc Rt
+------------------------------------------------------------------------------------------
+        38      19.0     9.5       67.0        2            1      0.50    0.95
+OUT
 exit 0
 EOF
 cat > "$FIXTURE_DIR/bin/radon" <<'EOF'
@@ -64,6 +74,115 @@ grep -q 'SUMMARY: 4 OK · 4 FINDINGS · 0 UNVERIFIED' "$FIXTURE_DIR/findings-sum
 if "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" --summary-only . \
     > /dev/null 2>&1; then
   echo "summary-only without artifacts unexpectedly succeeded" >&2
+  exit 1
+fi
+
+# Lizard always prints a threshold banner naming cyclomatic_complexity. A clean run
+# (banner only, zero warning rows) must be OK; any real warning row is FINDINGS.
+LIZARD_DIR="$FIXTURE_DIR/lizard-cases"
+mkdir -p "$LIZARD_DIR"
+cat > "$LIZARD_DIR/clean-current.txt" <<'EOF'
+================================================
+  NLOC    CCN   token  PARAM  length  location
+------------------------------------------------
+       2      1      7      1       2 ok@1-2@clean.py
+1 file analyzed.
+==============================================================
+NLOC    Avg.NLOC  AvgCCN  Avg.token  function_cnt    file
+--------------------------------------------------------------
+      2       2.0     1.0        7.0         1     clean.py
+
+===============================================================================================================
+No thresholds exceeded (cyclomatic_complexity > 15 or length > 1000 or nloc > 1000000 or parameter_count > 100)
+==========================================================================================
+Total nloc   Avg.NLOC  AvgCCN  Avg.token   Fun Cnt  Warning cnt   Fun Rt   nloc Rt
+------------------------------------------------------------------------------------------
+         2       2.0     1.0        7.0        1            0      0.00    0.00
+EOF
+cat > "$LIZARD_DIR/clean-legacy-banner.txt" <<'EOF'
+================================================
+  NLOC    CCN   token  PARAM  length  location
+------------------------------------------------
+       2      1      7      1       2 ok@1-2@clean.py
+1 file analyzed.
+===========================================================================================================
+!!!! Warnings (cyclomatic_complexity > 15 or length > 1000 or parameter_count > 100) !!!!
+================================================
+  NLOC    CCN   token  PARAM  length  location
+------------------------------------------------
+==========================================================================================
+Total nloc   Avg.NLOC  AvgCCN  Avg.token   Fun Cnt  Warning cnt   Fun Rt   nloc Rt
+------------------------------------------------------------------------------------------
+         2       2.0     1.0        7.0        1            0      0.00    0.00
+EOF
+printf '%s\n' \
+  'src/hot.py:1: warning: hot has 36 NLOC, 18 CCN, 127 token, 1 PARAM, 36 length, 0 ND' \
+  > "$LIZARD_DIR/warning-line.txt"
+
+LIZARD_PROJECT="$FIXTURE_DIR/lizard-project"
+mkdir -p "$LIZARD_PROJECT/bin"
+assert_lizard_status() {
+  local fixture="$1" expected="$2"
+  printf '%s\n' \
+    '#!/bin/sh' \
+    'if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi' \
+    "cat '$LIZARD_DIR/$fixture'" \
+    'exit 0' > "$LIZARD_PROJECT/bin/lizard"
+  chmod +x "$LIZARD_PROJECT/bin/lizard"
+  (
+    cd "$LIZARD_PROJECT"
+    PATH="$LIZARD_PROJECT/bin:$FIXTURE_DIR/bin:$PATH" RUN="" \
+      "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" \
+      --artifact-dir "$LIZARD_PROJECT/logs-$fixture" --summary-only . \
+      > "$LIZARD_PROJECT/summary-$fixture"
+  )
+  if ! grep -qE "^cyclomatic\+length \| lizard \|.*\| 0 \| $expected \|" \
+      "$LIZARD_PROJECT/summary-$fixture"; then
+    echo "lizard fixture $fixture was not classified $expected" >&2
+    grep -E '^cyclomatic\+length' "$LIZARD_PROJECT/summary-$fixture" >&2 || true
+    exit 1
+  fi
+}
+assert_lizard_status clean-current.txt 'OK'
+assert_lizard_status clean-legacy-banner.txt 'OK'
+assert_lizard_status warning-line.txt 'FINDINGS \(reported with exit 0\)'
+
+# --probe-only resolves the same battery for the detected stack, runs no analyzer,
+# names every missing tool, and cannot be mistaken for review provenance.
+PROBE_PROJECT="$FIXTURE_DIR/probe-project"
+mkdir -p "$PROBE_PROJECT/probe-bin" "$PROBE_PROJECT/sysbin"
+printf '[project]\nname = "probe"\n' > "$PROBE_PROJECT/pyproject.toml"
+for cmd in bash sh env grep sed awk tr head cat mkdir dirname touch; do
+  ln -s "$(command -v "$cmd")" "$PROBE_PROJECT/sysbin/$cmd"
+done
+for tool in jscpd lizard radon vulture; do
+  printf '%s\n' \
+    '#!/bin/sh' \
+    'if [ "$1" = "--version" ]; then echo "fake 1.0"; exit 0; fi' \
+    "touch '$PROBE_PROJECT/analyzer-ran'" \
+    'exit 0' > "$PROBE_PROJECT/probe-bin/$tool"
+  chmod +x "$PROBE_PROJECT/probe-bin/$tool"
+done
+(
+  cd "$PROBE_PROJECT"
+  PATH="$PROBE_PROJECT/probe-bin:$PROBE_PROJECT/sysbin" \
+    "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" --probe-only \
+    > "$PROBE_PROJECT/probe.txt"
+)
+test ! -e "$PROBE_PROJECT/analyzer-ran"
+grep -q 'STATIC ANALYSIS PROBE (no analyzer runs)' "$PROBE_PROJECT/probe.txt"
+grep -q '^cyclomatic+length | lizard | gate | <global PATH> | AVAILABLE$' "$PROBE_PROJECT/probe.txt"
+grep -q '^SAST | semgrep | gate | — | MISSING$' "$PROBE_PROJECT/probe.txt"
+grep -q '^py-SAST | bandit | gate | — | MISSING$' "$PROBE_PROJECT/probe.txt"
+grep -q '^PROBE: 5 AVAILABLE · 3 MISSING$' "$PROBE_PROJECT/probe.txt"
+grep -q '^MISSING TOOLS: semgrep complexipy bandit$' "$PROBE_PROJECT/probe.txt"
+if grep -q 'STATIC ANALYSIS PROVENANCE' "$PROBE_PROJECT/probe.txt"; then
+  echo "probe output must not look like review provenance" >&2
+  exit 1
+fi
+if "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" --probe-only . \
+    > /dev/null 2>&1; then
+  echo "probe-only with analysis targets unexpectedly succeeded" >&2
   exit 1
 fi
 

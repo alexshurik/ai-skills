@@ -203,7 +203,12 @@
         "decided_by": { "type": "string", "minLength": 1 },
         "decision_source": { "enum": ["user", "policy", "repository"] },
         "decision_event": { "type": "integer", "minimum": 0 },
-        "decision_reason": { "type": "string", "minLength": 1 }
+        "decision_reason": { "type": "string", "minLength": 1 },
+        "prior_entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/superseded_gate" }
+        }
       },
       "allOf": [
         {
@@ -212,6 +217,10 @@
           "else": { "required": ["decided_by", "decision_source", "decision_event"] }
         }
       ]
+    },
+    "superseded_gate": {
+      "allOf": [{ "$ref": "#/$defs/gate" }],
+      "not": { "required": ["prior_entries"] }
     },
     "check": {
       "type": "object",

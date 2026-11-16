@@ -182,8 +182,8 @@ The global root owns the journal/projection; only the named nested-review lease 
 record leaf attempts through the same helper. Gates belong to stages, attempts belong
 to logical tasks, and transport-only wait timeouts do not produce events.
 `sk-team-status` validates the projection and can show every agent attempt without
-reading host transcripts. Python 3.10+ is required; resolve `python3`, `python`, or
-`py -3` before invoking the helper. See the shared `runtime-state-policy.md` for the
+reading host transcripts. Python 3.10+ is required; use `$PYTHON` when set, else
+resolve `python3`, `python`, or `py -3` before invoking the helper. See the shared `runtime-state-policy.md` for the
 authoritative command, lease, recovery, and migration protocol.
 
 `DEFERRED.md` stages `candidate | deferred | rejected | promoted` proposals; it is

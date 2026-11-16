@@ -260,7 +260,11 @@ def validate_event_data(version: int, event_type: str, value: object) -> JsonObj
 
     join = data.get("join")
     if event_type == "task.created" and ("members" in data) != ("purpose" in data):
-        raise StateError("batched task creation requires both purpose and members")
+        raise StateError(
+            "batched task creation requires both purpose and members: purpose labels a "
+            "batch of already-dispatched children (CLI: --purpose plus one --member-json "
+            "per child); for a single task omit --purpose and record start-attempt"
+        )
     if join == "detached" and "detach_reason" not in data:
         raise StateError("detached waits require detach_reason")
     if join == "foreground" and "detach_reason" in data:

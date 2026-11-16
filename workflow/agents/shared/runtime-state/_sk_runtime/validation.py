@@ -127,7 +127,7 @@ def validate_budgets(value: object) -> None:
         require_integer(budgets[field], f"charter.budgets.{field}", minimum=0)
 
 
-def validate_gate(value: object, label: str, entries: int) -> None:
+def validate_gate(value: object, label: str, entries: int, *, superseded: bool = False) -> None:
     gate = require_object(value, label)
     required = {"status", "reason", "kind", "reason_code", "entry", "requested_event"}
     allowed = required | {
@@ -136,6 +136,8 @@ def validate_gate(value: object, label: str, entries: int) -> None:
         "decision_event",
         "decision_reason",
     }
+    if not superseded:
+        allowed.add("prior_entries")
     require_fields(gate, required, allowed, label)
     status = require_identifier(gate["status"], f"{label}.status")
     if status not in {"pending", "approved", "rejected", "waived"}:
@@ -165,6 +167,20 @@ def validate_gate(value: object, label: str, entries: int) -> None:
         require_integer(gate["decision_event"], f"{label}.decision_event")
     if "decision_reason" in gate:
         require_string(gate["decision_reason"], f"{label}.decision_reason")
+    if "prior_entries" in gate:
+        validate_prior_gate_entries(gate["prior_entries"], f"{label}.prior_entries", gate["entry"])
+
+
+def validate_prior_gate_entries(value: object, label: str, current_entry: int) -> None:
+    if not isinstance(value, list) or not value:
+        raise StateError(f"{label} must be a non-empty array")
+    previous_entry = 0
+    for index, record in enumerate(value, start=1):
+        record_label = f"{label}[{index}]"
+        validate_gate(record, record_label, current_entry - 1, superseded=True)
+        if record["entry"] <= previous_entry:
+            raise StateError(f"{record_label} is not in increasing entry order")
+        previous_entry = record["entry"]
 
 
 def validate_check(value: object, label: str, entries: int) -> None:

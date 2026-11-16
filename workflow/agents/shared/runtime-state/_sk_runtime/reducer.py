@@ -215,8 +215,7 @@ def reduce_gate_requested(state: JsonObject, event: JsonObject) -> None:
     stage = require_active_stage(state, data["stage"])
     if state["control"]["kind"] != "ready":
         raise StateError("a gate may be requested only while control is ready")
-    if data["gate"] in stage["gates"]:
-        raise StateError(f"gate {data['stage']}/{data['gate']} already exists")
+    prior_entries = superseded_gate_records(stage, data)
     kind = data.get("kind", "authority_decision")
     authorization = state["charter"]["authorization"]
     auto_decide = kind == "ceremony" and authorization in {"checkpoints", "yolo"}
@@ -237,7 +236,28 @@ def reduce_gate_requested(state: JsonObject, event: JsonObject) -> None:
                 "decision_reason": "ceremony gate auto-approved by run authorization",
             }
         )
+    if prior_entries:
+        gate["prior_entries"] = prior_entries
     stage["gates"][data["gate"]] = gate
+
+
+def superseded_gate_records(stage: JsonObject, data: JsonObject) -> list[JsonObject]:
+    """Gates are unique per name and stage entry; a re-entered stage may reuse a name.
+
+    The earlier entry's record is kept, oldest first, under the new gate's
+    ``prior_entries`` so the projection still shows every decision.
+    """
+    existing = stage["gates"].get(data["gate"])
+    if existing is None:
+        return []
+    if existing["entry"] == stage["entries"]:
+        raise StateError(
+            f"gate {data['stage']}/{data['gate']} already exists in stage entry "
+            f"{stage['entries']}; use a distinct gate name within one entry"
+        )
+    earlier = [dict(record) for record in existing.get("prior_entries", [])]
+    latest = {field: value for field, value in existing.items() if field != "prior_entries"}
+    return [*earlier, latest]
 
 
 def reduce_gate_decided(state: JsonObject, event: JsonObject) -> None:

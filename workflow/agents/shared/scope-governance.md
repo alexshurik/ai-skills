@@ -207,8 +207,9 @@ reviewers must read from evidence produced by the workflow itself:
   normative proposal/design/tasks/ADRs. Core lens manifests must cover this class,
   and only this class enters the source fingerprint.
 - `preserved_baseline`: pre-work dirty paths intentionally preserved and proven
-  byte-identical to their recorded initial hashes. Account for them; do not rereview
-  them unless the change touches or relies on them.
+  byte-identical to their recorded initial hashes, which come from the run-start
+  capture in `workspace-lifecycle.md`, never from snapshot time. Account for them;
+  do not rereview them unless the change touches or relies on them.
 - `workflow_output`: review, triage, deferred-decision, and retrospective artifacts
   such as `CODE_REVIEW.md`. Account for them, but never make a review consume the
   report it is producing.

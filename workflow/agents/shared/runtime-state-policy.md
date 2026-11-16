@@ -26,11 +26,15 @@ Use `runtime-state/sk_state.py` from this shared-policy directory. In the source
 repository it is `workflow/agents/shared/runtime-state/sk_state.py`. The helper
 requires Python 3.10 or newer and has no third-party runtime dependencies.
 
-Resolve the interpreter once before the first helper command. Try `python3`, then
-`python`, then the Windows launcher `py -3`; accept the first candidate for which
-`import sys; sys.version_info >= (3, 10)` succeeds. Use that exact argv prefix as
-`<python>` for the rest of the turn. If none succeeds, block with a Python 3.10+
-installation requirement instead of editing the ledger manually.
+Resolve the interpreter once before the first helper command. If the `PYTHON`
+environment variable is set, use it and nothing else; it must be 3.10 or newer.
+Otherwise try `python3`, then `python`, then the Windows launcher `py -3`; accept
+the first candidate for which `import sys; sys.version_info >= (3, 10)` succeeds
+(macOS ships `python3` 3.9, so do not assume `python3` qualifies). Use that exact
+argv prefix as `<python>` for the rest of the turn. The helper itself exits with a
+clear error under an older interpreter, and the shell helpers in `review-evidence/`
+apply the same resolution. If none succeeds, block with a Python 3.10+ installation
+requirement instead of editing the ledger manually.
 
 Never edit `events.jsonl` or `state.json` directly. The global root owns workflow
 state and invokes the helper. Only Full review may grant one named review
@@ -89,9 +93,15 @@ preserves an incomplete JSONL tail and rebuilds the projection.
   event materializes all successfully dispatched one-shot members with their host
   IDs and input fingerprints. Use it for Quick implementation/review batches and
   Full review leaf aggregation instead of a task/attempt event pair per leaf.
+  `purpose` is batch-only: `create-task --purpose` requires at least one
+  `--member-json`, and members require `--purpose`. A single long-lived task omits
+  `--purpose` and records its dispatch with `start-attempt`.
 - Gates, checks, and attempts record the stage entry that produced them. A redo
-  increments the entry; use a new gate ID, and only current-entry gates constrain
-  current stage completion.
+  increments the entry, and only current-entry gates constrain current stage
+  completion. A gate is unique per stage, name, and entry: a re-entered stage may
+  request the same gate name again (for example `execution-checkpoint` on planning
+  entry 2), and the earlier entry's record is kept under the new gate's
+  `prior_entries`. Within one entry, every gate name must be distinct.
 - `control` is a discriminated union: `ready`, `waiting_agents`, `waiting_user`,
   `blocked`, or `complete`.
 - `artifacts` stores paths and SHA-256 fingerprints, never full artifact contents.

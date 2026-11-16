@@ -68,6 +68,22 @@ Elevated work adds orthogonal boundary, failure-path, criterion-specific, or man
 evidence; its risk label alone never invalidates an unchanged exact-input receipt.
 This rule changes test execution, not criteria verification.
 
+## Probe at workflow Setup
+
+A full workflow probes the same battery when the charter is chosen, not at the
+approval gate:
+
+```text
+shared/static-analysis/run-static-analysis.sh --probe-only
+```
+
+Run it from each repository root. It runs no analyzer. It resolves each tool for
+the detected stack through the same runner and PATH probe as a real run, prints a
+`STATIC ANALYSIS PROBE` table and a `MISSING TOOLS` line, and is never valid
+review provenance. Settle install-or-proceed for every missing tool with the user
+then, because each one becomes UNVERIFIED in review and blocks APPROVED. Record the
+decision in the run's `workspace.md`; Code Review reuses it instead of asking again.
+
 ## Run deep analysis
 
 Run the canonical battery once before lens dispatch:
@@ -86,7 +102,8 @@ ANALYSIS PROVENANCE` table, `SUMMARY`, and log paths in the review provenance
 artifact. Give lenses those artifact paths, not raw scanner output.
 
 The canonical runner classifies semantic output as well as exit status. In
-particular, jscpd clone reports, Lizard warning sections, Radon B-or-worse
+particular, jscpd clone reports, Lizard warning rows (not its always-printed
+threshold banner), Radon B-or-worse
 complexity, Radon C-or-worse maintainability, and Vulture unused-code rows are
 `FINDINGS` even if the tool exits zero. Do not rewrite those rows as OK.
 
@@ -131,8 +148,10 @@ Use configured project tools first. Probe optional tools without installing:
 | frontend quality | eslint, stylelint, accessibility/performance/bundle gates |
 
 Only propose tools relevant to the detected stack. In full review, ask before
-installing. In quick mode or nested execution, continue with available tools and
-report missing dimensions; never install automatically.
+installing, unless the workflow's Setup probe already recorded the user's decision.
+Then apply that decision and do not ask again. In quick mode or nested execution,
+continue with available tools and report missing dimensions; never install
+automatically.
 
 ## Status semantics
 

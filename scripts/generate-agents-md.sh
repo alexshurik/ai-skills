@@ -83,7 +83,7 @@ Canonical policies: `workflow/agents/shared/workflow-charter-policy.md`,
 `workflow/agents/shared/handoff-protocol.md`, and
 `workflow/agents/shared/scope-governance.md`. Runtime transitions and migration are
 defined by `workflow/agents/shared/runtime-state-policy.md`.
-The runtime helper requires Python 3.10+ and resolves `python3`, `python`, or `py -3`.
+The runtime helper requires Python 3.10+ and resolves `$PYTHON`, then `python3`, `python`, or `py -3`.
 
 ORCHESTRATION
 

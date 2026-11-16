@@ -88,17 +88,37 @@ blocking the task; setup requires acceptance and is not implied by the charter.
 2. When no parent `sk-team` charter exists, resolve one compact charter first with
    route fixed to Full; recommend Checkpoints, Auto workspace, Local finish, and
    Standard assurance unless the request implies otherwise.
-3. Inspect current git status and preserve unrelated work.
-4. Resolve the workspace once. For a worktree, show/record branch
+3. Probe the static-analysis battery from each repository root the run will
+   review. Run `~/.claude/agents/static-analysis/run-static-analysis.sh --probe-only`
+   (or `shared/static-analysis/run-static-analysis.sh` from the skills repo). It
+   runs no analyzer. It reports which tools the review battery would use for the
+   detected stack (jscpd, lizard, and semgrep; complexipy, radon, vulture, and
+   bandit for Python; the JS/Go/Rust tools for those stacks) and lists every
+   MISSING tool. A missing tool becomes an UNVERIFIED row at Code Review, and
+   `review-gate.sh` rejects APPROVED on any UNVERIFIED row. So settle the analyzer
+   install decision with the user now, in the same compact exchange as the charter
+   (or right after a parent `sk-team` charter): install the named tools (the user
+   approves the exact commands, preferring project dev dependencies), or proceed
+   knowing approval stays blocked until they are installed. No authorization mode,
+   YOLO included, installs tools or decides this question by policy.
+4. Inspect current git status and preserve unrelated work. If a repository the run
+   will edit in place starts with staged, unstaged, or untracked paths, record its
+   run-start hashes before the run writes anything there. Follow
+   `workspace-lifecycle.md` § Run-start baseline for dirty repositories.
+   `preserved_baseline` identity is provable only against these run-start hashes,
+   never against hashes taken at review-snapshot time.
+5. Resolve the workspace once. For a worktree, show/record branch
    `feature/<name>` and sibling path `../<name>-worktree`; for the current checkout,
    record its existing branch/path. Ask only when the user selected an explicit
    workspace choice that is still ambiguous.
-5. Create `openspec/changes/<name>/` in the resolved workspace.
-6. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
+6. Create `openspec/changes/<name>/` in the resolved workspace.
+7. Resolve `git rev-parse --git-path sk-workflow`, create its `<name>/` runtime
    directory, and run the shared runtime-state helper `init --workflow sk-team`
    with the full charter, pinned skill/policy revision, and repository worktree/
    branch/base identities. Enter Setup as the first stage. Never hand-edit
-   `state.json` or `events.jsonl`.
+   `state.json` or `events.jsonl`. Record the analyzer probe and its install
+   decision in `<runtime-dir>/workspace.md`, and register each run-start baseline
+   with `record-artifact` before leaving Setup.
 
 Record run-owned worktrees and temporary resources under `workspace-lifecycle.md`.
 The Merge receipt includes normal post-merge cleanup. Do not infer permission for

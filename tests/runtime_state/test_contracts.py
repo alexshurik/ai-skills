@@ -245,6 +245,32 @@ class EventContractTests(RuntimeCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("semantic event journal", completed.stdout.lower())
 
+    def run_facade_as_python_3_9(self, run_name: str) -> subprocess.CompletedProcess[str]:
+        simulate = (
+            "import runpy, sys; sys.version_info = (3, 9, 6, 'final', 0); "
+            "runpy.run_path(sys.argv[1], run_name=sys.argv[2])"
+        )
+        return subprocess.run(
+            [sys.executable, "-c", simulate, str(TOOL_PATH), run_name, "--help"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+
+    def test_facade_rejects_unsupported_python_before_loading_runtime(self) -> None:
+        executed = self.run_facade_as_python_3_9("__main__")
+        self.assertEqual(executed.returncode, 2, executed.stderr)
+        self.assertEqual(executed.stdout, "")
+        self.assertIn("ERROR: sk_state.py requires Python >= 3.10", executed.stderr)
+        self.assertIn("is 3.9.6", executed.stderr)
+        self.assertIn("PYTHON=/path/to/python3.10+", executed.stderr)
+        self.assertNotIn("Traceback", executed.stderr)
+
+        imported = self.run_facade_as_python_3_9("sk_state")
+        self.assertNotEqual(imported.returncode, 0)
+        self.assertIn("ImportError: sk_state.py requires Python >= 3.10", imported.stderr)
+
     def load_facade(self, path: Path, name: str) -> ModuleType:
         spec = importlib.util.spec_from_file_location(name, path)
         if spec is None or spec.loader is None:
