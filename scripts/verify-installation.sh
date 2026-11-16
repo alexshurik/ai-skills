@@ -9,6 +9,7 @@ if [ "$#" -ne 2 ]; then
 fi
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-exec python3 "$REPO_DIR/scripts/skills_tool.py" verify \
+. "$REPO_DIR/scripts/python-runtime.sh"
+sk_python "$REPO_DIR/scripts/skills_tool.py" verify \
     --platform "$1" \
     --target "$2"

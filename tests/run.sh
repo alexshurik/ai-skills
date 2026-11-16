@@ -6,10 +6,18 @@ export PYTHONDONTWRITEBYTECODE=1
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
+# check-python.sh requires uv and syncs the locked dev environment.
+"$REPO_DIR/scripts/check-python.sh"
+
+# Every Python step and helper below uses that environment's interpreter (the
+# runtime tests import jsonschema), whatever python3 is first on PATH. An
+# explicit PYTHON still wins.
+if [ -z "${PYTHON:-}" ]; then
+    PYTHON="$(cd "$REPO_DIR" && uv run --frozen python -c 'import sys; print(sys.executable)')"
+    export PYTHON
+fi
 . "$REPO_DIR/scripts/python-runtime.sh"
 sk_require_python
-
-"$REPO_DIR/scripts/check-python.sh"
 
 "$REPO_DIR/scripts/validate-skills.sh"
 "$REPO_DIR/scripts/generate-agents-md.sh" --check
@@ -41,7 +49,7 @@ sk_python "$REPO_DIR/tests/test-render-symlinks.py"
 sk_python "$REPO_DIR/tests/test-receipt-boundary.py"
 sk_python "$REPO_DIR/tests/test-migration-atomic.py"
 sk_python "$REPO_DIR/tests/test-install-atomic.py"
-"$REPO_DIR/tests/test-install-rollback.py"
+sk_python "$REPO_DIR/tests/test-install-rollback.py"
 "$REPO_DIR/tests/test-installers.sh"
 "$REPO_DIR/tests/test-python-runtime.sh"
 

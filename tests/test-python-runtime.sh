@@ -6,6 +6,13 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
+# A real interpreter for the end-to-end wrapper checks, honouring the caller's
+# PYTHON (tests/run.sh exports the locked environment's). The resolver cases
+# below then need PYTHON unset so that only their stubs are on offer.
+REAL_PYTHON="$(bash -c '. "$1"; sk_python -c "import sys; print(sys.executable)"' \
+    shell "$REPO_DIR/scripts/python-runtime.sh")"
+unset PYTHON
+
 make_failure() {
     local target="$1"
     printf '%s\n' '#!/bin/sh' 'exit 1' > "$target"
@@ -78,8 +85,6 @@ OLD_ONLY="$TEST_ROOT/old-only"
 mkdir -p "$OLD_ONLY/bin"
 make_versioned "$OLD_ONLY/bin/python3" 3.9.6 1
 ln -s "$(command -v dirname)" "$OLD_ONLY/bin/dirname"
-REAL_PYTHON="$(bash -c '. "$1"; sk_python -c "import sys; print(sys.executable)"' \
-    shell "$REPO_DIR/scripts/python-runtime.sh")"
 for wrapper in collect-change-evidence.sh review-map.sh review-gate.sh; do
     set +e
     PATH="$OLD_ONLY/bin" "$REPO_DIR/shared/review-evidence/$wrapper" --help \
@@ -97,5 +102,22 @@ for wrapper in collect-change-evidence.sh review-map.sh review-gate.sh; do
         "$REPO_DIR/shared/review-evidence/$wrapper" --help > "$TEST_ROOT/$wrapper.ok"
     grep -q 'usage:' "$TEST_ROOT/$wrapper.ok"
 done
+
+# Repository shell scripts reach Python only through the resolver. A bare python3
+# call, or running a .py file through its shebang, picks macOS's 3.9 python3.
+BYPASS="$(cd "$REPO_DIR" && {
+    grep -rnE '(^[[:space:]]*|\$\(|[;&|][[:space:]]*|(if|then|do|exec)[[:space:]]+)python3?[[:space:]]' \
+        --include='*.sh' . || true
+    grep -rnE '^[[:space:]]*(exec[[:space:]]+)?"?\$[A-Za-z_]+[^[:space:]"]*\.py"?([[:space:]]|$)' \
+        --include='*.sh' . || true
+} | grep -v '^\./\.venv/' \
+  | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' \
+  | grep -v '^\./shared/review-evidence/python-runtime\.sh:' \
+  | grep -v '^\./tests/test-python-runtime\.sh:' || true)"
+if [ -n "$BYPASS" ]; then
+    echo "shell scripts bypass the Python resolver:" >&2
+    echo "$BYPASS" >&2
+    exit 1
+fi
 
 echo "OK: Python runtime resolver"

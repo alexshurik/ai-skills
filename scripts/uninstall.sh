@@ -4,11 +4,12 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 CODEX_DIR="${CODEX_SKILLS_DIR:-$HOME/.agents/skills}"
 CLAUDE_DIR="${CLAUDE_SKILLS_ROOT:-$HOME/.claude}"
 KIMI_DIR="${KIMI_AGENTS_ROOT:-$HOME/.kimi-code}"
 
-python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
+sk_python "$REPO_DIR/scripts/skills_tool.py" uninstall \
     --missing-ok \
     --target codex "$CODEX_DIR" \
     --target claude "$CLAUDE_DIR" \

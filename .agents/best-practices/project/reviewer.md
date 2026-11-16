@@ -12,6 +12,8 @@ Review only the normative IDs from `coder.md`.
   scopes in `pyproject.toml`.
 - [ENF-FUNCTION-LENGTH] Verify runtime production and test functions remain at or
   below 70 lines with `scripts/check-python-structure.py`.
+- [ENF-PYTHON-RESOLVER] Verify shell scripts call Python only through the resolver;
+  `tests/test-python-runtime.sh` enforces it.
 
 Report Observed/Legacy evidence separately; it is not a violation unless a normative
 rule prohibits the pattern.

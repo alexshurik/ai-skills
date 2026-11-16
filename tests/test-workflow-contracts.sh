@@ -3,8 +3,9 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 
-python3 - "$REPO_DIR" <<'PY'
+sk_python - "$REPO_DIR" <<'PY'
 import json
 import pathlib
 import re

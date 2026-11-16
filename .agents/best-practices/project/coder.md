@@ -29,6 +29,10 @@
   component. Verify with `./scripts/check-python.sh`.
 - [ENF-FUNCTION-LENGTH] Keep production and runtime-state test functions at or below
   70 physical lines. Verify with `scripts/check-python-structure.py`.
+- [ENF-PYTHON-RESOLVER] Shell scripts reach Python only through `sk_python` from
+  `scripts/python-runtime.sh` (installed helpers: `shared/review-evidence/python-runtime.sh`),
+  never through a bare `python3` or a `.py` shebang; macOS ships `python3` 3.9.
+  Verify with `tests/test-python-runtime.sh`.
 
 ## Conflicts and escalation
 

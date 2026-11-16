@@ -9,6 +9,7 @@ if [ "$#" -ne 2 ]; then
 fi
 
 EVAL_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$EVAL_DIR/../../scripts/python-runtime.sh"
 SKILLS_DIR="$(cd "$EVAL_DIR/../.." && pwd)"
 CONFIG="$EVAL_DIR/eval.json"
 OUTPUT_DIR="$1"
@@ -29,13 +30,13 @@ if [ -e "$OUTPUT_DIR" ] && [ -n "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit)"
     exit 2
 fi
 command -v codex >/dev/null
-python3 "$EVAL_DIR/validate.py" "$CONFIG"
+sk_python "$EVAL_DIR/validate.py" "$CONFIG"
 
 mkdir -p "$FIXTURES_DIR" "$RESPONSES_DIR"
 
 copy_public_inputs() {
     local fixture="$1"
-    python3 - "$CONFIG" <<'PY' |
+    sk_python - "$CONFIG" <<'PY' |
 import json
 import sys
 
@@ -50,7 +51,7 @@ PY
     done
 
     cp "$EVAL_DIR/response.schema.json" "$fixture/response.schema.json"
-    python3 - "$CONFIG" "$fixture/policy-inputs.txt" <<'PY'
+    sk_python - "$CONFIG" "$fixture/policy-inputs.txt" <<'PY'
 import json
 import pathlib
 import sys
@@ -79,7 +80,7 @@ run_case() {
     git -C "$fixture" config user.name "Workflow Routing Eval"
     git -C "$fixture" add .
     git -C "$fixture" commit -qm "isolated public policy fixture"
-    scenario="$(python3 - "$encoded_input" <<'PY'
+    scenario="$(sk_python - "$encoded_input" <<'PY'
 import base64
 import sys
 
@@ -105,7 +106,7 @@ PY
         -
 }
 
-python3 - "$EVAL_DIR/cases.json" <<'PY' |
+sk_python - "$EVAL_DIR/cases.json" <<'PY' |
 import base64
 import json
 import sys
@@ -127,7 +128,7 @@ if [ -n "$(git -C "$SKILLS_DIR" status --porcelain)" ]; then
 fi
 CODEX_VERSION="$(codex --version)"
 
-python3 - \
+sk_python - \
     "$EVAL_DIR/cases.json" \
     "$RESPONSES_DIR" \
     "$OUTPUT_DIR/run-manifest.json" \
@@ -179,4 +180,4 @@ PY
 
 echo "Fresh-context responses: $RESPONSES_DIR"
 echo "Run provenance: $OUTPUT_DIR/run-manifest.json"
-echo "Score with: python3 $EVAL_DIR/validate.py $CONFIG --responses $RESPONSES_DIR"
+echo "Score with: ${SK_PYTHON_CMD[*]} $EVAL_DIR/validate.py $CONFIG --responses $RESPONSES_DIR"

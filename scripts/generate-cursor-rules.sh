@@ -4,6 +4,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 OUTPUT="$REPO_DIR/adapters/cursor/.cursor/rules/sk-skills.mdc"
 CHECK_ONLY=false
 CANDIDATE=""
@@ -41,7 +42,7 @@ mkdir -p "$(dirname "$TARGET")"
     echo "Native skills are installed under .cursor/skills; this rule keeps the"
     echo "manifest-owned catalog and internal role map visible as project context."
     echo ""
-    python3 "$REPO_DIR/scripts/manifest_inventory.py" all \
+    sk_python "$REPO_DIR/scripts/manifest_inventory.py" all \
         --format cursor-document
 } > "$TARGET"
 

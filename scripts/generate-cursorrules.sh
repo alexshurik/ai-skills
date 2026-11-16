@@ -4,6 +4,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 OUTPUT="$REPO_DIR/adapters/cursor/.cursorrules"
 CHECK_ONLY=false
 
@@ -32,7 +33,7 @@ cat > "$OUTPUT" << 'HEADER'
 
 HEADER
 
-python3 "$REPO_DIR/scripts/manifest_inventory.py" all \
+sk_python "$REPO_DIR/scripts/manifest_inventory.py" all \
     --format cursor-document >> "$OUTPUT"
 
 if [ "$CHECK_ONLY" = true ]; then

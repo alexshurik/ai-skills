@@ -3,10 +3,11 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 EVAL_DIR="$REPO_DIR/evals/webapp-auth-shell"
 CONFIG="$EVAL_DIR/eval.json"
 
-python3 - "$CONFIG" <<'PY'
+sk_python - "$CONFIG" <<'PY'
 import json
 import pathlib
 import sys
@@ -36,7 +37,7 @@ bash -n \
     "$EVAL_DIR/run-codex-eval.sh" \
     "$EVAL_DIR/build-historical-fixture.sh" \
     "$EVAL_DIR/cases/review-scope-baseline/build-fixture.sh"
-python3 "$REPO_DIR/evals/validate-result.py" \
+sk_python "$REPO_DIR/evals/validate-result.py" \
     "$CONFIG" \
     "$EVAL_DIR/results/2026-07-24.json" \
     --require-pass
@@ -44,7 +45,7 @@ python3 "$REPO_DIR/evals/validate-result.py" \
 TEST_ROOT="$(mktemp -d /tmp/sk-eval-fixtures.XXXXXX)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 cp -R "$EVAL_DIR/results" "$TEST_ROOT/results"
-python3 - "$TEST_ROOT/results/2026-07-24.json" "$TEST_ROOT/outside.md" <<'PY'
+sk_python - "$TEST_ROOT/results/2026-07-24.json" "$TEST_ROOT/outside.md" <<'PY'
 import hashlib
 import json
 import pathlib
@@ -58,7 +59,7 @@ result["runs"][0]["output"] = "../outside.md"
 result["runs"][0]["output_sha256"] = hashlib.sha256(outside_path.read_bytes()).hexdigest()
 result_path.write_text(json.dumps(result), encoding="utf-8")
 PY
-if python3 "$REPO_DIR/evals/validate-result.py" \
+if sk_python "$REPO_DIR/evals/validate-result.py" \
     "$CONFIG" \
     "$TEST_ROOT/results/2026-07-24.json" >/dev/null 2>&1; then
     echo "ERROR: eval validator accepted an output path escape" >&2

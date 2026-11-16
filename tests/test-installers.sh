@@ -3,6 +3,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 TEST_HOME="$(mktemp -d /tmp/sk-installers-test.XXXXXX)"
 TEST_HOME="$(cd "$TEST_HOME" && pwd -P)"
 trap 'rm -rf "$TEST_HOME"' EXIT
@@ -63,17 +64,17 @@ test -L "$SYMLINK_CONFLICT_HOME/.agents/skills/sk-team-help/SKILL.md"
 # CLI uninstall pairs each target with an explicit platform. A valid receipt
 # from another platform must not authorize deletion.
 WRONG_PLATFORM_TARGET="$TEST_HOME/wrong-platform-target"
-python3 "$REPO_DIR/scripts/skills_tool.py" install \
+sk_python "$REPO_DIR/scripts/skills_tool.py" install \
     --platform kimi \
     --target "$WRONG_PLATFORM_TARGET"
-if python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
+if sk_python "$REPO_DIR/scripts/skills_tool.py" uninstall \
     --target codex "$WRONG_PLATFORM_TARGET"; then
     echo "Expected wrong-platform uninstall refusal" >&2
     exit 1
 fi
 test -f "$WRONG_PLATFORM_TARGET/.sk-skills-install.json"
 test -f "$WRONG_PLATFORM_TARGET/skills/sk-team-help/SKILL.md"
-python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
+sk_python "$REPO_DIR/scripts/skills_tool.py" uninstall \
     --target kimi "$WRONG_PLATFORM_TARGET"
 
 # Legacy resource migration must not traverse a parent symlink and move an
@@ -265,7 +266,7 @@ test -f "$TEST_HOME/.claude/agents/unrelated.keep"
 test -f "$TEST_HOME/.kimi-code/agents/references/best-practices/unrelated.keep"
 test ! -e "$TEST_HOME/.agents/skills/sk-team-feature"
 
-python3 "$REPO_DIR/scripts/skills_tool.py" uninstall \
+sk_python "$REPO_DIR/scripts/skills_tool.py" uninstall \
     --target cursor "$CURSOR_DIR"
 test -f "$CURSOR_DIR/best-practices/unrelated.keep"
 test ! -e "$CURSOR_DIR/sk-team-feature"

@@ -9,6 +9,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 EVAL_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$EVAL_DIR/../../scripts/python-runtime.sh"
 SKILLS_DIR="$(cd "$EVAL_DIR/../.." && pwd)"
 CONFIG="$EVAL_DIR/eval.json"
 SOURCE_REPO="$1"
@@ -18,7 +19,7 @@ FIXTURES_DIR="$OUTPUT_DIR/fixtures"
 RESPONSES_DIR="$OUTPUT_DIR/responses"
 
 config_value() {
-    python3 - "$CONFIG" "$1" <<'PY'
+    sk_python - "$CONFIG" "$1" <<'PY'
 import json
 import sys
 
@@ -131,7 +132,7 @@ run_agent() {
         -
 }
 
-python3 - "$CONFIG" <<'PY' |
+sk_python - "$CONFIG" <<'PY' |
 import json
 import sys
 
@@ -151,7 +152,7 @@ if [ -n "$(git -C "$SKILLS_DIR" status --porcelain)" ]; then
 fi
 CODEX_VERSION="$(codex --version)"
 
-python3 - \
+sk_python - \
     "$CONFIG" \
     "$RESPONSES_DIR" \
     "$OUTPUT_DIR/run-manifest.json" \

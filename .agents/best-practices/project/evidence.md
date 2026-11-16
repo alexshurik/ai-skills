@@ -17,12 +17,8 @@
 
 ## Legacy or uncertain — do not copy by frequency
 
-- [LEG-PYTHON-COMMAND] Pattern: some unchanged developer/test scripts invoke
-  `python3` directly.
-  Evidence: repository search outside installed runtime/install entrypoints.
-  Conflict: the approved installed runtime resolver supports `python3`, `python`, and
-  `py -3`. Containment: new install/runtime paths use `scripts/python-runtime.sh`;
-  broader baseline conversion needs separate authority.
+- None. The former bare-`python3` script pattern was converted and is now
+  `ENF-PYTHON-RESOLVER` in `coder.md`.
 
 ## Decisions needed
 

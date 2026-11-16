@@ -3,6 +3,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 FIXTURE_DIR="$(mktemp -d /tmp/sk-evidence-test.XXXXXX)"
 FIRST_COMMIT_DIR="$(mktemp -d /tmp/sk-evidence-first.XXXXXX)"
 ESCAPE_DIR="$(mktemp -d /tmp/sk-evidence-escape.XXXXXX)"
@@ -77,7 +78,7 @@ ln -s "$ESCAPE_DIR/outside.py" "$FIXTURE_DIR/src/untracked_link.py"
     --repo "$FIXTURE_DIR" \
     --format json > "$OUTPUT"
 
-python3 - "$OUTPUT" <<'PY'
+sk_python - "$OUTPUT" <<'PY'
 import json
 import sys
 
@@ -128,7 +129,7 @@ PY
     --format json \
     --output "$ARTIFACT_OUTPUT" > "$RECEIPT_OUTPUT"
 
-python3 - "$ARTIFACT_OUTPUT" "$RECEIPT_OUTPUT" "$OUTPUT" <<'PY'
+sk_python - "$ARTIFACT_OUTPUT" "$RECEIPT_OUTPUT" "$OUTPUT" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -146,13 +147,13 @@ assert artifact["fingerprint"] == original["fingerprint"]
 assert len(receipt) == 2
 PY
 
-FIRST_FINGERPRINT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
+FIRST_FINGERPRINT="$(sk_python -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
 printf 'content-sensitive change\n' >> "$FIXTURE_DIR/src/lazy.ts"
 "$REPO_DIR/shared/review-evidence/collect-change-evidence.sh" \
     --repo "$FIXTURE_DIR" \
     --format json \
     --output "$ARTIFACT_OUTPUT" > "$RECEIPT_OUTPUT"
-SECOND_FINGERPRINT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
+SECOND_FINGERPRINT="$(sk_python -c 'import json,sys; print(json.load(open(sys.argv[1]))["fingerprint"])' "$ARTIFACT_OUTPUT")"
 test "$FIRST_FINGERPRINT" != "$SECOND_FINGERPRINT"
 
 # A repository with only its first commit has no parent/upstream and must still work.
@@ -165,7 +166,7 @@ git -C "$FIRST_COMMIT_DIR" commit -qm "first"
 "$REPO_DIR/shared/review-evidence/collect-change-evidence.sh" \
     --repo "$FIRST_COMMIT_DIR" \
     --format json > "$FIRST_OUTPUT"
-python3 - "$FIRST_OUTPUT" <<'PY'
+sk_python - "$FIRST_OUTPUT" <<'PY'
 import json
 import sys
 

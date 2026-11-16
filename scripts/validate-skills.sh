@@ -4,4 +4,5 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-exec python3 "$REPO_DIR/scripts/skills_tool.py" validate
+. "$REPO_DIR/scripts/python-runtime.sh"
+sk_python "$REPO_DIR/scripts/skills_tool.py" validate

@@ -5,6 +5,7 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO_DIR/scripts/python-runtime.sh"
 OUTPUT="$REPO_DIR/AGENTS.md"
 CHECK_ONLY=false
 
@@ -35,7 +36,7 @@ cat > "$OUTPUT" << 'HEADER'
 
 HEADER
 
-python3 "$REPO_DIR/scripts/manifest_inventory.py" all \
+sk_python "$REPO_DIR/scripts/manifest_inventory.py" all \
     --format agents-document >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
