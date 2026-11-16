@@ -14,7 +14,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 COLLECT = ROOT / "shared/review-evidence/collect-change-evidence.sh"
 REVIEW_MAP = ROOT / "shared/review-evidence/review-map.sh"
-PRESERVED = ("notes/staged.txt", "notes/unstaged.txt", "notes/untracked.txt")
+PRESERVED = (
+    "notes/deleted.txt",
+    "notes/staged.txt",
+    "notes/unstaged.txt",
+    "notes/untracked.txt",
+)
 
 
 def read(relative: str) -> str:
@@ -104,7 +109,7 @@ def helper(script: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
 def make_dirty_repository(repo: Path) -> str:
     (repo / "notes").mkdir(parents=True)
     (repo / "src").mkdir()
-    for name in ("staged", "unstaged"):
+    for name in ("deleted", "staged", "unstaged"):
         (repo / f"notes/{name}.txt").write_text(f"{name} committed\n")
     (repo / "src/app.py").write_text("VALUE = 1\n")
     git(repo, "init", "-q")
@@ -116,6 +121,7 @@ def make_dirty_repository(repo: Path) -> str:
     git(repo, "add", "notes/staged.txt")
     (repo / "notes/unstaged.txt").write_text("unstaged edit\n")
     (repo / "notes/untracked.txt").write_text("untracked note\n")
+    (repo / "notes/deleted.txt").unlink()
     return base
 
 
@@ -144,6 +150,7 @@ def build_map(root: Path, evidence: str, policy: Path) -> subprocess.CompletedPr
 def write_policy(root: Path, run_start: dict[str, Any]) -> Path:
     hashes = {entry["path"]: entry["current_sha256"] for entry in run_start["files"]}
     assert sorted(hashes) == list(PRESERVED), f"run start must list exactly dirty paths: {hashes}"
+    assert hashes["notes/deleted.txt"] is None, "a pre-run deletion is captured as null"
     policy = {
         "path_classes": dict.fromkeys(PRESERVED, "preserved_baseline"),
         "path_class_reasons": dict.fromkeys(PRESERVED, "dirty before run start"),
@@ -177,6 +184,14 @@ def check_run_start_baseline_proves_preserved_identity() -> None:
         assert rejected.returncode != 0, rejected.stdout
         expected = "preserved baseline changed after capture: notes/unstaged.txt"
         assert expected in rejected.stderr, rejected.stderr
+
+        (repo / "notes/unstaged.txt").write_text("unstaged edit\n")
+        (repo / "notes/deleted.txt").write_text("restored after run start\n")
+        capture(repo, base, root / "third.json")
+        restored = build_map(root, "third.json", policy)
+        assert restored.returncode != 0, restored.stdout
+        expected = "preserved baseline changed after capture: notes/deleted.txt"
+        assert expected in restored.stderr, restored.stderr
 
 
 def main() -> None:

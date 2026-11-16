@@ -54,9 +54,11 @@ run.
 
 `preserved_baseline` identity is provable only from this capture. Copy every
 `preserved_baseline_hashes` value in a review policy from the run-start
-`current_sha256` of the same path, never from the snapshot under review.
-`review-map.sh build` then rejects a preserved path whose bytes changed after run
-start. A dirty path without a run-start hash cannot be classified
+`current_sha256` of the same path, never from the snapshot under review. A path
+already deleted at run start has `current_sha256: null`; copy the `null` too, and
+keep the path in the evidence (never filter it out). `review-map.sh build` then
+rejects a preserved path whose bytes changed after run start, or a deleted one
+that reappeared. A dirty path without a run-start hash cannot be classified
 `preserved_baseline`: review it as `reviewable`, or report its baseline identity as
 unproven.
 

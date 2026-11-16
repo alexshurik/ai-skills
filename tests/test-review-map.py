@@ -240,10 +240,52 @@ def metadata_only_scope(manifests: list[dict[str, Any]]) -> list[dict[str, Any]]
     return metadata_only
 
 
+def preserved_deletion_evidence(**current: object) -> dict[str, Any]:
+    deleted = evidence_entry(
+        "notes/deleted-before-run.txt",
+        current_kind="missing",
+        current_read_status="missing",
+        current_lines=None,
+        current_sha256=None,
+        changed_intervals=[],
+    )
+    deleted.update(current)
+    return {
+        "repository": "/tmp/example",
+        "base": "base",
+        "head": "head",
+        "fingerprint": "b" * 64,
+        "files": [deleted],
+        "review_policy": {
+            "path_classes": {"notes/deleted-before-run.txt": "preserved_baseline"},
+            "path_class_reasons": {"notes/deleted-before-run.txt": "deleted before run start"},
+            "preserved_baseline_hashes": {"notes/deleted-before-run.txt": None},
+        },
+    }
+
+
+def assert_preserved_deletion_rules() -> None:
+    # A null run-start hash keeps a pre-run deletion in the lossless map.
+    review_map = build_review_map(preserved_deletion_evidence())
+    (entry,) = review_map["files"]
+    assert entry["review_class"] == "preserved_baseline"
+    # The path must still be absent: reappearing breaks baseline identity.
+    reappeared = preserved_deletion_evidence(
+        current_kind="regular", current_read_status="ok", current_lines=1, current_sha256="c" * 64
+    )
+    try:
+        build_review_map(reappeared)
+    except ValueError as error:
+        assert "preserved baseline changed after capture" in str(error)
+    else:
+        raise AssertionError("a reappeared pre-run deletion was accepted as preserved")
+
+
 def main() -> None:
     review_map, files, manifests, lenses, evidence = fixture()
     assert_map_classification(review_map, files, evidence)
     assert_workflow_output_does_not_invalidate_source(evidence)
+    assert_preserved_deletion_rules()
     receipt = validate_scopes(review_map, manifests)
     assert receipt == {
         "review_map_fingerprint": review_map["fingerprint"],

@@ -420,10 +420,13 @@ def validated_path_classes(raw: dict[str, Any]) -> dict[str, str]:
     return path_classes
 
 
-def validated_preserved_hashes(raw: dict[str, Any], path_classes: dict[str, str]) -> dict[str, str]:
+def validated_preserved_hashes(
+    raw: dict[str, Any], path_classes: dict[str, str]
+) -> dict[str, str | None]:
+    # A null run-start hash records a path that was already deleted at run start.
     preserved_hashes = raw.get("preserved_baseline_hashes", {})
     if not isinstance(preserved_hashes, dict) or any(
-        not isinstance(path, str) or not isinstance(digest, str)
+        not isinstance(path, str) or not (digest is None or isinstance(digest, str))
         for path, digest in preserved_hashes.items()
     ):
         raise ValueError("review_policy.preserved_baseline_hashes must be an object")
@@ -530,12 +533,19 @@ def is_ui_candidate(path: str, review_class: str) -> bool:
     )
 
 
+def preserved_identity_holds(raw_entry: dict[str, Any], run_start_sha256: str | None) -> bool:
+    """A path deleted before run start (null hash) must still be absent."""
+    if run_start_sha256 is None:
+        return raw_entry.get("current_kind") == "missing"
+    return raw_entry.get("current_sha256") == run_start_sha256
+
+
 def mapped_evidence_entry(raw_entry: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     path = raw_entry["path"]
     classification, requirement, reason = content_class(raw_entry)
     review_class = policy["path_classes"].get(path, default_review_class(path))
-    if review_class == "preserved_baseline" and (
-        raw_entry.get("current_sha256") != policy["preserved_baseline_hashes"][path]
+    if review_class == "preserved_baseline" and not preserved_identity_holds(
+        raw_entry, policy["preserved_baseline_hashes"][path]
     ):
         raise ValueError(f"preserved baseline changed after capture: {path}")
     return {
