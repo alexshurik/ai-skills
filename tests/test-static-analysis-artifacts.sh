@@ -185,5 +185,42 @@ if "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" --probe-only . \
   echo "probe-only with analysis targets unexpectedly succeeded" >&2
   exit 1
 fi
+grep -q '^SEMGREP RULES: auto$' "$PROBE_PROJECT/probe.txt"
+
+# Semgrep rules are pinnable: SEMGREP_CONFIG, then a repository-local config;
+# the registry's floating `auto` is used only as a flagged last resort.
+SEMGREP_PROJECT="$FIXTURE_DIR/semgrep-project"
+mkdir -p "$SEMGREP_PROJECT"
+run_semgrep_case() {
+  local name="$1"; shift
+  (
+    cd "$SEMGREP_PROJECT"
+    env PATH="$FIXTURE_DIR/bin:$PATH" RUN="" "$@" \
+      "$REPO_DIR/shared/static-analysis/run-static-analysis.sh" \
+      --artifact-dir "$SEMGREP_PROJECT/logs-$name" --summary-only . \
+      > "$SEMGREP_PROJECT/$name.txt"
+  )
+}
+assert_semgrep_rules() {
+  local name="$1" rules="$2"
+  if ! grep -qE "^SAST \| semgrep \|[^|]*\| +semgrep --config $rules --error --quiet \. \|" \
+      "$SEMGREP_PROJECT/$name.txt"; then
+    echo "semgrep case $name did not run with --config $rules" >&2
+    grep '^SAST' "$SEMGREP_PROJECT/$name.txt" >&2 || true
+    exit 1
+  fi
+}
+run_semgrep_case unpinned
+assert_semgrep_rules unpinned auto
+grep -q 'results are not reproducible' "$SEMGREP_PROJECT/unpinned.txt"
+touch "$SEMGREP_PROJECT/.semgrep.yml"
+run_semgrep_case repository
+assert_semgrep_rules repository '\.semgrep\.yml'
+if grep -q 'not reproducible' "$SEMGREP_PROJECT/repository.txt"; then
+  echo "a repository-pinned semgrep config was reported as unpinned" >&2
+  exit 1
+fi
+run_semgrep_case explicit SEMGREP_CONFIG=rules/pinned.yml
+assert_semgrep_rules explicit 'rules/pinned\.yml'
 
 echo "OK: static analysis artifacts"

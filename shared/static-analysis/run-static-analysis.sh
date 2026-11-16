@@ -26,6 +26,10 @@
 # one; otherwise it resolves the runner itself from lockfiles. Every tool is probed
 # via $RUN first, then as a global binary.
 #
+# Semgrep rules: $SEMGREP_CONFIG if set, else a repository-local .semgrep.yml,
+# .semgrep.yaml, or .semgrep/ (pinned with the code), else the registry's `auto`,
+# which resolves rules at run time; the output then says SAST is not reproducible.
+#
 # Output: a human+machine-readable PROVENANCE table and a SUMMARY line. Exit code is
 # always 0 — findings/unverified are reported in the table, not via exit status
 # (the reviewer decides severity).
@@ -118,6 +122,16 @@ if [ -z "${RUN:-}" ]; then
   else RUN=""
   fi
 fi
+
+# Semgrep rule set (see header): explicit, then repository-pinned, then registry.
+if   [ -n "${SEMGREP_CONFIG:-}" ]; then SEMGREP_RULES="$SEMGREP_CONFIG"
+elif [ -f .semgrep.yml ]; then SEMGREP_RULES=".semgrep.yml"
+elif [ -f .semgrep.yaml ]; then SEMGREP_RULES=".semgrep.yaml"
+elif [ -d .semgrep ]; then SEMGREP_RULES=".semgrep"
+else SEMGREP_RULES="auto"
+fi
+SEMGREP_NOTE="NOTE: semgrep --config auto resolves registry rules at run time, so SAST
+      results are not reproducible; set SEMGREP_CONFIG or commit .semgrep.yml to pin them."
 
 # ---------------------------------------------------------------------------
 # 2. Helpers
@@ -279,6 +293,7 @@ else
   echo " STATIC ANALYSIS BATTERY"
 fi
 echo " runner: ${RUN:-<global PATH>}"
+echo " semgrep rules: $SEMGREP_RULES"
 [ "$PROBE_ONLY" -eq 0 ] && echo " targets: ${TARGETS[*]}"
 [ -n "$ARTIFACT_DIR" ] && echo " artifacts: $ARTIFACT_DIR"
 echo "=============================================="
@@ -286,7 +301,7 @@ echo "=============================================="
 # Multi-language dimensions (always attempt)
 run_tool "duplication"        jscpd   gate -- --min-lines 5 --threshold 0 --reporters consoleFull "${TARGETS[@]}"
 run_tool "cyclomatic+length"  lizard  gate -- "${TARGETS[@]}"
-run_tool "SAST"               semgrep gate -- --config auto --error --quiet "${TARGETS[@]}"
+run_tool "SAST"               semgrep gate -- --config "$SEMGREP_RULES" --error --quiet "${TARGETS[@]}"
 
 # Python
 if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
@@ -333,6 +348,8 @@ if [ "$PROBE_ONLY" -eq 1 ]; then
     echo "NOTE: each missing tool becomes an UNVERIFIED row in review, and review-gate.sh"
     echo "      rejects APPROVED on any UNVERIFIED row. Settle install or proceed now."
   fi
+  echo "SEMGREP RULES: ${SEMGREP_RULES}"
+  [ "$SEMGREP_RULES" = "auto" ] && echo "$SEMGREP_NOTE"
   exit 0
 fi
 echo ""
@@ -345,6 +362,7 @@ echo ""
 echo "SUMMARY: ${N_OK} OK · ${N_FIND} FINDINGS · ${N_UNVERIFIED} UNVERIFIED"
 if [ "$N_UNVERIFIED" -gt 0 ]; then
   echo "NOTE: ${N_UNVERIFIED} dimension(s) UNVERIFIED — these must appear in the verdict as"
-  echo "      UNVERIFIED (not as a silent pass). A gate dimension UNVERIFIED blocks APPROVED."
+  echo "      UNVERIFIED (not as a silent pass). review-gate.sh rejects APPROVED on any UNVERIFIED row."
 fi
+[ "$SEMGREP_RULES" = "auto" ] && echo "$SEMGREP_NOTE"
 exit 0

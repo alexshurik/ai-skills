@@ -101,6 +101,11 @@ Persist full tool output under the artifact directory. Capture the compact `STAT
 ANALYSIS PROVENANCE` table, `SUMMARY`, and log paths in the review provenance
 artifact. Give lenses those artifact paths, not raw scanner output.
 
+Semgrep uses `$SEMGREP_CONFIG` when set, else a repository-local `.semgrep.yml`,
+`.semgrep.yaml`, or `.semgrep/`, else the registry's `auto`. `auto` resolves rules
+at run time, so the runner prints a not-reproducible NOTE. Carry that NOTE into
+the provenance, and do not compare SAST rows across runs that used `auto`.
+
 The canonical runner classifies semantic output as well as exit status. In
 particular, jscpd clone reports, Lizard warning rows (not its always-printed
 threshold banner), Radon B-or-worse
